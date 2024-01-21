@@ -1,2 +1,2 @@
-# tgp
-The Gaia Project
+# aoi
+Age of Innovations
