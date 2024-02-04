@@ -90,6 +90,9 @@
     "atomic": "cpp",
     "ctime": "cpp",
     "memory": "cpp",
-    "typeinfo": "cpp"
-  }
+    "typeinfo": "cpp",
+    "deque": "cpp",
+    "queue": "cpp"
+  },
+  "C_Cpp.errorSquiggles": "disabled"
 }

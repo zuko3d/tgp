@@ -31,7 +31,7 @@ struct LandTypeBonus {
     LandTypeBonusSpecial special = LandTypeBonusSpecial::None;
 };
 
-enum Race : uint8_t {
+enum class Race : uint8_t {
     Blessed = 0,
     Felines = 1,
     Goblins = 2,
@@ -62,10 +62,12 @@ enum class BookColor : uint8_t {
 using GodColor = BookColor;
 
 enum class EventType : uint8_t {
-    None,
     BuildOnEdge,
     BuildNearRiver,
-    BuildExactType,
+    BuildMine,
+    BuildGuild,
+    BuildLab,
+    BuildMine,
     BuildHuge,
     PutManToGod,
     MoveGod,
@@ -73,11 +75,12 @@ enum class EventType : uint8_t {
     FormFederation,
     Terraform,
     UpgradeNavOrTerra,
+    None,
 };
 
 struct RoundScoreBonus {
-    EventType event;
-    int eventParams;
+    EventType event = EventType::None;
+    // int eventParams;
     int bonusWp;
 
     BookColor god;
@@ -97,13 +100,29 @@ enum class Building : uint8_t {
     None
 };
 
+struct BuildingOrigin {
+    Building type;
+    Resources price = {};
+    IncomableResources income = {};
+    EventType buildEvent = EventType::None;
+    int power = 0;
+};
+
+struct BuildingOnMap {
+    Building type = BuildingType::None;
+    int8_t owner = -1;
+    bool neutral = false;
+    bool hasAnnex = false;
+    int8_t fedIdx = -1;
+}
+
 struct RoundBoosterOrigin {
     IncomableResources resources;
     
     EventType trigger = EventType::None;
     int8_t wpPerTrigger = 0;
 
-    ActionType action = ActionType::Pass;
+    int8_t buttonOriginIdx = -1;
 
     bool navBooster = false;
     bool scoreHuge = false;
@@ -112,13 +131,13 @@ struct RoundBoosterOrigin {
 };
 
 struct RoundBoosterOnBoard {
-    const RoundBoosterOrigin& origin;
+    int8_t originIdx;
     uint8_t gold;
 };
 
 enum class TechTile : uint8_t {
     BookCharge,
-    p2g3,
+    p3g2,
     cubeGod,
     charge4,
     spades2,
@@ -131,9 +150,11 @@ enum class TechTile : uint8_t {
     tower,
 };
 
+using FedTileOrigin = int8_t;
+
 struct FederationTile
 {
-    uint8_t origin;
+    FedTileOrigin origin;
     uint8_t flipped = 0;
 };
 
@@ -160,8 +181,6 @@ enum class Innovation : uint8_t {
 };
 
 enum class PalaceSpecial : uint8_t {
-    DowngradeLabCube3wp,
-    UpgradeMine,
     GetTech,
     Lab3wp,
     Fed6nrg,
@@ -173,13 +192,43 @@ enum class PalaceSpecial : uint8_t {
     Spades2Books2Bridges2,
     FreeGuild,
     Wp10,
+    FlyingMan,
     None,
 };
 
 struct Palace {
     IncomableResources income = IncomableResources{};
-    IncomableResources button = IncomableResources{};
+    int8_t buttonOrigin = -1;
     PalaceSpecial special = PalaceSpecial::None;
+};
+
+enum class ButtonActionSpecial : uint8_t {
+    FiraksButton,
+    BuildBridge,
+    UpgradeMine,
+    None,
+};
+
+struct ButtonOrigin {
+    IncomableResources resources = IncomableResources{};
+    ButtonActionSpecial special = ButtonActionSpecial::None;
+};
+
+struct Button {
+    int8_t buttonOrigin = -1;
+    int8_t isUsed = false;
+};
+
+struct MarketButton {
+    int8_t manaPrice = 0;
+    int8_t buttonOrigin = -1;
+    int8_t isUsed = false;
+};
+
+struct BookButton {
+    int8_t bookPrice = 0;
+    int8_t buttonOrigin = -1;
+    int8_t isUsed = false;
 };
 
 enum class BookActionSpecial : uint8_t {
@@ -188,21 +237,15 @@ enum class BookActionSpecial : uint8_t {
     None
 };
 
-struct BookAction {
-    int8_t price;
-    IncomableResources resources;
-    BookActionSpecial special;
-};
-
-struct MarketAction {
-    int8_t price;
-    IncomableResources resources;
-    bool bridge = false;
-};
-
 enum class GamePhase {
     Preparation,
     Upkeep,
     Actions,
     EndOfTurn,
 };
+
+struct InnoPrice {
+    FlatMap<BookColor, int8_t, 4> books;
+    int8_t anyBooks = 0;
+    int8_t gold = 0;
+}

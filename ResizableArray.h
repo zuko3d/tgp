@@ -22,6 +22,19 @@ public:
     void push_back(const T& value) { data_.at(size_++) = value; }
     void pop_back() { --size_; }
 
+    void erase(T* iter, size_t amount = 1) {
+        const auto curEnd = end();
+        const auto nextIter = iter + amount;
+        while (nextIter < curEnd) {
+            *iter = *nextIter;
+            ++iter;
+            ++nextIter;
+        }
+        size_--;
+    }
+
+    size_t size() const { return size_; }
+
 private:
     std::array<T, N> data_;
     size_t size_ = 0;

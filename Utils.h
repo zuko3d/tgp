@@ -137,8 +137,8 @@ public:
 			, idx(i)
 		{ }
 
-		std::pair<const T&, size_t> operator*() const {
-			return { cont_[idx], idx };
+		std::pair<size_t, const T&> operator*() const {
+			return { idx, cont_[idx] };
 		}
 
 		void operator++() {
