@@ -48,7 +48,8 @@
     "**/.*",
     "**/.*/**",
     "**/.vscode",
-    "**/.vscode/**"
+    "**/.vscode/**",
+    "**/.history/**"
   ],
   "C_Cpp_Runner.useAddressSanitizer": false,
   "C_Cpp_Runner.useUndefinedSanitizer": false,
@@ -92,7 +93,21 @@
     "memory": "cpp",
     "typeinfo": "cpp",
     "deque": "cpp",
-    "queue": "cpp"
+    "queue": "cpp",
+    "clocale": "cpp",
+    "ios": "cpp",
+    "iostream": "cpp",
+    "istream": "cpp",
+    "iterator": "cpp",
+    "ostream": "cpp",
+    "stdexcept": "cpp",
+    "streambuf": "cpp",
+    "system_error": "cpp",
+    "xfacet": "cpp",
+    "xiosbase": "cpp",
+    "xlocale": "cpp",
+    "xlocinfo": "cpp",
+    "xlocnum": "cpp"
   },
   "C_Cpp.errorSquiggles": "disabled"
 }

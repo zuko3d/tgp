@@ -95,6 +95,11 @@ inline typename Container::value_type maximum(const Container& vec) {
 }
 
 template <class Container>
+inline typename Container::value_type minimum(const Container& vec) {
+    return *std::min_element(vec.begin(), vec.end());
+}
+
+template <class Container>
 inline typename Container::value_type percentile(Container vec, double pct) {
     std::sort(vec.begin(), vec.end());
 	assert((pct <= 1.0) && (pct >= 0.0));
@@ -304,7 +309,7 @@ private:
 
 template <class Container>
 inline Enumerator<std::remove_reference_t<typename Container::value_type>> enumerate(const Container& cont) {
-	return Enumerator<std::remove_reference_t<typename Container::value_type>>(&cont.front(), cont.size());
+	return Enumerator<std::remove_reference_t<typename Container::value_type>>(&(*cont.begin()), cont.size());
 }
 
 template <class Container1, class Container2>

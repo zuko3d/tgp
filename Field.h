@@ -2,7 +2,10 @@
 
 #include "ResizableArray.h"
 #include "Types.h"
+
+#include <array>
 #include <memory>
+#include <vector>
 
 struct FieldOrigin {
     static constexpr size_t FIELD_SIZE = 89;
@@ -18,23 +21,20 @@ struct FieldOrigin {
 
 // Don't forget to make it Copy-on-write
 struct Field {
-    std::vector<int8_t> buildingByPlayer(Building b, int p, bool withNeutrals = false);
-    bool hasAdjacentEnemies(int8_t pos, int owner);
-    int adjacentEnemiesPower(int8_t pos, int owner);
-    std::vector<int8_t> buildableBridges(int owner);
-    std::vector<int8_t> reachable(int owner, int range, TerrainType color = TerrainType::None);
+    std::vector<int8_t> buildingByPlayer(Building b, int p, bool withNeutrals = false) const;
+    bool hasAdjacentEnemies(int8_t pos, int owner) const;
+    int adjacentEnemiesPower(int8_t pos, int owner) const;
+    int countReachableBuildings(int owner, int reach) const;
+    std::vector<int8_t> buildableBridges(int owner) const;
+    
+    std::array<int8_t, FieldOrigin::FIELD_SIZE> bfs(int owner, int reach) const;
 
-    int countReachableBuildings(int owner, int reach);
-    std::array<int8_t, Field::FIELD_SIZE> Field::bfs(int owner, int reach);
+    std::vector<int8_t> reachable(int owner, int range, TerrainType color = TerrainType::None) const;
+    ResizableArray<int8_t, 8> adjacent(int pos) const;
 
-    static constexpr size_t FIELD_SIZE = 89;
-    static constexpr size_t TOTAL_BRIDGES = 89;
-
-    ResizableArray<int8_t, 8> adjacent(int pos);
-
-    std::array<TerrainType, FIELD_SIZE> type;
-    std::array<int8_t, TOTAL_BRIDGES> bridges = {{ -1 }}; // owner
-    std::array<BuildingOnMap, FIELD_SIZE> building;
+    std::array<TerrainType, FieldOrigin::FIELD_SIZE> type;
+    std::array<int8_t, FieldOrigin::TOTAL_BRIDGES> bridges = {{ -1 }}; // owner
+    std::array<BuildingOnMap, FieldOrigin::FIELD_SIZE> building;
     std::array<ResizableArray<int8_t, 20>, 2> ownedByPlayer;
     int stateIdx = 0;
 };

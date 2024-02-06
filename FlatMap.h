@@ -1,6 +1,9 @@
 #pragma once
 
 #include <array>
+#include <assert.h>
+
+#include "Utils.h"
 
 template <typename KeyType, typename ValueType, size_t Size>
 class FlatMap {
@@ -12,13 +15,13 @@ public:
 			, idx(i)
 		{ }
 
-		std::pair<KeyType, ValueType&> operator*() {
+		std::pair<KeyType, const ValueType&> operator*() const {
 			return { (KeyType) idx, begin_[idx] };
 		}
 
-        std::pair<KeyType, const ValueType&> operator*() const {
-			return { (KeyType) idx, begin_[idx] };
-		}
+        // std::pair<KeyType, const ValueType&> operator*() const {
+		// 	return { (KeyType) idx, begin_[idx] };
+		// }
 
 		void operator++() {
 			idx++;
@@ -39,7 +42,14 @@ public:
 		size_t idx;
 	};
 
-    FlatMap(const std::array<ValueType, Size>& arr) : arr_(arr) { }
+	FlatMap() = default;
+
+    FlatMap(const std::initializer_list<ValueType> arr) {
+		assert(arr.size() == Size);
+		for (const auto& [idx, val]: enumerate(arr)) {
+			arr_[idx] = val;
+		}
+	};
 
     const ValueType& operator[](const KeyType& key) const { return arr_[static_cast<size_t>(key)]; }
     ValueType& operator[](const KeyType& key) { return arr_[static_cast<size_t>(key)]; }

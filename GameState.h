@@ -9,7 +9,6 @@
 #include <memory>
 
 struct StaticGameState {
-    FieldOrigin fieldOrigin;
     std::array<RoundBoosterOrigin, 5> roundBoosters;
     RoundScoreBonus lastRoundBonus;
     std::array<RoundScoreBonus, 6> bonusByRound;

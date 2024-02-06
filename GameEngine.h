@@ -3,16 +3,19 @@
 #include "Action.h"
 #include "Bot.h"
 #include "GameState.h"
+#include "Types.h"
 
 #include <random>
 
 class GameEngine {
 public:
-    void initializeRandomly(GameState& gs, std::vector<IBot*> bots, std::default_random_engine& g);
+    GameEngine(std::vector<IBot*> bots);
+    
+    void initializeRandomly(GameState& gs, std::default_random_engine& g);
 
     void playGame(GameState& gs);
 
-    void doFreeActionMarket(FreeActionMarket action, GameState& gs);
+    void doFreeActionMarket(FreeActionMarketType action, GameState& gs);
     void doAction(Action action, GameState& gs);
     std::vector<Action> generateActions(GameState& gs);
 
@@ -62,6 +65,9 @@ private:
     void buildMine(int8_t pos, GameState& gs);
 
     InnoPrice getInnoFullPrice(int pos, GameState& gs);
+
+    std::vector<int8_t> someHexes(bool onlyInReach, bool onlyNative, const GameState& gs, int cubesDetained = 0, int freeSpades = 0) const;
+    std::vector<int8_t> terraformableHexes(const GameState& gs) const;
 
     std::vector<IBot*> bots_;
     int fieldStateIdx = 0;

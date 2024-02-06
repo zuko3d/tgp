@@ -3,6 +3,8 @@
 #include "Resources.h"
 
 #include <array>
+#include <stdint.h>
+#include <vector>
 
 enum class HexType : uint8_t {
     Desert = 0,
@@ -49,17 +51,8 @@ enum class Race : uint8_t {
 
 struct RaceStartBonus {
     IncomableResources resources;
-    std::array<int8_t, 4> gods; 
+    FlatMap<GodColor, int8_t, 4> gods; 
 };
-
-enum class BookColor : uint8_t {
-    Yellow = 0,
-    Blue = 1,
-    Brown = 2,
-    White = 3,
-};
-
-using GodColor = BookColor;
 
 enum class EventType : uint8_t {
     BuildOnEdge,
@@ -67,7 +60,6 @@ enum class EventType : uint8_t {
     BuildMine,
     BuildGuild,
     BuildLab,
-    BuildMine,
     BuildHuge,
     PutManToGod,
     MoveGod,
@@ -109,12 +101,12 @@ struct BuildingOrigin {
 };
 
 struct BuildingOnMap {
-    Building type = BuildingType::None;
+    Building type = Building::None;
     int8_t owner = -1;
     bool neutral = false;
     bool hasAnnex = false;
     int8_t fedIdx = -1;
-}
+};
 
 struct RoundBoosterOrigin {
     IncomableResources resources;
@@ -132,7 +124,7 @@ struct RoundBoosterOrigin {
 
 struct RoundBoosterOnBoard {
     int8_t originIdx;
-    uint8_t gold;
+    int8_t gold;
 };
 
 enum class TechTile : uint8_t {
@@ -206,6 +198,7 @@ enum class ButtonActionSpecial : uint8_t {
     FiraksButton,
     BuildBridge,
     UpgradeMine,
+    WpForGuilds2,
     None,
 };
 
@@ -231,21 +224,9 @@ struct BookButton {
     int8_t isUsed = false;
 };
 
-enum class BookActionSpecial : uint8_t {
-    Guild2wp,
-    UpgradeMine,
-    None
-};
-
 enum class GamePhase {
     Preparation,
     Upkeep,
     Actions,
     EndOfTurn,
 };
-
-struct InnoPrice {
-    FlatMap<BookColor, int8_t, 4> books;
-    int8_t anyBooks = 0;
-    int8_t gold = 0;
-}

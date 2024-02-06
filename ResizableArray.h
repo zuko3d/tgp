@@ -5,6 +5,8 @@
 template <typename T, size_t N>
 class ResizableArray {
 public:
+    using value_type = T;
+
     void fromArray(const std::array<T, N>& arr, size_t sz) { data_ = arr; size_ = sz; }
 
     const T& operator[](size_t index) const { return data_[index]; }
@@ -12,6 +14,12 @@ public:
 
     const T& at(size_t index) const { return data_[index]; }
     T& at(size_t index) { return data_[index]; }
+
+    const T& front() const { return *data_; }
+    T& front() { return *data_; }
+
+    const T& back() const { return data_[size_ - 1]; }
+    T& back() { return data_[size_ - 1]; }
 
     T* begin() { return &data_[0]; }
     const T* begin() const { return &data_[0]; }
@@ -34,6 +42,8 @@ public:
     }
 
     size_t size() const { return size_; }
+
+    void resize(size_t sz) { assert(sz <= N); size_ = sz; }
 
 private:
     std::array<T, N> data_;

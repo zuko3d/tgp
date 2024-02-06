@@ -3,6 +3,22 @@
 #include <cstdint>
 
 #include "FlatMap.h"
+#include "Utils.h"
+
+enum class BookColor : uint8_t {
+    Yellow = 0,
+    Blue = 1,
+    Brown = 2,
+    White = 3,
+};
+
+using GodColor = BookColor;
+
+struct InnoPrice {
+    FlatMap<BookColor, int8_t, 4> books;
+    int8_t anyBooks = 0;
+    int8_t gold = 0;
+};
 
 struct IncomableResources
 {
@@ -43,34 +59,46 @@ struct Resources
     int8_t gold = 0;
     int8_t cube = 0;
     int8_t humans = 0;
-    FlatMap<GodColor, int8_t, 4> gods = {};
-    FlatMap<BookColor, int8_t, 4> books = {};
-    int16_t winPoints = {};
+    FlatMap<GodColor, int8_t, 4> gods = {0, 0, 0, 0};
+    FlatMap<BookColor, int8_t, 4> books = {0, 0, 0, 0};
+    int16_t winPoints = 0;
 
     void operator+=(const Resources& op) {
         gold += op.gold;
         cube += op.cube;
         humans += op.humans;
-        for (size_t i = 0; i < books.size(); i++) {
+        for (size_t i = 0; i < 4; i++) {
             books[(BookColor) i] += op.books[(BookColor) i];
         }
-        for (size_t i = 0; i < gods.size(); i++) {
+        for (size_t i = 0; i < 4; i++) {
             gods[(GodColor) i] = std::min(gods[(GodColor) i] + op.gods[(GodColor) i], 12);
         }
         winPoints += op.winPoints;
     }
 
-    bool operator >= (const IncomableResources& op) {
+    bool operator >= (const Resources& op) const {
+        if (gold < op.gold) return false;
+        if (cube < op.cube) return false;
+        if (humans < op.humans) return false;
+        for (size_t i = 0; i < 4; i++) {
+            if (books[(BookColor) i] < op.books[(BookColor) i]) return false;
+        }
+
+        assert(false);
+        return {};
+    }
+
+    bool operator >= (const IncomableResources& op) const {
         return gold >= op.gold &&
             cube >= op.cube;
     }
 
-    bool operator >= (const InnoPrice& op) {
+    bool operator >= (const InnoPrice& op) const {
         if (op.gold > gold) return false;
 
         FlatMap<BookColor, int8_t, 4> booksLeft = books;
-        for (auto& [color, val]: booksLeft) {
-            val -= books[color];
+        for (const auto [color, _]: booksLeft) {
+            booksLeft[color] -= books[color];
         }
 
         return sum(booksLeft.values()) >= op.anyBooks;

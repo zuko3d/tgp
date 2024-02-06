@@ -9,9 +9,9 @@ struct PlayerState {
         constexpr int8_t startingBuildingsAvailable[] = {9, 4, 1, 3, 1};
 
         if (SC(building) < 5) {
-            return startingBuildingsAvailable[SC(building)] - ps.buildingsAvailable[SC(building)] + ps.neutralBuildingsAmount[SC(building)];
+            return startingBuildingsAvailable[SC(building)] - buildingsAvailable[building] + neutralBuildingsAmount[building];
         } else {
-            return ps.neutralBuildingsAmount[SC(building)];
+            return neutralBuildingsAmount[building];
         }
     }
 

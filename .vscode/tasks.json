@@ -30,18 +30,20 @@
           "label": "C/C++: Debug",
           "command": "cl.exe",
           "args": [
+            "*.cpp",
             "/Od",
             "/Zi",
             "/EHsc",
             "/std:c++latest",
             "/GS-",
             "/arch:AVX512",
-            
-            "*.cpp",
             "/Fe:",
             "${fileDirname}\\${fileBasenameNoExtension}.exe"
           ],
-          "problemMatcher": ["$msCompile"],
+          "problemMatcher": {
+            "base": "$msCompile",
+            "fileLocation": ["search"]
+          },
           "group": {
             "kind": "build",
             "isDefault": true

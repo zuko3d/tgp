@@ -4,13 +4,13 @@
 #include "Utils.h"
 #include <queue>
 
-std::vector<int8_t> Field::buildableBridges(int owner) {
+std::vector<int8_t> Field::buildableBridges(int owner) const {
     std::vector<int8_t> ret;
-    std::array<bool, TOTAL_BRIDGES> r;
+    std::array<bool, FieldOrigin::TOTAL_BRIDGES> r;
     ret.reserve(40);
     for (const auto& pos: ownedByPlayer[owner]) {
-        for (const auto& bridgables: StaticData::fieldOrigin().bridgables[pos]) {
-            if (bridges[bridgables] == -1) r[bridgables] = true;
+        for (const auto& br: StaticData::fieldOrigin().bridgeIds[pos]) {
+            if (bridges[br] == -1) r[br] = true;
         }
     }
 
@@ -21,20 +21,20 @@ std::vector<int8_t> Field::buildableBridges(int owner) {
     return ret;
 }
 
-int Field::adjacentEnemiesPower(int8_t pos, int owner) {
+int Field::adjacentEnemiesPower(int8_t pos, int owner) const {
     int opp = 1 - owner;
     int ret = 0;
     for (const auto& neib: adjacent(pos)) {
         if (building.at(neib).owner == opp) {
             ret += StaticData::buildingOrigins()[building.at(neib).type].power;
-            if (building.at(neib)..hasAnnex) ret++;
+            if (building.at(neib).hasAnnex) ret++;
         }
     }
 
     return ret;
 }
 
-bool Field::hasAdjacentEnemies(int8_t pos, int owner) {
+bool Field::hasAdjacentEnemies(int8_t pos, int owner) const {
     int opp = 1 - owner;
 
     for (const auto& neib: adjacent(pos)) {
@@ -46,7 +46,7 @@ bool Field::hasAdjacentEnemies(int8_t pos, int owner) {
     return false;
 }
 
-std::vector<int8_t> Field::buildingByPlayer(Building b, int p, bool withNeutrals = false) {
+std::vector<int8_t> Field::buildingByPlayer(Building b, int p, bool withNeutrals) const {
     std::vector<int8_t> ret;
     ret.reserve(ownedByPlayer[p].size());
     for (const auto& pos: ownedByPlayer[p]) {
@@ -58,8 +58,8 @@ std::vector<int8_t> Field::buildingByPlayer(Building b, int p, bool withNeutrals
     return ret;
 }
 
-std::array<int8_t, Field::FIELD_SIZE> Field::bfs(int owner, int reach) {
-    std::array<int8_t, Field::FIELD_SIZE> ret = {-1};
+std::array<int8_t, FieldOrigin::FIELD_SIZE> Field::bfs(int owner, int reach) const {
+    std::array<int8_t, FieldOrigin::FIELD_SIZE> ret = {-1};
     int curComponent = 0;
 
     for (const auto& start: ownedByPlayer[owner]) {
@@ -73,7 +73,7 @@ std::array<int8_t, Field::FIELD_SIZE> Field::bfs(int owner, int reach) {
                 q.pop();
                 if (ret[pos] == -1) {
                     ret[pos] = curComponent;
-                    for (const auto& r: reachable(pos)) {
+                    for (const auto& r: StaticData::fieldOrigin().reachable[reach].at(pos)) {
                         if (building[pos].owner == owner && ret[r] == -1) {
                             q.push(r);
                         }
@@ -86,7 +86,7 @@ std::array<int8_t, Field::FIELD_SIZE> Field::bfs(int owner, int reach) {
     return ret;
 }
 
-int Field::countReachableBuildings(int owner, int reach) {
+int Field::countReachableBuildings(int owner, int reach) const {
     const auto components = bfs(owner, reach);
 
     std::array<int, 20> countByComponent = {0};
@@ -97,7 +97,7 @@ int Field::countReachableBuildings(int owner, int reach) {
     return maximum(countByComponent);
 }
 
-ResizableArray<int8_t, 8> Field::adjacent(int pos) {
+ResizableArray<int8_t, 8> Field::adjacent(int pos) const {
     ResizableArray<int8_t, 8> ret;
     for (const auto& p: StaticData::fieldOrigin().neibs[pos]) {
         ret.push_back(p);
@@ -105,10 +105,10 @@ ResizableArray<int8_t, 8> Field::adjacent(int pos) {
 
     for (const auto& br: StaticData::fieldOrigin().bridgeIds[pos]) {
         if (bridges[br] != -1) {
-            if (pos != StaticData::fieldOrigin().bridgeConnections[br].first]) {
-                ret.push_back(StaticData::fieldOrigin().bridgeConnections[br].first]);
+            if (pos != StaticData::fieldOrigin().bridgeConnections[br].first) {
+                ret.push_back(StaticData::fieldOrigin().bridgeConnections[br].first);
             } else {
-                ret.push_back(StaticData::fieldOrigin().bridgeConnections[br].second]);
+                ret.push_back(StaticData::fieldOrigin().bridgeConnections[br].second);
             }
         }
     }
@@ -116,8 +116,8 @@ ResizableArray<int8_t, 8> Field::adjacent(int pos) {
     return ret;
 }
 
-std::vector<int8_t> Field::reachable(int owner, int range, TerrainType color) {
-    std::array<bool, Field::FIELD_SIZE> r;
+std::vector<int8_t> Field::reachable(int owner, int range, TerrainType color) const {
+    std::array<bool, FieldOrigin::FIELD_SIZE> r;
     for (const auto& pos: ownedByPlayer[owner]) {
         for (const auto& p: StaticData::fieldOrigin().reachable[range][pos]) {
             if (building.at(pos).owner == -1) r[p] = true;
@@ -143,4 +143,3 @@ std::vector<int8_t> Field::reachable(int owner, int range, TerrainType color) {
     
     return ret;
 }
-

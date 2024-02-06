@@ -32,8 +32,8 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": true,
-      "cwd": "c:/Users/zuko3d/source/repos/tgp/.history",
-      "program": "c:/Users/zuko3d/source/repos/tgp/.history/build/Debug/outDebug",
+      "cwd": "c:/Users/zuko3d/source/repos/tgp",
+      "program": "c:/Users/zuko3d/source/repos/tgp/build/Debug/outDebug",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [

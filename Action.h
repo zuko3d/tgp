@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 enum class ActionType {
     // Build,
     UpgradeBuilding,
@@ -27,12 +29,12 @@ enum class FreeActionMarketType {
     CubeToGold,
     BookToGold,
     BurnMana,
-}
+};
 
 // struct FreeActionMarket {
 //     IncomableResources resources;
 //     Resources price;
-// }
+// };
 
 struct Action
 {
