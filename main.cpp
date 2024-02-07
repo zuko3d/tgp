@@ -12,9 +12,6 @@ int main() {
     StaticGameState sgs;
     GameState gs { .staticGs = sgs };
 
-    std::cout << sizeof(gs) << std::endl;
-    std::cout << sizeof(*gs.field) << std::endl;
-
     GameEngine ge({ &bot1, &bot2 });
 
     ge.initializeRandomly(gs, g);

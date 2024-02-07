@@ -117,7 +117,8 @@ void GameEngine::upgradeBuilding(int8_t pos, Building building, GameState& gs, i
     awardWp(ps.wpPerEvent[StaticData::buildingOrigins()[building].buildEvent], gs);
     gs.field->building[pos].type = building;
 
-    if (building == Building::Palace && param >= 0) {
+    if (building == Building::Palace) {
+        assert(param >= 0);
         ps.palaceIdx = param;
         std::remove(gs.palacesAvailable.begin(), gs.palacesAvailable.end(), param);
         gs.palacesAvailable.pop_back();
@@ -357,7 +358,7 @@ std::vector<Action> GameEngine::generateActions(GameState& gs) {
                     ret.emplace_back(Action{
                         .type = ActionType::UpgradeBuilding,
                         .param1 = pos,
-                        .param2 = -1 - i,
+                        .param2 = i,
                     });
                 }
             }
@@ -529,11 +530,11 @@ std::vector<Action> GameEngine::generateActions(GameState& gs) {
     // TerraformAndBuild,
     // No "pure" terraforms, just with build
 
-    if (ps.buildingsAvailable[Building::Mine] && ps.resources >= StaticData::buildingOrigins()[Building::Mine].price) {
+    if (ps.buildingsAvailable[Building::Mine] > 0 && ps.resources >= StaticData::buildingOrigins()[Building::Mine].price) {
         if (ps.tfLevel == 2) {
-            const auto reachable = gs.field->reachable(gs.activePlayer, ps.navLevel);
-            for (const auto& pos: reachable) {
-                if (ps.resources.cube >= 1 + spadesNeeded(gs.field->type[pos], color)) {
+            const auto poses = someHexes(true, false, gs, 1, 0);
+            for (const auto& pos: poses) {
+                if (gs.field->building[pos].type == Building::None) {
                     ret.emplace_back(Action{
                         .type = ActionType::TerraformAndBuild,
                         .param1 = pos,
@@ -542,13 +543,15 @@ std::vector<Action> GameEngine::generateActions(GameState& gs) {
                 }
             }
         } else {
-            const auto reachable = gs.field->reachable(gs.activePlayer, ps.navLevel, color);
-            for (const auto& pos: reachable) {
-                ret.emplace_back(Action{
-                    .type = ActionType::TerraformAndBuild,
-                    .param1 = pos,
-                    .param2 = 1,
-                });
+            const auto poses = someHexes(true, true, gs, 1, 0);
+            for (const auto& pos: poses) {
+                if (gs.field->building[pos].type == Building::None) {
+                    ret.emplace_back(Action{
+                        .type = ActionType::TerraformAndBuild,
+                        .param1 = pos,
+                        .param2 = 1,
+                    });
+                }
             }
         }
     }
@@ -835,6 +838,7 @@ void GameEngine::buildForFree(int8_t pos, Building building, bool isNeutral, Gam
     gs.field->building[pos].type = building;
     gs.field->building[pos].owner = gs.activePlayer;
     gs.field->building[pos].neutral = isNeutral;
+    gs.field->ownedByPlayer[gs.activePlayer].push_back(pos);
 
     auto& ps = getPs(gs);
 
@@ -863,6 +867,7 @@ void GameEngine::buildMine(int8_t pos, GameState& gs) {
 
     gs.field->building[pos].type = Building::Mine;
     gs.field->building[pos].owner = gs.activePlayer;
+    gs.field->ownedByPlayer[gs.activePlayer].push_back(pos);
 
     if (ps.buildingsAvailable[Building::Mine] != 5) ps.additionalIncome.cube++;
     ps.buildingsAvailable[Building::Mine]--;
@@ -894,6 +899,21 @@ void GameEngine::doAction(Action action, GameState& gs) {
     const auto race = getRace(gs);
 
     switch (action.type) {
+        case ActionType::UpgradeBuilding: {
+            const auto pos = action.param1;
+            if (gs.field->building[pos].type == Building::Guild) {
+                if (action.param2 >= 0) {
+                    upgradeBuilding(pos, Building::Palace, gs, action.param2);
+                } else {
+                    upgradeBuilding(pos, Building::Laboratory, gs, -1 - action.param2);
+                }
+            } else if (gs.field->building[pos].type == Building::Mine) {
+                upgradeBuilding(pos, Building::Guild, gs, action.param2);
+            } else if (gs.field->building[pos].type == Building::Laboratory) {
+                upgradeBuilding(pos, Building::Academy, gs, action.param2);
+            }
+            break;
+        }
         case ActionType::TerraformAndBuild: {
             terraformAndBuildMine(action.param1, action.param2, gs);
             break;
@@ -1010,21 +1030,10 @@ void GameEngine::playGame(GameState& gs) {
 
             for (gs.activePlayer = 0; gs.activePlayer < 2; gs.activePlayer++) {
                 auto& ps = gs.players[gs.activePlayer];
-                const auto color = gs.staticGs.playerColors[gs.activePlayer];
-                const auto race = gs.staticGs.playerRaces[gs.activePlayer];
 
                 ps.wpPerEvent[curBonus.event] += curBonus.bonusWp;
-
-                constexpr int8_t chargePerGuild[] = {6, 4, 2, 1, 0};
                 awardResources(ps.additionalIncome, gs);
                 awardResources(gs.staticGs.roundBoosters.at(ps.currentRoundBoosterOriginIdx).resources, gs);
-
-                // awardResources(IncomableResources{
-                //     .gold = 2 * (4 - ps.buildingsAvailable[SC(Building::Guild)]) + (color == TerrainType::Mountain && ps.buildingsAvailable[SC(Building::Guild)] < 4) ? 1 : 0,
-                //     .cube = 9 - ps.buildingsAvailable[SC(Building::Mine)] + (ps.buildingsAvailable[SC(Building::Mine)] >= 5) ? 1 : 0,
-                //     .humans = 3 - ps.buildingsAvailable[SC(Building::Laboratory)],
-                //     .manaCharge = chargePerGuild[ps.buildingsAvailable[SC(Building::Guild)]],
-                // }, gs);
             }
         }
 
@@ -1540,6 +1549,7 @@ void GameEngine::initializeRandomly(GameState& gs, std::default_random_engine& g
 
     gs.field = std::make_shared<Field>();
     gs.field->type = StaticData::fieldOrigin().basicType;
+    for (auto& b: gs.field->bridges) b = -1;
 
     std::vector<int> indices;
 

@@ -8,8 +8,8 @@
 #include <vector>
 
 struct FieldOrigin {
-    static constexpr size_t FIELD_SIZE = 89;
-    static constexpr size_t TOTAL_BRIDGES = 89;
+    static constexpr size_t FIELD_SIZE = 91;
+    static constexpr size_t TOTAL_BRIDGES = 18;
 
     std::array<TerrainType, FIELD_SIZE> basicType;
     std::array<bool, FIELD_SIZE> onEdge_;

@@ -1,5 +1,7 @@
 #include "StaticData.h"
 
+#include <queue>
+
 const std::array<IncomableResources, 7>& StaticData::fedTiles() {
     static const auto ret = generateFedTiles();
     return ret;
@@ -218,5 +220,119 @@ std::array<LandTypeBonus, 7> StaticData::generateLandTypeBonuses() {
 };
 
 FieldOrigin StaticData::generateFieldOrigin() {
-    return {};
+    FieldOrigin fld;
+
+    fld.basicType = {
+        TerrainType::Forest, TerrainType::Mountain, TerrainType::Desert, TerrainType::Plains, TerrainType::River, TerrainType::Lake, TerrainType::Forest, TerrainType::Mountain, TerrainType::Wasteland, TerrainType::River,
+        TerrainType::River, TerrainType::Swamp, TerrainType::Lake, TerrainType::Swamp, TerrainType::Wasteland, TerrainType::River, TerrainType::Swamp, TerrainType::Plains, TerrainType::Lake, TerrainType::River, TerrainType::Forest,
+        TerrainType::River, TerrainType::Plains, TerrainType::Mountain, TerrainType::Forest, TerrainType::River, TerrainType::River, TerrainType::Desert, TerrainType::River, TerrainType::River, TerrainType::Desert,
+        TerrainType::River, TerrainType::Wasteland, TerrainType::Desert, TerrainType::River, TerrainType::Forest, TerrainType::River, TerrainType::River, TerrainType::Mountain, TerrainType::Plains, TerrainType::Swamp,
+        TerrainType::River, TerrainType::River, TerrainType::River, TerrainType::Swamp, TerrainType::Plains, TerrainType::Lake, TerrainType::Desert, TerrainType::Wasteland, TerrainType::Mountain,
+        TerrainType::River, TerrainType::Lake, TerrainType::Plains, TerrainType::River, TerrainType::Wasteland, TerrainType::Mountain, TerrainType::River, TerrainType::Forest, TerrainType::Lake, TerrainType::Desert,
+        TerrainType::River, TerrainType::Swamp, TerrainType::Mountain, TerrainType::River, TerrainType::River, TerrainType::River, TerrainType::River, TerrainType::River, TerrainType::River, TerrainType::River,
+        TerrainType::River, TerrainType::Desert, TerrainType::Forest, TerrainType::Wasteland, TerrainType::Desert, TerrainType::Forest, TerrainType::Lake, TerrainType::Swamp, TerrainType::Forest, TerrainType::River,
+        TerrainType::River, TerrainType::Wasteland, TerrainType::Plains, TerrainType::Mountain, TerrainType::Lake, TerrainType::Swamp, TerrainType::Plains, TerrainType::Desert, TerrainType::Wasteland, TerrainType::Mountain, TerrainType::River
+    };
+
+    std::vector<int> onEdge = {0, 1, 2, 3, 5, 6, 7, 8, 20, 30, 40, 49, 59, 81, 82, 83, 84, 85, 86, 87, 88, 89};
+    for (auto& f: fld.onEdge_) { f = false; }
+    for (const auto& pos: onEdge) {
+        fld.onEdge_[pos] = true;
+    }
+    fld.bridgeConnections[1] = {-1, -1};
+    fld.bridgeConnections[1] = {5, 14};
+    fld.bridgeConnections[2] = {8, 20};
+    fld.bridgeConnections[3] = {18, 30};
+    fld.bridgeConnections[4] = {18, 38};
+    fld.bridgeConnections[5] = {24, 35};
+    fld.bridgeConnections[6] = {27, 35};
+    fld.bridgeConnections[7] = {27, 38};
+    fld.bridgeConnections[8] = {27, 46};
+    fld.bridgeConnections[9] = {33, 44};
+    fld.bridgeConnections[10] = {32, 51};
+    fld.bridgeConnections[11] = {33, 52};
+    fld.bridgeConnections[12] = {44, 52};
+    fld.bridgeConnections[13] = {54, 62};
+    fld.bridgeConnections[14] = {54, 74};
+    fld.bridgeConnections[15] = {55, 75};
+    fld.bridgeConnections[16] = {57, 77};
+    fld.bridgeConnections[17] = {58, 78};
+
+    for (const auto& [idx, p]: enumerate(fld.bridgeConnections)) {
+        if (idx > 0) {
+            fld.bridgeIds[p.first].push_back(idx);
+            fld.bridgeIds[p.second].push_back(idx);
+        }
+    }
+
+    std::vector<int> rs = {0, 10, 21, 31, 41, 50, 60, 70, 80};
+    std::vector<int> re = {9, 20, 30, 40, 49, 59, 69, 79, 90};
+
+    for (size_t row = 0; row < 9; row++) {
+        for (int idx = rs[row]; idx < re[row]; idx++) {
+            fld.neibs[idx].push_back(idx + 1);
+            fld.neibs[idx + 1].push_back(idx);
+        }
+    }
+
+    std::vector<int> start = {10, 21, 31, 41, 50, 60, 70, 80};
+    std::vector<int> end = {19, 30, 39, 49, 58, 68, 79, 89};
+    std::vector<int> shift = {10, 10, 9, 9, 9, 9, 10, 10};
+
+    for (size_t row = 0; row < 8; row++) {
+        for (int idx = start[row]; idx <= end[row]; idx++) {
+            fld.neibs[idx].push_back(idx - shift[row]);
+            fld.neibs[idx - shift[row]].push_back(idx);
+        }
+    }
+
+    start = {11, 21, 31, 41, 51, 60, 71, 81};
+    end = {20, 30, 40, 49, 59, 69, 79, 90};
+    shift = {11, 11, 10, 10, 10, 10, 11, 11};
+
+    for (size_t row = 0; row < 8; row++) {
+        for (int idx = start[row]; idx <= end[row]; idx++) {
+            fld.neibs[idx].push_back(idx - shift[row]);
+            fld.neibs[idx - shift[row]].push_back(idx);
+        }
+    }
+
+    for (int startPos = 0; startPos < FieldOrigin::FIELD_SIZE; startPos++) {
+        if (fld.basicType[startPos] == TerrainType::River) continue;
+
+        std::queue<std::pair<int, int>> q;
+        q.push({startPos, 0});
+
+        std::vector<int> visited(FieldOrigin::FIELD_SIZE, 20);
+        
+        for (const auto& neib: fld.neibs[startPos]) {
+            if (fld.basicType[neib] != TerrainType::River) {
+                visited[neib] = 1;
+            }
+        }
+        
+        while (!q.empty()) {
+            const auto [cur, curWeight] = q.front();
+            q.pop();
+            if (visited[cur] < 20) continue;
+            visited[cur] = curWeight;
+            for (const auto& neib: fld.neibs[cur]) {
+                if (fld.basicType[neib] == TerrainType::River) {
+                    if (visited[neib] == -1) {
+                        q.push({neib, curWeight + 1});
+                    }
+                } else {
+                    visited[neib] = std::min(visited[neib], curWeight + 1);
+                }
+            }
+        }
+
+        for (const auto& [idx, range]: enumerate(visited)) {
+            for (int i = range; i < 5; i++) {
+                fld.reachable.at(i).at(startPos).push_back(idx);
+            }
+        }
+    }
+    
+    return fld;
 }

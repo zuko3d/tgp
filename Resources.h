@@ -84,8 +84,7 @@ struct Resources
             if (books[(BookColor) i] < op.books[(BookColor) i]) return false;
         }
 
-        assert(false);
-        return {};
+        return true;
     }
 
     bool operator >= (const IncomableResources& op) const {
