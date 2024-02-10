@@ -1,3 +1,4 @@
+#pragma once
 #include "Bot.h"
 
 #include <random>
@@ -74,15 +75,6 @@ public:
         assert(false);
         return (TechTile) -1;
     }
-
-    // int8_t chooseInnovation(const GameState& gs) {
-    //     for (const auto inno: gs.innovations) {
-    //         if (inno != Innovation::None) {
-    //             return inno;
-    //         }
-    //     }
-    // }
-    // int8_t choosePalace(const GameState& gs);
 
     int8_t choosePlaceToSpade(const GameState& gs, int amount, const std::vector<int8_t>& possiblePos) {
         if (possiblePos.empty()) return -1;

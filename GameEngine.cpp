@@ -68,7 +68,7 @@ void GameEngine::awardBooster(int boosterIdx, GameState& gs) {
     awardResources(IncomableResources{ .gold = (int8_t) newBooster.gold }, gs);
 
     if (ps.currentRoundBoosterOriginIdx >= 0) {
-        const auto oldBooster = gs.staticGs.roundBoosters.at(ps.currentRoundBoosterOriginIdx);
+        const auto oldBooster = StaticData::roundBoosters()[ps.currentRoundBoosterOriginIdx];
         ps.wpPerEvent[oldBooster.trigger] -= oldBooster.wpPerTrigger;
 
         gs.boosters.at(boosterIdx) = RoundBoosterOnBoard{
@@ -78,7 +78,7 @@ void GameEngine::awardBooster(int boosterIdx, GameState& gs) {
     }
 
     ps.currentRoundBoosterOriginIdx = newBooster.originIdx;
-    const auto& origin = gs.staticGs.roundBoosters.at(newBooster.originIdx);
+    const auto& origin =StaticData::roundBoosters()[newBooster.originIdx];
     ps.wpPerEvent[origin.trigger] += origin.wpPerTrigger;
 
     if (origin.buttonOriginIdx >= 0) {
@@ -1000,10 +1000,10 @@ void GameEngine::doAction(Action action, GameState& gs) {
                 awardWp( 3 * ps.countBuildings(Building::Laboratory), gs);
             }
         
-            if (gs.staticGs.roundBoosters.at(ps.currentRoundBoosterOriginIdx).godsForLabs == true) {
+            if (StaticData::roundBoosters()[ps.currentRoundBoosterOriginIdx].godsForLabs == true) {
                 awardResources(IncomableResources { .anyGod = ps.countBuildings(Building::Laboratory)}, gs);
             }
-            if (gs.staticGs.roundBoosters.at(ps.currentRoundBoosterOriginIdx).scoreHuge == true) {
+            if (StaticData::roundBoosters()[ps.currentRoundBoosterOriginIdx].scoreHuge == true) {
                 awardWp( 4 * (ps.countBuildings(Building::Academy) + ps.countBuildings(Building::Palace)), gs);
             }
 
@@ -1026,14 +1026,14 @@ void GameEngine::doAction(Action action, GameState& gs) {
 void GameEngine::playGame(GameState& gs) {
     while (gs.round < 6) {
         if (gs.phase == GamePhase::Upkeep) {
-            const auto& curBonus = gs.staticGs.bonusByRound[gs.round];
+            const auto& curBonus = StaticData::roundScoreBonuses()[gs.staticGs.bonusByRound[gs.round]];
 
             for (gs.activePlayer = 0; gs.activePlayer < 2; gs.activePlayer++) {
                 auto& ps = gs.players[gs.activePlayer];
 
                 ps.wpPerEvent[curBonus.event] += curBonus.bonusWp;
                 awardResources(ps.additionalIncome, gs);
-                awardResources(gs.staticGs.roundBoosters.at(ps.currentRoundBoosterOriginIdx).resources, gs);
+                awardResources(StaticData::roundBoosters()[ps.currentRoundBoosterOriginIdx].resources, gs);
             }
         }
 
@@ -1064,7 +1064,7 @@ void GameEngine::playGame(GameState& gs) {
         }
 
         gs.phase = GamePhase::EndOfTurn;
-        const auto& curBonus = gs.staticGs.bonusByRound[gs.round];
+        const auto& curBonus = StaticData::roundScoreBonuses()[gs.staticGs.bonusByRound[gs.round]];
         for (gs.activePlayer = 0; gs.activePlayer < 2; gs.activePlayer++) {
             auto& ps = gs.players[gs.activePlayer];
             const int8_t blessedBonus = (gs.staticGs.playerRaces[gs.activePlayer] == Race::Blessed) ? 3 : 0;
@@ -1557,27 +1557,26 @@ void GameEngine::initializeRandomly(GameState& gs, std::default_random_engine& g
     gs.staticGs.neutralGods[GodColor::Blue] = 2;
     gs.staticGs.neutralGods[GodColor::Brown] = 2;
     gs.staticGs.neutralGods[GodColor::White] = 2;
-    const auto allRoundBonuses = StaticData::generateRoundScoreBonuses();
     indices.resize(12);
     std::iota(indices.begin(), indices.end(), 0);
     rshuffle(indices, g);
     for (int i = 0; i < 6; ++i) {
-        gs.staticGs.bonusByRound.at(i) = allRoundBonuses.at(indices.at(i));
+        gs.staticGs.bonusByRound.at(i) = indices.at(i);
     }
     int counter = 6;
-    while (gs.staticGs.bonusByRound.at(4).event == EventType::Terraform) {
-        gs.staticGs.bonusByRound.at(4) = allRoundBonuses.at(indices.at(counter));
+    while (StaticData::roundScoreBonuses()[gs.staticGs.bonusByRound.at(4)].event == EventType::Terraform) {
+        gs.staticGs.bonusByRound.at(4) = indices.at(counter);
         counter++;
     }
-    while (gs.staticGs.bonusByRound.at(5).event == EventType::Terraform) {
-        gs.staticGs.bonusByRound.at(5) = allRoundBonuses.at(indices.at(counter));
+    while (StaticData::roundScoreBonuses()[gs.staticGs.bonusByRound.at(5)].event == EventType::Terraform) {
+        gs.staticGs.bonusByRound.at(5) = indices.at(counter);
         counter++;
     }
     for (int i = 0; i < 5; ++i) {
-        gs.staticGs.neutralGods[gs.staticGs.bonusByRound.at(i).god] += gs.staticGs.bonusByRound.at(i).godAmount;
+        gs.staticGs.neutralGods[StaticData::roundScoreBonuses()[gs.staticGs.bonusByRound.at(i)].god] += StaticData::roundScoreBonuses()[gs.staticGs.bonusByRound.at(i)].godAmount;
     }
 
-    gs.staticGs.lastRoundBonus = allRoundBonuses.at(12 + g() % 4);
+    gs.staticGs.lastRoundBonus = 12 + g() % 4;
 
     const auto bookActions = StaticData::generateBookActions();
     indices.resize(bookActions.size());
@@ -1624,7 +1623,7 @@ void GameEngine::initializeRandomly(GameState& gs, std::default_random_engine& g
     std::iota(indices.begin(), indices.end(), 0);
     rshuffle(indices, g);
     for (int i = 0; i < 5; ++i) {
-        gs.staticGs.roundBoosters.at(i) = allRoundBoosters.at(indices.at(i));
+        gs.staticGs.roundBoosters.at(i) = indices.at(i);
     }
 
     const auto raceStartBonuses = StaticData::generateRaceStartBonus();
@@ -1708,7 +1707,7 @@ void GameEngine::initializeRandomly(GameState& gs, std::default_random_engine& g
     }
 
     // Choose boosters
-    for (const auto& [idx, _]: enumerate(gs.staticGs.roundBoosters)) {
+    for (const auto& idx: gs.staticGs.roundBoosters) {
         gs.boosters.push_back(RoundBoosterOnBoard{ .originIdx = (int8_t) idx, .gold = 0});
     }
 

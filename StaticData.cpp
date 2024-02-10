@@ -37,6 +37,11 @@ const std::array<InnoPrice, 6>& StaticData::innoPrices() {
     return ret;
 }
 
+const std::array<RoundScoreBonus, 16>& StaticData::roundScoreBonuses() {
+    static const auto ret = generateRoundScoreBonuses();
+    return ret;
+}
+
 std::array<InnoPrice, 6> StaticData::generateInnoPrices() {
     return std::array<InnoPrice, 6>{
         InnoPrice{ .books = { 2, 2, 0, 0 }, .anyBooks = 1 },

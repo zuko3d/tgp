@@ -15,14 +15,15 @@ public:
     static const std::array<Palace, 17>& palaces();
     static const FlatMap<Building, BuildingOrigin, 7>& buildingOrigins();
     static const std::array<InnoPrice, 6>& innoPrices();
+    static const std::array<RoundScoreBonus, 16>& roundScoreBonuses();
     
     static std::array<BookButton, 6> generateBookActions();
     static std::array<MarketButton, 6> generateMarketActions();
-    static std::array<RoundScoreBonus, 16> generateRoundScoreBonuses();
     static std::array<RaceStartBonus, 12> generateRaceStartBonus();
     static std::array<LandTypeBonus, 7> generateLandTypeBonuses();
 
 private:
+    static std::array<RoundScoreBonus, 16> generateRoundScoreBonuses();
     static std::array<InnoPrice, 6> generateInnoPrices();
     static FlatMap<Building, BuildingOrigin, 7> generateBuildingOrigins();
     static std::vector<ButtonOrigin> generateButtonOrigins();

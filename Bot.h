@@ -26,8 +26,6 @@ public:
     virtual FedTileOrigin chooseFedTile(const GameState& gs) = 0;
 
     virtual TechTile chooseTechTile(const GameState& gs) = 0;
-    // int8_t chooseInnovation(const GameState& gs);
-    // int8_t choosePalace(const GameState& gs);
 
     virtual int8_t choosePlaceToSpade(const GameState& gs, int amount, const std::vector<int8_t>& possiblePos) = 0;
     virtual int8_t choosePlaceForBridge(const GameState& gs, const std::vector<int8_t>& possiblePos) = 0;

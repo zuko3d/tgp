@@ -13,6 +13,7 @@
           "/GS-",
           "/arch:AVX512",
           "/openmp",
+          "/I", "${fileDirname}",
           
           "*.cpp",
           "/Fe:",
@@ -35,6 +36,7 @@
             "/Zi",
             "/EHsc",
             "/std:c++latest",
+            "/I", "${fileDirname}",
             "/GS-",
             "/arch:AVX512",
             "/Fe:",

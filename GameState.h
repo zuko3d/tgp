@@ -9,9 +9,9 @@
 #include <memory>
 
 struct StaticGameState {
-    std::array<RoundBoosterOrigin, 5> roundBoosters;
-    RoundScoreBonus lastRoundBonus;
-    std::array<RoundScoreBonus, 6> bonusByRound;
+    std::array<int, 5> roundBoosters; // origin idx
+    int lastRoundBonus;
+    std::array<int, 6> bonusByRound; // origin idx
     std::array<Race, 2> playerRaces;
     std::array<TerrainType, 2> playerColors;
     std::array<std::array<TechTile, 3>, 4> techTiles;

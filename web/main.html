@@ -1,0 +1,80 @@
+<html>
+    <body>
+        <table><tr><td>
+            <div class="board-all">
+                <table><tr><td>
+                    <table border=1 class="roundscorebonus-all">
+                        <tr><td><img style="width:140px" src="pics/rsb_back.png" class="rsb_6"></td></tr>
+                        <tr><td><img style="width:140px" src="pics/rsb_back.png" class="rsb_5"></td></tr>
+                        <tr><td><img style="width:140px" src="pics/rsb_back.png" class="rsb_4"></td></tr>
+                        <tr><td><img style="width:140px" src="pics/rsb_back.png" class="rsb_3"></td></tr>
+                        <tr><td><img style="width:140px" src="pics/rsb_back.png" class="rsb_2"></td></tr>
+                        <tr><td><img style="width:140px" src="pics/rsb_back.png" class="rsb_1"></td></tr>
+                    </table>
+                </td><td>
+                    <div id="field-all" style="background-image: url('pics/field.jpg');width:1330px;height: 908px;">
+                    </div>
+                </td></tr></table>
+            </div>
+            </td>
+        </tr></table>
+    </body>
+    <head>
+    <script type="text/javascript">
+        function generateFieldTable() {
+            var dv = document.querySelector("#field-all");
+            var table = document.createElement('table');
+            var spaceTr1 = document.createElement('tr');
+            spaceTr1.style.height = 48;
+            table.appendChild(spaceTr1);
+
+            var amounts = [10, 11, 10, 10, 9, 10, 10, 10, 11];
+            var starts = [75, 18, 60, 110, 155, 98, 144, 80, 10];
+            var widths = [101, 102, 104, 105, 107, 108, 110, 111, 113];
+            var heights = [52, 52, 52, 60, 58, 60, 65, 65, 69];
+
+            var curHex = 0;
+            for (let r = 0; r < 9; r++) {
+                var otr = document.createElement('tr');
+                table.appendChild(otr);
+                var otd = document.createElement('td');
+                otr.appendChild(otd)
+                var tbl = document.createElement('table');
+                // tbl.border = 1;
+                otd.appendChild(tbl);                
+
+                var tr = document.createElement('tr');
+                tbl.appendChild(tr);
+                tr.style.height = heights[r];
+
+                var spaceTd = document.createElement('td');
+                spaceTd.style.width = starts[r];
+                tr.appendChild(spaceTd);
+
+                for (let i = 0; i < amounts[r]; i++) {
+                    var hexTd = document.createElement('td');
+                    hexTd.style.width = widths[r];
+                    hexTd.id = 'fld_' + curHex;
+                    // hexTd.textContent = curHex;
+                    hexTd.style.fontSize = 40;
+                    hexTd.style.fontWeight = 'bold';
+                    hexTd.style.color = "white";
+                    hexTd.style.fontFamily = "Courier";
+                    hexTd.style.textAlign = "center";
+                    hexTd.onmouseover = function() { this.innerHTML = 'X'; };
+                    hexTd.onmouseout = function() { this.innerHTML = ''; };
+                    curHex++;
+                    tr.appendChild(hexTd);
+                }
+                var spaceTr = document.createElement('tr');
+                table.appendChild(spaceTr);
+                spaceTr.style.height = 21;
+            }
+
+            dv.appendChild(table);
+        }
+
+        generateFieldTable()
+    </script>
+    </head>
+</html>
