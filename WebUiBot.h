@@ -1,10 +1,14 @@
 #pragma once
 #include "Bot.h"
+#include "serialize.h"
 
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
 
+#include <json.hpp>
+
 #include <functional>
+#include <optional>
 #include <random>
 
 class WebUiBot: public IBot {
@@ -15,7 +19,10 @@ public:
         : rng(g)
     {
         using namespace std::placeholders;
+        server_.set_access_channels(websocketpp::log::alevel::all);
+        server_.clear_access_channels(websocketpp::log::alevel::frame_payload);
         server_.set_message_handler(std::bind(&WebUiBot::on_message, this, _1, _2));
+        server_.set_open_handler(std::bind(&WebUiBot::on_open, this, _1));
 
         server_.init_asio();
         server_.listen(9002);
@@ -23,6 +30,10 @@ public:
         // server_.run();
         thread_.reset(new websocketpp::lib::thread(&Server::run, &server_));
         std::cout << "WebUiBot listening on 9002" << std::endl;
+        while (!hClient_.has_value()) {
+            std::cout << "Waiting for web-client..." << std::endl;
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+        }
     }
 
     ~WebUiBot() {
@@ -32,7 +43,15 @@ public:
     }
 
     Race chooseRace(const GameState& gs, const std::vector<Race>& races) {
-        return races[rng() % races.size()];
+        std::cout << "chooseRace..." << std::endl;
+
+        nlohmann::json j;
+        j["action"] = "chooseRace";
+        j["races"] = toJson(races);
+
+        const auto ret = rpc(gs, j.dump());
+
+        return (Race) ret["race"].get<int>();
     }
 
     TerrainType chooseTerrainType(const GameState& gs, const std::vector<TerrainType>& colors) {
@@ -122,9 +141,39 @@ private:
     // void on_message(Server* s, websocketpp::connection_hdl hdl, Server::message_ptr msg) {
     void on_message(websocketpp::connection_hdl hdl, Server::message_ptr msg) {
         std::cout << "Received message: " << msg->get_payload() << std::endl;
+
+        lastResponse_ = msg->get_payload();
+    }
+
+    void on_open(websocketpp::connection_hdl hdl) {
+        hClient_ = hdl;
+        std::cout << "Received connection!" << std::endl;
+
+        if (lastRequest_) {
+            std::cout << "Seems like reconnections, resend message!" << std::endl;
+            server_.send(*hClient_, *lastRequest_, websocketpp::frame::opcode::text);
+        }
+    }
+
+    nlohmann::json rpc(const GameState& gs, const std::string& msg) {
+        nlohmann::json j;
+        j["gs"] = toJson(gs);
+        j["msg"] = msg;
+
+        lastResponse_ = std::nullopt;
+        lastRequest_ = j.dump();
+        server_.send(*hClient_, *lastRequest_, websocketpp::frame::opcode::text);
+        while (!lastResponse_.has_value()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        }
+        lastRequest_ = std::nullopt;
+        return nlohmann::json::parse(*lastResponse_);
     }
 
     std::default_random_engine rng;
     Server server_;
+    std::optional<websocketpp::connection_hdl> hClient_;
     websocketpp::lib::shared_ptr<websocketpp::lib::thread> thread_;
+    std::optional<std::string> lastResponse_;
+    std::optional<std::string> lastRequest_;
 };

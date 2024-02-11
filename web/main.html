@@ -1,15 +1,16 @@
 <html>
     <body>
-        <table><tr><td>
-            <div class="board-all">
+        <table>
+            <tr><td><div id="input-box"></div></td></tr>
+            <tr><td><div class="board-all">
                 <table><tr><td>
                     <table border=1 class="roundscorebonus-all">
-                        <tr><td><img style="width:140px" src="pics/rsb_back.png" class="rsb_6"></td></tr>
-                        <tr><td><img style="width:140px" src="pics/rsb_back.png" class="rsb_5"></td></tr>
-                        <tr><td><img style="width:140px" src="pics/rsb_back.png" class="rsb_4"></td></tr>
-                        <tr><td><img style="width:140px" src="pics/rsb_back.png" class="rsb_3"></td></tr>
-                        <tr><td><img style="width:140px" src="pics/rsb_back.png" class="rsb_2"></td></tr>
-                        <tr><td><img style="width:140px" src="pics/rsb_back.png" class="rsb_1"></td></tr>
+                        <tr><td><img style="width:140px" src="pics/rsb_back.png" id="rsb_6"></td></tr>
+                        <tr><td><img style="width:140px" src="pics/rsb_back.png" id="rsb_5"></td></tr>
+                        <tr><td><img style="width:140px" src="pics/rsb_back.png" id="rsb_4"></td></tr>
+                        <tr><td><img style="width:140px" src="pics/rsb_back.png" id="rsb_3"></td></tr>
+                        <tr><td><img style="width:140px" src="pics/rsb_back.png" id="rsb_2"></td></tr>
+                        <tr><td><img style="width:140px" src="pics/rsb_back.png" id="rsb_1"></td></tr>
                     </table>
                 </td><td>
                     <div id="field-all" style="background-image: url('pics/field.jpg');width:1330px;height: 908px;">
@@ -75,6 +76,42 @@
         }
 
         generateFieldTable()
+
+        var socket = new WebSocket('ws://localhost:9002');
+
+        // Connection opened
+        socket.addEventListener('open', function (event) {
+            console.log('Connected to websocket server');
+        });
+
+        // Listen for messages
+        socket.addEventListener('message', function (event) {
+            obj = JSON.parse(event.data);
+            msg = JSON.parse(obj.msg);
+            console.log('Received message:', obj.msg);
+
+            if (msg.action === 'chooseRace') {
+                var dv = document.querySelector("#input-box");
+                dv.textContent = '';
+
+                var table = document.createElement('table');
+                table.insertRow().insertCell().textContent = "Choose your race:";
+                var tr = table.insertRow();
+                var td = tr.insertCell();
+                td.style.width = 1900;
+
+                for (const raceIdx in msg.races) {
+                    var img = document.createElement('img');
+                    td.appendChild(img);
+                    img.style.width = 200;
+                    img.src = "pics/race_" + raceIdx + ".png"
+                    img.id = raceIdx
+                    img.onclick = function() { socket.send('{ "race": ' + this.id + '}'); };
+                }
+
+                dv.appendChild(table);
+            }
+        });
     </script>
     </head>
 </html>
