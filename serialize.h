@@ -38,13 +38,15 @@ nlohmann::json toJson(const BookButton& op);
 
 nlohmann::json toJson(const MarketButton& op);
 
-nlohmann::json toJson(const TechTile& op);
+int toJson(const TechTile& op);
 
-nlohmann::json toJson(const TerrainType& op);
+int toJson(const TerrainType& op);
 
-nlohmann::json toJson(const Race& op);
+int toJson(const Race& op);
 
-nlohmann::json toJson(const Innovation& op);
+int toJson(const Innovation& op);
+
+int toJson(const Building& op);
 
 nlohmann::json toJson(const PlayerState& ps);
 

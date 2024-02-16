@@ -141,7 +141,7 @@ std::array<RoundBoosterOrigin, 10> StaticData::generateRoundBoosters()
         RoundBoosterOrigin{.resources = IncomableResources{.humans = 1}, .trigger = EventType::PutManToGod, .wpPerTrigger = 2},
         RoundBoosterOrigin{.resources = IncomableResources{.anyBook = 1}, .buttonOriginIdx = 1},
         RoundBoosterOrigin{.resources = IncomableResources{.anyBook = 1}, .buttonOriginIdx = 0},
-        RoundBoosterOrigin{.resources = IncomableResources{.anyBook = 1}, .scoreHuge = true},
+        RoundBoosterOrigin{.resources = IncomableResources{.cube = 1}, .scoreHuge = true},
         RoundBoosterOrigin{.resources = IncomableResources{.cube = 2}, .buttonOriginIdx = 2},
         RoundBoosterOrigin{.resources = IncomableResources{.gold = 2, .manaCharge = 4}},
         RoundBoosterOrigin{.resources = IncomableResources{.gold = 6}},

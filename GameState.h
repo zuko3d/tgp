@@ -12,8 +12,8 @@ struct StaticGameState {
     std::array<int, 5> roundBoosters; // origin idx
     int lastRoundBonus;
     std::array<int, 6> bonusByRound; // origin idx
-    std::array<Race, 2> playerRaces;
-    std::array<TerrainType, 2> playerColors;
+    std::array<Race, 2> playerRaces = { (Race) -1, (Race) -1};
+    std::array<TerrainType, 2> playerColors = { (TerrainType) -1, (TerrainType) -1};
     std::array<std::array<TechTile, 3>, 4> techTiles;
     FlatMap<TechTile, Resources, 12> bookAndGodPerTech;
     std::array<Palace, 5> palaces;

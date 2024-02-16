@@ -3,35 +3,323 @@
         <table>
             <tr><td><div id="input-box"></div></td></tr>
             <tr><td><div class="board-all">
-                <table><tr><td>
-                    <table border=1 class="roundscorebonus-all">
-                        <tr><td><img style="width:140px" src="pics/rsb_back.png" id="rsb_6"></td></tr>
-                        <tr><td><img style="width:140px" src="pics/rsb_back.png" id="rsb_5"></td></tr>
-                        <tr><td><img style="width:140px" src="pics/rsb_back.png" id="rsb_4"></td></tr>
-                        <tr><td><img style="width:140px" src="pics/rsb_back.png" id="rsb_3"></td></tr>
-                        <tr><td><img style="width:140px" src="pics/rsb_back.png" id="rsb_2"></td></tr>
-                        <tr><td><img style="width:140px" src="pics/rsb_back.png" id="rsb_1"></td></tr>
-                    </table>
-                </td><td>
-                    <div id="field-all" style="background-image: url('pics/field.jpg');width:1330px;height: 908px;">
-                    </div>
-                </td></tr></table>
+                <table><tr><td style="position: relative; width: 125px;">
+                        <table id="roundscorebonus-all" style="position: absolute; top: 0; z-index: 2;">
+                            <tr><td><img style="height:55px" src="pics/rsb_back.png" class="orange-border" id="rsb-5"></td></tr>
+                            <tr><td><img style="height:55px" src="pics/rsb_back.png" class="orange-border" id="rsb-4"></td></tr>
+                            <tr><td><img style="height:55px" src="pics/rsb_back.png" class="orange-border" id="rsb-3"></td></tr>
+                            <tr><td><img style="height:55px" src="pics/rsb_back.png" class="orange-border" id="rsb-2"></td></tr>
+                            <tr><td><img style="height:55px" src="pics/rsb_back.png" class="orange-border" id="rsb-1"></td></tr>
+                            <tr><td><img style="height:55px" src="pics/rsb_back.png" class="orange-border" id="rsb-0"></td></tr>
+
+                            <tr><td><img style="height:55px" src="pics/book_action.png" class="orange-border" id="book-action-0"></td></tr>
+                            <tr><td><img style="height:55px" src="pics/book_action.png" class="orange-border" id="book-action-1"></td></tr>
+                            <tr><td><img style="height:55px" src="pics/book_action.png" class="orange-border" id="book-action-2"></td></tr>
+
+                            <tr><td><img style="height:55px" src="pics/market_0.png" class="orange-border" id="market-action-0"></td></tr>
+                            <tr><td><img style="height:55px" src="pics/market_1.png" class="orange-border" id="market-action-1"></td></tr>
+                            <tr><td><img style="height:55px" src="pics/market_2.png" class="orange-border" id="market-action-2"></td></tr>
+                            <tr><td><img style="height:55px" src="pics/market_3.png" class="orange-border" id="market-action-3"></td></tr>
+                            <tr><td><img style="height:55px" src="pics/market_4.png" class="orange-border" id="market-action-4"></td></tr>
+                            <tr><td><img style="height:55px" src="pics/market_5.png" class="orange-border" id="market-action-5"></td></tr>
+                        </table>
+                    </td><td style="width: 425px; position: relative;">
+                        <div id="inno-tablet" style="position: absolute; top: 0; background-image: url('pics/inno_tablet.png');width:423px;height: 198px; background-size: contain; background-repeat: no-repeat;">
+                        </div>
+                        <div id="tech-tablet" style="position: absolute; top: 199; background-image: url('pics/tech_tablet.png');width:425px;height: 238px; background-size: contain; background-repeat: no-repeat;">
+                        </div>
+                        <div id="round-boosters-all" style="position: absolute; top: 438; background-image: url('pics/rb_0.png');width:425px;height: 173px; background-size: contain; background-repeat: no-repeat;">
+                        </div>
+                    </td><td>
+                        <div id="field-all" style="background-image: url('pics/field.jpg');width:853px;height: 605px; background-repeat: no-repeat; background-size: contain;">
+                        </div>
+                    </td><td style="position: relative;">
+                        <div id="gods-all" style="background-image: url('pics/gods_back.png');width:380px;height: 605px; background-size: contain; background-repeat: no-repeat;">
+                        </div>
+                    </td>
+                </tr>
+                <tr><td colspan="5" style="position: relative;">
+                    <table style="position: absolute; top: 0; left: 0; width: 1840;"><tr>
+                        <td style="width: 125px;"></td>
+                        <td>
+                            <div id="ptablet-0" style="background-image: url('pics/tablet.png');width:572px;height: 297px; background-size: contain; background-repeat: no-repeat;">
+                            </div>
+                        </td><td>
+                            <div id="ptablet-1" style="background-image: url('pics/tablet.png');width:572px;height: 297px; background-size: contain; background-repeat: no-repeat;">
+                            </div>
+                    </td></tr></table>
+                </td></tr>
+                </table>
             </div>
             </td>
         </tr></table>
     </body>
     <head>
+        <style>
+            .highlight {
+              background-color: rgb(161, 248, 180);
+              opacity: 0.5;
+            }
+
+            .orange-border {
+              border: 1px solid transparent;
+            }
+            .orange-border:hover {
+              border: 3px solid orange;
+            }
+
+            .red-border {
+              border: 3px solid transparent;
+            }
+            .red-border:hover {
+              border: 3px solid red;
+            }
+
+            .nonmoving-rect {
+              position: absolute;
+              width: 100%;
+              height: 100%;
+              top: 0;
+              left: 0;
+            }
+
+            .has-human {
+              background-image: url('pics/human.png');
+              background-size: contain;
+              background-repeat: no-repeat;
+              background-position: center;
+            }
+
+            .has-building-0 {
+                background-image: url('pics/building_0.png');
+                background-size: contain;
+                background-repeat: no-repeat;
+                background-position: center;
+            }
+            .has-building-1 {
+                background-image: url('pics/building_1.png');
+                background-size: contain;
+                background-repeat: no-repeat;
+                background-position: center;
+            }
+            .has-building-2 {
+                background-image: url('pics/building_2.png');
+                background-size: contain;
+                background-repeat: no-repeat;
+                background-position: center;
+            }
+            .has-building-3 {
+                background-image: url('pics/building_3.png');
+                background-size: contain;
+                background-repeat: no-repeat;
+                background-position: center;
+            }
+            .has-building-4 {
+                background-image: url('pics/building_4.png');
+                background-size: contain;
+                background-repeat: no-repeat;
+                background-position: center;
+            }
+            .has-building-5 {
+                background-image: url('pics/building_5.png');
+                background-size: contain;
+                background-repeat: no-repeat;
+                background-position: center;
+            }
+            .has-building-6 {
+                background-image: url('pics/building_6.png');
+                background-size: contain;
+                background-repeat: no-repeat;
+                background-position: center;
+            }
+
+            .pcolor-0 {
+                filter: hue-rotate(37deg) saturate(1.4) brightness(2.2);
+            }
+            .pcolor-1 {
+            }
+            .pcolor-2 {
+                filter: grayscale() contrast(1.5) brightness(1.0);
+            }
+            .pcolor-3 {
+                filter: hue-rotate(190deg) saturate(2.0) brightness(1.5);
+            }
+            .pcolor-4 {
+                filter: hue-rotate(100deg) saturate(2.0) brightness(1.5);
+            }
+            .pcolor-5 {
+                filter: grayscale() brightness(1.5);
+            }
+            .pcolor-6 {
+                filter: hue-rotate(10deg) saturate(2.0) brightness(1.4);
+            }
+            .pcolor-neutral {
+                filter: grayscale() contrast(1.3) brightness(3.5);
+            }
+                        
+          </style>
+        <!-- <style id="player-colors">
+            .player-0: { filter: hue-rotate(10deg) saturate(2.0) brightness(1.4);}
+            .player-1: { @extend .pcolor-` + pcolors[1] + `;}
+        </style> -->
+
     <script type="text/javascript">
+        const Buildings = [
+            {
+                "name": "Mine",
+            },
+            {
+                "name": "Guild",
+            },
+            {
+                "name": "Palace",
+            },
+            {
+                "name": "Laboratory",
+            },
+            {
+                "name": "Academy",
+            },
+            {
+                "name": "Tower",
+            },
+            {
+                "name": "Monument",
+            },
+        ]
+
+        function goldImgs(amount) {
+            var dv = document.createElement("div");
+            for (var i = 0; i < amount; i++) {
+                var img = document.createElement('img');
+                dv.appendChild(img);                
+                img.style.width = 30;
+                img.src = "pics/gold_1.png"
+            }
+            return dv;
+        }
+
+        function generateBoosterChoice(boosters) {
+            var dv = document.querySelector("#input-box");
+            dv.innerHTML = '';
+
+            var table = document.createElement('table');
+            table.insertRow().insertCell().textContent = "Choose your round booster:";
+            var tr = table.insertRow();
+
+            var idx = 0
+            for (const button of msg.boosters) {
+                var td = tr.insertCell();
+                td.classList.add('red-border');
+                // td.style.width = 1900;
+                var img = document.createElement('img');
+                td.appendChild(goldImgs(button.gold));
+                td.appendChild(img);
+                
+                img.style.width = 60;
+                img.src = "pics/rb_" + button.originIdx + ".png"
+                img.data = idx
+                idx++
+                img.onclick = function() { socket.send('{ "choice": ' + this.data + '}'); document.querySelector("#input-box").innerHTML = ''; };
+            }
+
+            dv.appendChild(table);
+        }
+
+        function generateInputter(txt, img_width, img_prefix) {
+            var dv = document.querySelector("#input-box");
+            dv.innerHTML = '';
+
+            var table = document.createElement('table');
+            table.insertRow().insertCell().textContent = txt;
+            var tr = table.insertRow();
+            var td = tr.insertCell();
+            td.style.width = 1900;
+
+            for (const cIdx in msg.choices) {
+                var img = document.createElement('img');
+                td.appendChild(img);
+                img.classList.add('red-border');
+                img.style.width = img_width;
+                // border: 1px solid transparent;
+                img.src = img_prefix + cIdx + ".png"
+                img.data = cIdx
+                img.onclick = function() { socket.send('{ "choice": ' + this.data + '}'); document.querySelector("#input-box").innerHTML = ''; };
+            }
+
+            dv.appendChild(table);
+        }
+
+        function clearHighlight() {
+            items = document.getElementsByClassName('highlight');
+
+            while (items.length) {
+                items[0].classList.remove('highlight');
+            };
+        }
+
+        function visualizePs(ps, gs, pIdx) {
+            const res = ps.resources;
+
+            for (let i = 0; i < 4; i++) {
+                var dv = document.getElementById("god-human-img-p" + pIdx + "-r" + res.gods[i] + "-g"  + i);
+                dv.classList.add('has-human');
+            }
+        }
+
+        function visualizeGs(gs) {
+            idx = 0
+            pcolors = gs.staticGs.playerColors;
+
+            const q = document.getElementById("player-colors");
+            if ((!q) && (pcolors[0] > -1)) {
+                var sheet = document.createElement('style')
+
+                // Would be great to just copy given style, but I don't know how to do it
+                const styleByColor = [
+                    "{ filter: hue-rotate(37deg) saturate(1.4) brightness(2.2); }",
+                    "",
+                    "{ filter: grayscale() contrast(1.5) brightness(1.0); }",
+                    "{ filter: hue-rotate(190deg) saturate(2.0) brightness(1.5); }",
+                    "{ filter: hue-rotate(100deg) saturate(2.0) brightness(1.5); }",
+                    "{ filter: grayscale() brightness(1.5); }",
+                    "{ filter: hue-rotate(10deg) saturate(2.0) brightness(1.4); }"
+                ]
+
+                sheet.id = "player-colors";
+                sheet.innerHTML = ".player-0 " + styleByColor[pcolors[0]] + "\n.player-1 " + styleByColor[pcolors[1]];
+                document.head.appendChild(sheet);
+            }
+
+            for (building of gs.field.building) {
+                if (building.owner != -1) {
+                    var dv = document.querySelector("#building_" + idx);
+                    // dv.style.backgroundPosition = 'center';
+                    dv.classList.add('has-building-' + building.type);
+                    if (!building.isNeutral) {
+                        dv.classList.add('player-' + building.owner);
+                    } else {
+                        dv.classList.add('pcolor-neutral');
+                    }
+                }
+                idx++;
+            }
+
+            for (let i = 0; i < 2; i++) {
+                visualizePs(gs.players[i], gs, i);
+            }
+        }
+
         function generateFieldTable() {
             var dv = document.querySelector("#field-all");
             var table = document.createElement('table');
             var spaceTr1 = document.createElement('tr');
-            spaceTr1.style.height = 48;
+            spaceTr1.style.height = 45;
             table.appendChild(spaceTr1);
 
             var amounts = [10, 11, 10, 10, 9, 10, 10, 10, 11];
-            var starts = [75, 18, 60, 110, 155, 98, 144, 80, 10];
-            var widths = [101, 102, 104, 105, 107, 108, 110, 111, 113];
+            var starts = [70, 12, 60, 110, 155, 98, 144, 80, 8];
+            var widths = [96, 97, 98, 99, 101, 102, 104, 105, 108];
             var heights = [52, 52, 52, 60, 58, 60, 65, 65, 69];
 
             var curHex = 0;
@@ -53,29 +341,228 @@
                 tr.appendChild(spaceTd);
 
                 for (let i = 0; i < amounts[r]; i++) {
-                    var hexTd = document.createElement('td');
-                    hexTd.style.width = widths[r];
-                    hexTd.id = 'fld_' + curHex;
+                    var hexTd = tr.insertCell();
+                    var containerDv = document.createElement('div');
+                    hexTd.appendChild(containerDv);
+
+                    containerDv.style.width = widths[r];
+                    containerDv.style.height = heights[r];
+                    containerDv.style.position = 'relative';
+                    containerDv.classList.add('red-border');
+
+                    var buildingDv = document.createElement('div');
+                    containerDv.appendChild(buildingDv);
+                    buildingDv.classList.add('nonmoving-rect');
+                    buildingDv.id = 'building_' + curHex;
+
+                    var highlightDv = document.createElement('div');
+                    containerDv.appendChild(highlightDv);
+                    
+                    highlightDv.classList.add('nonmoving-rect');
+                    highlightDv.style.height = heights[r];
+                    highlightDv.style.zIndex = 10;
+                    highlightDv.id = 'fld_' + curHex;
+                    highlightDv.data = curHex;
+
+                    // hexTd.id = 'hex_' + curHex;
                     // hexTd.textContent = curHex;
-                    hexTd.style.fontSize = 40;
-                    hexTd.style.fontWeight = 'bold';
-                    hexTd.style.color = "white";
-                    hexTd.style.fontFamily = "Courier";
-                    hexTd.style.textAlign = "center";
-                    hexTd.onmouseover = function() { this.innerHTML = 'X'; };
-                    hexTd.onmouseout = function() { this.innerHTML = ''; };
+                    // hexTd.style.fontSize = 40;
+                    // hexTd.style.fontWeight = 'bold';
+                    // hexTd.style.color = "white";
+                    // hexTd.style.fontFamily = "Courier";
+                    // hexTd.style.textAlign = "center";
+                    // insideDv.onmouseover = function() { this.innerHTML = 'X'; };
+                    // insideDv.onmouseout = function() { this.innerHTML = ''; };
                     curHex++;
-                    tr.appendChild(hexTd);
                 }
                 var spaceTr = document.createElement('tr');
                 table.appendChild(spaceTr);
-                spaceTr.style.height = 21;
+                spaceTr.style.height = 14;
             }
 
             dv.appendChild(table);
         }
 
-        generateFieldTable()
+        function generateGodsTable() {
+            var dv = document.querySelector("#gods-all");
+            dv.style.position = "relative";
+
+            {
+                var humansOnGods = document.createElement('div');
+                dv.appendChild(humansOnGods);
+                humansOnGods.classList.add('nonmoving-rect');
+
+                var topTable = document.createElement('table');
+                humansOnGods.appendChild(topTable);
+
+                var spaceTr1 = topTable.insertRow();
+                spaceTr1.style.height = 10;
+                
+                spaceHs = [33, 1, 1, 0, 10, 15, 5, 15, 5, 12, 5, 12];
+
+                for (let r = 0; r < 13; r++) {
+                    var otr = topTable.insertRow();
+                    otr.style.height = 22;
+                    var spaceTd1 = otr.insertCell();
+                    spaceTd1.style.width = 20;
+
+                    for (let i = 0; i < 4; i++) {
+                        for (let pIdx = 0; pIdx < 2; pIdx++) {
+                            var otd = otr.insertCell();
+                            otd.style.width = 20;
+
+                            var dvP0 = document.createElement('div');
+                            // dvP0.classList.add("has-human");
+                            dvP0.classList.add("player-" + pIdx);
+                            dvP0.id = "god-human-img-p" + pIdx + "-r" + (12-r) + "-g"  + i;
+                            dvP0.style.width = 20;
+                            dvP0.style.height = 22;
+                            otd.appendChild(dvP0);
+                        }
+
+                        if (i < 3) {
+                            var spaceTd = otr.insertCell();
+                            spaceTd.style.width = 43;
+                        }
+                    }
+
+                    var spaceTr = topTable.insertRow();
+                    spaceTr.style.height = spaceHs[r];
+                }
+                
+                var godsBottomTable = document.createElement("table");
+                humansOnGods.appendChild(godsBottomTable);
+                bottomSpaceTr1 = godsBottomTable.insertRow();
+                bottomSpaceTr1.style.height = 5;
+
+                bottomTr1 = godsBottomTable.insertRow();
+                bottomTr1.style.height = 30;
+                                
+                for (let i = 0; i < 4; i++) {
+                    var otdLeft = bottomTr1.insertCell();
+                    otdLeft.style.width = 30;
+                    otdLeft.style.position = "relative";
+                    {
+                        var dvP0 = document.createElement('div');
+                        dvP0.style.width = 30;
+                        // dvP0.classList.add("has-human");
+                        dvP0.classList.add('nonmoving-rect');
+                        dvP0.id = "god-bottom-img-g" + i + "-pos0";
+                        dvP0.data = i;
+                        otdLeft.appendChild(dvP0);
+                    }
+
+                    var spaceTd = bottomTr1.insertCell();
+                    spaceTd.style.width = 11;
+
+                    var otdRight = bottomTr1.insertCell();
+                    otdRight.style.width = 30;
+                    otdRight.style.position = "relative";
+                    {
+                        var dvP0 = document.createElement('div');
+                        dvP0.style.width = 30;
+                        dvP0.classList.add("has-human");
+                        dvP0.classList.add("pcolor-neutral");
+                        dvP0.classList.add('nonmoving-rect');
+                        otdRight.appendChild(dvP0);
+                    }
+
+                    var spaceTd2 = bottomTr1.insertCell();
+                    spaceTd2.style.width = 11;
+                }
+
+                bottomSpaceTr2 = godsBottomTable.insertRow();
+                bottomSpaceTr2.style.height = 21;
+
+                bottomTr2 = godsBottomTable.insertRow();
+                bottomTr2.style.height = 30;
+
+                for (let i = 0; i < 4; i++) {
+                    var otdLeft = bottomTr2.insertCell();
+                    otdLeft.style.width = 30;
+                    otdLeft.style.position = "relative";
+                    {
+                        var dvP0 = document.createElement('div');
+                        dvP0.style.width = 30;
+                        // dvP0.classList.add("has-human");
+                        dvP0.classList.add('nonmoving-rect');
+                        dvP0.id = "god-bottom-img-g" + i + "-pos1";
+                        dvP0.data = i;
+                        otdLeft.appendChild(dvP0);
+                    }
+
+                    var spaceTd = bottomTr2.insertCell();
+                    spaceTd.style.width = 11;
+
+                    var otdRight = bottomTr2.insertCell();
+                    otdRight.style.width = 30;
+                    otdRight.style.position = "relative";
+                    {
+                        var dvP0 = document.createElement('div');
+                        dvP0.style.width = 30;
+                        // dvP0.classList.add("has-human");
+                        dvP0.classList.add('nonmoving-rect');
+                        dvP0.id = "god-bottom-img-g" + i + "-pos2";
+                        dvP0.data = i;
+                        otdRight.appendChild(dvP0);
+                    }
+
+                    var spaceTd2 = bottomTr2.insertCell();
+                    spaceTd2.style.width = 11;
+                }
+            }
+            {
+                var godSelectors = document.createElement('div');
+                dv.appendChild(godSelectors);
+                godSelectors.classList.add('nonmoving-rect');
+
+                var table = document.createElement('table');
+                godSelectors.appendChild(table);
+                
+                var otr = table.insertRow();
+                otr.style.height = 492;
+                
+                for (let i = 0; i < 4; i++) {
+                    var otd = otr.insertCell();
+                    otd.style.width = 75;
+                    otd.style.position = 'relative';
+                    otd.classList.add("red-border");
+                    var dvP0 = document.createElement('div');
+                    dvP0.classList.add('nonmoving-rect');
+                    dvP0.id = "god-selector-" + i;
+                    dvP0.data = i;
+                    otd.appendChild(dvP0);
+
+                    var spaceTd = otr.insertCell();
+                    spaceTd.style.width = 10;
+                }
+
+                var otr2 = table.insertRow();
+                otr2.style.height = 93;
+                
+                for (let i = 0; i < 4; i++) {
+                    var otd = otr2.insertCell();
+                    otd.style.width = 73;
+                    otd.style.position = 'relative';
+                    otd.classList.add("red-border");
+                    var dvP0 = document.createElement('div');
+                    dvP0.classList.add('nonmoving-rect');
+                    dvP0.id = "god-humans-selector-" + i;
+                    dvP0.data = i;
+                    otd.appendChild(dvP0);
+
+                    var spaceTd = otr2.insertCell();
+                    spaceTd.style.width = 11;
+                }
+            }
+        }
+
+        function genStartTable() {
+            generateFieldTable();
+            generateGodsTable();
+        }
+
+        genStartTable()
 
         var socket = new WebSocket('ws://localhost:9002');
 
@@ -90,26 +577,27 @@
             msg = JSON.parse(obj.msg);
             console.log('Received message:', obj.msg);
 
+            visualizeGs(obj.gs);
+
             if (msg.action === 'chooseRace') {
+                generateInputter("Choose your race:", 200, "pics/race_")
+            }
+            if (msg.action === 'chooseTerrainType') {
+                generateInputter("Choose your terrain:", 200, "pics/terraintype_")
+            }
+            if (msg.action === 'chooseRoundBooster') {
+                generateBoosterChoice(msg)
+            }
+            if (msg.action === 'choosePlaceToBuildForFree') {
                 var dv = document.querySelector("#input-box");
-                dv.textContent = '';
+                dv.innerHTML = 'Choose a place to build ' + Buildings[msg.building].name + ' for free';
 
-                var table = document.createElement('table');
-                table.insertRow().insertCell().textContent = "Choose your race:";
-                var tr = table.insertRow();
-                var td = tr.insertCell();
-                td.style.width = 1900;
-
-                for (const raceIdx in msg.races) {
-                    var img = document.createElement('img');
-                    td.appendChild(img);
-                    img.style.width = 200;
-                    img.src = "pics/race_" + raceIdx + ".png"
-                    img.id = raceIdx
-                    img.onclick = function() { socket.send('{ "race": ' + this.id + '}'); };
+                for (const idx of msg.choices) {
+                    var dv = document.querySelector("#fld_" + idx);
+                    dv.classList.add('highlight');
+                    
+                    dv.onclick = function() { socket.send('{ "choice": ' + this.data + '}'); clearHighlight(); };
                 }
-
-                dv.appendChild(table);
             }
         });
     </script>

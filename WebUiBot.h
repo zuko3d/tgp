@@ -47,18 +47,34 @@ public:
 
         nlohmann::json j;
         j["action"] = "chooseRace";
-        j["races"] = toJson(races);
+        j["choices"] = toJson(races);
 
         const auto ret = rpc(gs, j.dump());
 
-        return (Race) ret["race"].get<int>();
+        return (Race) ret["choice"].get<int>();
     }
 
     TerrainType chooseTerrainType(const GameState& gs, const std::vector<TerrainType>& colors) {
-        return colors[rng() % colors.size()];
+        std::cout << "chooseTerrainType..." << std::endl;
+
+        nlohmann::json j;
+        j["action"] = "chooseTerrainType";
+        j["choices"] = toJson(colors);
+
+        const auto ret = rpc(gs, j.dump());
+
+        return (TerrainType) ret["choice"].get<int>();
     }
     int chooseRoundBooster(const GameState& gs) {
-        return rng() % gs.boosters.size();
+        std::cout << "chooseRoundBooster..." << std::endl;
+
+        nlohmann::json j;
+        j["action"] = "chooseRoundBooster";
+        j["boosters"] = toJson(gs.boosters);
+
+        const auto ret = rpc(gs, j.dump());
+
+        return ret["choice"].get<int>();
     }
 
     FullAction chooseAction(const GameState& gs, const std::vector<Action>& actions) {
@@ -78,6 +94,7 @@ public:
         ret[(BookColor) (rng() % 4)] = amount;
         return ret;
     }
+    
     FlatMap<BookColor, int8_t, 4> chooseBooksToSpend(const GameState& gs, int amount) {
         FlatMap<BookColor, int8_t, 4> ret = { 0, 0, 0, 0 };
         const auto& ps = gs.players[gs.activePlayer];
@@ -134,7 +151,16 @@ public:
 
     int8_t choosePlaceToBuildForFree(const GameState& gs,  Building building, const std::vector<int8_t>& possiblePos) {
         if (possiblePos.empty()) return -1;
-        return possiblePos[rng() % possiblePos.size()];
+        std::cout << "choosePlaceToBuildForFree..." << std::endl;
+
+        nlohmann::json j;
+        j["action"] = "choosePlaceToBuildForFree";
+        j["choices"] = toJson(possiblePos);
+        j["building"] = toJson(building);
+
+        const auto ret = rpc(gs, j.dump());
+
+        return ret["choice"].get<int>();
     }
 
 private:

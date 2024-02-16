@@ -1524,7 +1524,7 @@ std::vector<int8_t> GameEngine::someHexes(bool onlyInReach, bool onlyNative, con
             std::vector<int8_t> ret;
             ret.reserve(20);
             for (const auto [pos, color]: enumerate(gs.field->type)) {
-                if (color == getColor(gs)) {
+                if (color == getColor(gs) && gs.field->building[pos].owner == -1) {
                     ret.emplace_back(pos);
                 }
             }

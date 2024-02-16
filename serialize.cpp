@@ -117,19 +117,23 @@ nlohmann::json toJson(const MarketButton& op) {
     return j;
 }
 
-nlohmann::json toJson(const TechTile& op) {
+int toJson(const TechTile& op) {
     return SC(op);
 }
 
-nlohmann::json toJson(const TerrainType& op) {
+int toJson(const TerrainType& op) {
     return SC(op);
 }
 
-nlohmann::json toJson(const Race& op) {
+int toJson(const Race& op) {
     return SC(op);
 }
 
-nlohmann::json toJson(const Innovation& op) {
+int toJson(const Innovation& op) {
+    return SC(op);
+}
+
+int toJson(const Building& op) {
     return SC(op);
 }
 

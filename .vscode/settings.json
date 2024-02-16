@@ -132,7 +132,25 @@
     "xlocmes": "cpp",
     "xlocmon": "cpp",
     "xloctime": "cpp",
-    "xtree": "cpp"
+    "xtree": "cpp",
+    "bitset": "cpp",
+    "complex": "cpp",
+    "condition_variable": "cpp",
+    "coroutine": "cpp",
+    "csignal": "cpp",
+    "cstdarg": "cpp",
+    "cwctype": "cpp",
+    "resumable": "cpp",
+    "set": "cpp",
+    "fstream": "cpp",
+    "future": "cpp",
+    "mutex": "cpp",
+    "regex": "cpp",
+    "shared_mutex": "cpp",
+    "source_location": "cpp",
+    "stop_token": "cpp",
+    "thread": "cpp",
+    "variant": "cpp"
   },
   "C_Cpp.errorSquiggles": "disabled"
 }
