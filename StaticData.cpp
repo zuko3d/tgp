@@ -118,6 +118,8 @@ std::array<RoundScoreBonus, 16> StaticData::generateRoundScoreBonuses()
             .god = BookColor::White, .godAmount = 3, .resourceBonus = IncomableResources{ .anyBook = 1 }},
         RoundScoreBonus{.event = EventType::BuildGuild, .bonusWp = 3,
             .god = BookColor::Blue, .godAmount = 3, .resourceBonus = IncomableResources{ .anyBook = 1 }},
+        RoundScoreBonus{.event = EventType::Terraform, .bonusWp = 2,
+            .god = BookColor::Brown, .godAmount = 1, .resourceBonus = IncomableResources{ .gold = 1 }},
         RoundScoreBonus{.event = EventType::UpgradeNavOrTerra, .bonusWp = 3,
             .god = BookColor::Brown, .godAmount = 3, .resourceBonus = IncomableResources{ .humans = 1 }},
         RoundScoreBonus{.event = EventType::FormFederation, .bonusWp = 5,

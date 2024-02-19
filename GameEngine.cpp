@@ -1633,7 +1633,8 @@ void GameEngine::initializeRandomly(GameState& gs, std::default_random_engine& g
     std::iota(indices.begin(), indices.end(), 0);
     rshuffle(indices, g);
     for (int i = 0; i < 5; ++i) {
-        gs.staticGs.roundBoosters.at(i) = indices.at(i);
+        gs.boosters.push_back(RoundBoosterOnBoard{ .originIdx = (int8_t) indices.at(i), .gold = 0});
+        // gs.staticGs.roundBoosters.at(i) = indices.at(i);
     }
 
     const auto raceStartBonuses = StaticData::generateRaceStartBonus();
@@ -1714,11 +1715,6 @@ void GameEngine::initializeRandomly(GameState& gs, std::default_random_engine& g
             const auto towerPos = bots_[i]->choosePlaceToBuildForFree(gs, Building::Tower, poses);
             buildForFree(towerPos, Building::Tower, true, gs);
         }
-    }
-
-    // Choose boosters
-    for (const auto& idx: gs.staticGs.roundBoosters) {
-        gs.boosters.push_back(RoundBoosterOnBoard{ .originIdx = (int8_t) idx, .gold = 0});
     }
 
     for (int i = 0; i < 2; ++i) {

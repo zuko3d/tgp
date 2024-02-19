@@ -9,7 +9,7 @@
 #include <memory>
 
 struct StaticGameState {
-    std::array<int, 5> roundBoosters; // origin idx
+    // std::array<int, 5> roundBoosters; // origin idx
     int lastRoundBonus;
     std::array<int, 6> bonusByRound; // origin idx
     std::array<Race, 2> playerRaces = { (Race) -1, (Race) -1};

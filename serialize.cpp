@@ -177,7 +177,7 @@ nlohmann::json toJson(const Field& f) {
 nlohmann::json toJson(const StaticGameState& sgs) {
     nlohmann::json j;
 
-    j["roundBoosters"] = toJson(sgs.roundBoosters);
+    // j["roundBoosters"] = toJson(sgs.roundBoosters);
     j["lastRoundBonus"] = sgs.lastRoundBonus;
     j["bonusByRound"] = toJson(sgs.bonusByRound);
     j["playerRaces"] = toJson(sgs.playerRaces);
