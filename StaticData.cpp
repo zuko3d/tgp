@@ -194,23 +194,23 @@ std::array<Palace, 17> StaticData::generatePalaces() {
 
 std::array<BookButton, 6> StaticData::generateBookActions() {
     return std::array<BookButton, 6> {
-        BookButton { .bookPrice = 1, .buttonOrigin = 13 },
-        BookButton { .bookPrice = 1, .buttonOrigin = 4 },
-        BookButton { .bookPrice = 2, .buttonOrigin = 14 },
-        BookButton { .bookPrice = 2, .buttonOrigin = 6 },
-        BookButton { .bookPrice = 2, .buttonOrigin = 15 },
-        BookButton { .bookPrice = 3, .buttonOrigin = 16 },
+        BookButton { .bookPrice = 1, .buttonOrigin = 13, .picOrigin = 0 },
+        BookButton { .bookPrice = 1, .buttonOrigin = 4, .picOrigin = 1 },
+        BookButton { .bookPrice = 2, .buttonOrigin = 14, .picOrigin = 2 },
+        BookButton { .bookPrice = 2, .buttonOrigin = 6, .picOrigin = 3 },
+        BookButton { .bookPrice = 2, .buttonOrigin = 15, .picOrigin = 4 },
+        BookButton { .bookPrice = 3, .buttonOrigin = 16, .picOrigin = 5 },
     };
 };
 
 std::array<MarketButton, 6> StaticData::generateMarketActions() {
     return std::array<MarketButton, 6> {
-        MarketButton { .manaPrice = 3, .buttonOrigin = 0 },
-        MarketButton { .manaPrice = 3, .buttonOrigin = 11 },
-        MarketButton { .manaPrice = 4, .buttonOrigin = 12 },
-        MarketButton { .manaPrice = 4, .buttonOrigin = 9 },
-        MarketButton { .manaPrice = 4, .buttonOrigin = 1 },
-        MarketButton { .manaPrice = 6, .buttonOrigin = 8 },
+        MarketButton { .manaPrice = 3, .buttonOrigin = 0, .picOrigin = 0 },
+        MarketButton { .manaPrice = 3, .buttonOrigin = 11, .picOrigin = 1 },
+        MarketButton { .manaPrice = 4, .buttonOrigin = 12, .picOrigin = 2 },
+        MarketButton { .manaPrice = 4, .buttonOrigin = 9, .picOrigin = 3 },
+        MarketButton { .manaPrice = 4, .buttonOrigin = 1, .picOrigin = 4 },
+        MarketButton { .manaPrice = 6, .buttonOrigin = 8, .picOrigin = 5 },
     };
 }
 

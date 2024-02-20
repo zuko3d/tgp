@@ -216,12 +216,14 @@ struct MarketButton {
     int8_t manaPrice = 0;
     int8_t buttonOrigin = -1;
     int8_t isUsed = false;
+    int8_t picOrigin = -1;
 };
 
 struct BookButton {
     int8_t bookPrice = 0;
     int8_t buttonOrigin = -1;
     int8_t isUsed = false;
+    int8_t picOrigin = -1;
 };
 
 enum class GamePhase {

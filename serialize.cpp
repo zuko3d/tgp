@@ -1,5 +1,7 @@
 #include "serialize.h"
 
+#include "StaticData.h"
+
 int toJson(int8_t v) {
     return v;
 }
@@ -103,6 +105,7 @@ nlohmann::json toJson(const BookButton& op) {
     j["bookPrice"] = op.bookPrice;
     j["buttonOrigin"] = op.buttonOrigin;
     j["isUsed"] = op.isUsed;
+    j["picOrigin"] = op.picOrigin;
 
     return j;
 }
@@ -113,6 +116,7 @@ nlohmann::json toJson(const MarketButton& op) {
     j["manaPrice"] = op.manaPrice;
     j["buttonOrigin"] = op.buttonOrigin;
     j["isUsed"] = op.isUsed;
+    j["picOrigin"] = op.picOrigin;
 
     return j;
 }
@@ -168,7 +172,16 @@ nlohmann::json toJson(const Field& f) {
     nlohmann::json j;
 
     j["type"] = toJson(f.type);
+    j["basic_type"] = toJson(StaticData::fieldOrigin().basicType);
     j["bridges"] = toJson(f.bridges);
+
+    std::vector<std::array<int8_t, 2>> bridgesHexes;
+    for(const auto& [idx, owner] : enumerate(f.bridges)) {
+        if (owner >= 0) {
+            bridgesHexes.emplace_back(std::array<int8_t, 2>{StaticData::fieldOrigin().bridgeConnections[idx].first, StaticData::fieldOrigin().bridgeConnections[idx].second});
+        }
+    }
+    j["bridgesHexes"] = toJson(bridgesHexes);
     j["building"] = toJson(f.building);
 
     return j;

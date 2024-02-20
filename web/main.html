@@ -52,16 +52,21 @@
                             <div id="tech-g3-p1" style="position: absolute; top: 119px; left: 358px; width: 47px; height: 45px;; background-size: contain; background-repeat: no-repeat;"></div>
                             <div id="tech-g3-p2" style="position: absolute; top: 180px; left: 358px; width: 47px; height: 45px;; background-size: contain; background-repeat: no-repeat;"></div>
                         </div>
-                        <div id="round-boosters-all" style="position: absolute; top: 438; width:425px;height: 173px;">
+                        <div id="round-boosters-all" style="position: absolute; top: 421px; width:425px;height: 173px;">
                             <div id="rb-0-gold" style="position: absolute; top: 77px; left: 0px"></div>
                             <div id="rb-1-gold" style="position: absolute; top: 77px; left: 62px"></div>
                             <div id="rb-2-gold" style="position: absolute; top: 77px; left: 124px"></div>
                         </div>
+                        <div id="palaces-all" style="position: absolute; top: 424px; left: 148px; width: 300;"></div>
                     </td><td>
-                        <div id="field-all" style="background-image: url('pics/field.jpg');width:902px;height: 605px; background-repeat: no-repeat; background-size: contain;">
+                        <div id="field-all" style="position: relative; background-image: url('pics/field.jpg');width:902px;height: 605px; background-repeat: no-repeat; background-size: contain;">
                         </div>
                     </td><td style="position: relative;">
                         <div id="gods-all" style="background-image: url('pics/gods_back.png');width:380px;height: 605px; background-size: contain; background-repeat: no-repeat;">
+                            <div id="neutral-god-0" style="position: absolute; background-image: url('pics/human.png'); width:32px; height: 35px; left: 1px; background-size: contain; background-repeat: no-repeat;" class="pcolor-neutral"></div>
+                            <div id="neutral-god-1" style="position: absolute; background-image: url('pics/human.png'); width:32px; height: 35px; left: 100px; background-size: contain; background-repeat: no-repeat;" class="pcolor-neutral"></div>
+                            <div id="neutral-god-2" style="position: absolute; background-image: url('pics/human.png'); width:32px; height: 35px; left: 196px; background-size: contain; background-repeat: no-repeat;" class="pcolor-neutral"></div>
+                            <div id="neutral-god-3" style="position: absolute; background-image: url('pics/human.png'); width:32px; height: 35px; left: 289px; background-size: contain; background-repeat: no-repeat;" class="pcolor-neutral"></div>
                         </div>
                     </td>
                 </tr>
@@ -315,6 +320,53 @@
             },
         ]
 
+        function createLineElement(x, y, length, angle) {
+            var line = document.createElement("div");
+            var styles = 'border: 7px solid brown; '
+                    + 'width: ' + length + 'px; '
+                    + 'height: 0px; '
+                    + 'transform: rotate(' + angle + 'rad); '
+                    + 'position: absolute; '
+                    + 'top: ' + y + 'px; '
+                    + 'left: ' + x + 'px; ';
+            line.setAttribute('style', styles);  
+            return line;
+        }
+
+        function createLine(x1, y1, x2, y2, length) {
+            var a = x1 - x2,
+                b = y1 - y2,
+                c = length;
+                // c = Math.sqrt(a * a + b * b);
+
+            var sx = (x1 + x2) / 2,
+                sy = (y1 + y2) / 2;
+
+            var x = sx - c / 2,
+                y = sy;
+
+            var alpha = Math.PI - Math.atan2(-b, a);
+
+            return createLineElement(x, y, c, alpha);
+        }
+
+        function createBridge(hexFrom, hexTo) {
+            if (hexFrom > hexTo) {
+                tmp = hexTo;
+                hexTo = hexFrom;
+                hexFrom = tmp;
+            }
+            var bridgeId = "bridge-" + hexFrom + "-" + hexTo;
+            if (!document.getElementById(bridgeId)) {
+                const dv1 = document.getElementById("terrain-" + hexFrom);
+                const dv2 = document.getElementById("terrain-" + hexTo);
+                var line = createLine(dv1.offsetLeft + dv1.offsetWidth / 2, dv1.offsetTop + dv1.offsetHeight / 2, dv2.offsetLeft + dv2.offsetWidth / 2, dv2.offsetTop + dv2.offsetHeight / 2, 50);
+                line.id = bridgeId;
+                var dv = document.getElementById("field-all");
+                dv.appendChild(line);
+            }
+        }
+
         function addImg(path, parent, wd, additionalClass) {
             var img = document.createElement('img');
             img.src = path
@@ -428,7 +480,13 @@
                 }
             }
 
-            // FlatMap<GodColor, int8_t, 4> neutralGods;
+            {
+                const topByRank = [457, 413, 381, 339, 307, 264, 232, 190, 153, 124, 97, 66, 17];
+                for (var idx = 0; idx < 4; idx++) {
+                    var dv = document.getElementById("neutral-god-" + idx);
+                    dv.style.top = topByRank[sgs.neutralGods[idx]];
+                }
+            }
         }
 
         function visualizePs(ps, gs, pIdx) {
@@ -587,26 +645,45 @@
                 document.head.appendChild(sheet);
             }
 
-            for (building of gs.field.building) {
-                if (building.owner != -1) {
-                    var dv = document.querySelector("#building_" + idx);
-                    // dv.style.backgroundPosition = 'center';
-                    dv.classList.add('has-building-' + building.type);
-                    if (!building.isNeutral) {
-                        dv.classList.add('player-' + building.owner);
+            {
+                idx = 0
+                for (building of gs.field.building) {
+                    if (building.owner != -1) {
+                        var dv = document.querySelector("#building_" + idx);
+                        // dv.style.backgroundPosition = 'center';
+                        dv.classList.add('has-building-' + building.type);
+                        if (!building.isNeutral) {
+                            dv.classList.add('player-' + building.owner);
+                        } else {
+                            dv.classList.add('pcolor-neutral');
+                        }
+                    }
+                    idx++;
+                }
+            }
+            {
+                for (var pos = 0; pos < 91; pos++) {
+                    var dv = document.getElementById("terrain-" + pos);
+                    if (gs.field.type[pos] != gs.field.basic_type[pos]) {
+                        dv.style.backgroundImage = "url('pics/terrain/" + gs.field.type[pos] + ".png')";
                     } else {
-                        dv.classList.add('pcolor-neutral');
+                        dv.style.backgroundImage = "";
                     }
                 }
-                idx++;
             }
-
+            {
+                for (const idxPair of gs.field.bridgesHexes) {
+                    createBridge(idxPair[0], idxPair[1]);
+                }
+            }
+            
             {
                 var dv = document.getElementById("round-boosters-all");
+                dv.innerHTML = "";
                 var idx = 0;
                 for (var rb of gs.boosters) {
                     if (rb.originIdx >= 0) {
-                        var img = addImg("pics/rb_" + rb.originIdx + ".png", dv, 62);
+                        var img = addImg("pics/rb_" + rb.originIdx + ".png", dv, 42);
                         img.id = "rb-" + rb.originIdx;
                         var goldDv = document.getElementById("rb-" + idx + "-gold");
                         if (goldDv) {
@@ -630,13 +707,57 @@
                 }
             }
 
-            // j["palacesAvailable"] = toJson(gs.palacesAvailable);
-            // j["humansOnGods"] = toJson(gs.humansOnGods);
-            // j["bookActions"] = toJson(gs.bookActions);
-            // j["marketActions"] = toJson(gs.marketActions);
+            {
+                // var dv = document.getElementById("palaces-all");
+                // dv.innerHTML = "";
+                var dv = document.getElementById("round-boosters-all");
+                // var idx = 0;
+                for (var plc of gs.palacesAvailable) {
+                    if (plc >= 0) {
+                        var img = addImg("pics/palace/" + plc + ".png", dv, 140);
+                        img.id = "palace-" + plc;
+                    }
+                    // idx++;
+                }
+            }
 
+            {
+                var god = 0;
+                for (const hums of gs.humansOnGods) {
+                    var pos = 0;
+                    for (const owner of hums) {
+                        if (owner >= 0) {
+                            var dv = document.getElementById("god-bottom-img-g" + god + "-pos" + pos);
+                            dv.style.backgroundImage = "url('pics/human.png')";
+                            dv.classList.add("player-" + owner);
+                        }
+                        pos++;
+                    }
+                    god++;
+                }
+            }
 
-            // j["field"] = toJson(*gs.field);
+            {
+                for (var idx = 0; idx < 3; idx++) {
+                    var dv = document.getElementById("book-action-" + idx);
+                    dv.src = "pics/book_action/" + gs.bookActions[idx].picOrigin + ".png";
+                    if (gs.bookActions[idx].isUsed) {
+                        dv.classList.add("crossed");
+                    } else {
+                        dv.classList.remove("crossed");
+                    }
+                }
+            }
+            {
+                for (var idx = 0; idx < 6; idx++) {
+                    var dv = document.getElementById("market-action-" + idx);
+                    if (gs.marketActions[idx].isUsed) {
+                        dv.classList.add("crossed");
+                    } else {
+                        dv.classList.remove("crossed");
+                    }
+                }
+            }
 
             for (let i = 0; i < 2; i++) {
                 visualizePs(gs.players[i], gs, i);
@@ -688,6 +809,8 @@
                     containerDv.style.height = heights[r];
                     containerDv.style.position = 'relative';
                     containerDv.classList.add('red-border');
+                    containerDv.id = "terrain-" + curHex;
+                    containerDv.style.backgroundSize = "contain";
 
                     var buildingDv = document.createElement('div');
                     containerDv.appendChild(buildingDv);
