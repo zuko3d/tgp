@@ -115,12 +115,11 @@
                                 </div>
 
                                 <div id="p0-passed" style="position: absolute; top: 19px; left: 123px; width: 277px; opacity: 0.0; height: 261px; background-size: contain; background-image: url('pics/passed.png');"></div>
+
+                                <div id="p0-score" style="position: absolute; top: 27px; left: 313px; color: white; font-weight: 900; font-size: 74px;">0</div>
                             </div>
-                        </td><td>
-                            <table>
-                                <tr><td id="presources-0"></td>
-                                </tr>
-                            </table>
+                        </td><td style="width: 222px;">
+                            <div id="presources-0"></div>
                         </td>
                         <td style="width: 55px;" id="p1-booster"></td>
                         <td style="width: 572px;">
@@ -164,12 +163,10 @@
                                 </div>
 
                                 <div id="p1-passed" style="position: absolute; top: 19px; left: 123px; width: 277px; opacity: 0.0; height: 261px; background-size: contain; background-image: url('pics/passed.png');"></div>
+                                <div id="p1-score" style="position: absolute; top: 27px; left: 313px; color: white; font-weight: 900; font-size: 74px;">0</div>
                             </div>
-                        </td><td>
-                            <table>
-                                <tr><td id="presources-1"></td>
-                                </tr>
-                            </table>
+                        </td><td style="width: 222px;">
+                            <div id="presources-1"></div>
                     </td></tr></table>
                 </td></tr>
                 </table>
@@ -180,10 +177,12 @@
     <head>
         <style>
             .highlight {
+              border: 4px dashed black;
               background-color: rgb(161, 248, 180);
-              opacity: 0.5;
             }
-
+            .highlight:hover {
+              border: 4px solid red;
+            }
 
             .debug-border {
               border: 2px solid red;
@@ -199,9 +198,9 @@
             .red-border {
               border: 3px solid transparent;
             }
-            .red-border:hover {
+            /* .red-border:hover {
               border: 3px solid red;
-            }
+            } */
 
             .nonmoving-rect {
               position: absolute;
@@ -213,6 +212,10 @@
 
             .crossed {
                 filter: grayscale();
+                border: none;
+            }
+            .crossed:hover {
+                border: none;
             }
 
             .has-human {
@@ -493,6 +496,11 @@
             const res = ps.resources;
 
             // resources
+            {
+                var dv = document.getElementById("p" + pIdx + "-score");
+                dv.innerHTML = res.winPoints;
+            }
+
             for (let i = 0; i < 4; i++) {
                 var dv = document.getElementById("god-human-img-p" + pIdx + "-r" + res.gods[i] + "-g"  + i);
                 dv.classList.add('has-human');
@@ -823,6 +831,7 @@
                     highlightDv.classList.add('nonmoving-rect');
                     highlightDv.style.height = heights[r];
                     highlightDv.style.zIndex = 10;
+                    highlightDv.style.opacity = 0.6;
                     highlightDv.id = 'fld_' + curHex;
                     highlightDv.data = curHex;
 
@@ -1041,6 +1050,11 @@
 
             visualizeGs(obj.gs);
 
+            if (msg.action === 'triggerFinal') {
+                var prompt = document.getElementById("input-box");
+                prompt.innerHTML = 'The game is over!';
+                socket.send('{}');
+            }
             if (msg.action === 'chooseRace') {
                 generateInputter("Choose your race:", 200, "pics/race_")
             }
@@ -1050,17 +1064,117 @@
             if (msg.action === 'chooseRoundBooster') {
                 generateBoosterChoice(msg)
             }
+            if (msg.action === 'chooseGodToMove') {
+                var prompt = document.getElementById("input-box");
+                prompt.innerHTML = 'Choose god to move';
+
+                for (var i = 0; i < 4; i++) {
+                    var dv = document.getElementById("god-selector-" + i);
+                    dv.classList.add('highlight');
+                    dv.onclick = function() { socket.send('{ "choice": ' + this.data + '}'); clearHighlight(); };
+                }
+            }
+            if (msg.action === 'chooseBookColorToGet') {
+                var prompt = document.getElementById("input-box");
+                prompt.innerHTML = 'Choose book color to get, left: ' + msg.amount;
+
+                for (var i = 0; i < 4; i++) {
+                    var dv = document.getElementById("god-selector-" + i);
+                    dv.classList.add('highlight');
+                    dv.onclick = function() { socket.send('{ "choice": ' + this.data + '}'); clearHighlight(); };
+                }
+            }
+            if (msg.action === 'chooseBooksToSpend') {
+                var prompt = document.getElementById("input-box");
+                prompt.innerHTML = 'Choose book color to SPEND, left: ' + msg.amount;
+
+                for (var i = 0; i < 4; i++) {
+                    var dv = document.getElementById("god-selector-" + i);
+                    dv.classList.add('highlight');
+                    dv.onclick = function() { socket.send('{ "choice": ' + this.data + '}'); clearHighlight(); };
+                }
+            }
+            if (msg.action === 'wannaBuildMine') {
+                var prompt = document.getElementById("input-box");
+                prompt.innerHTML = 'Do you want to build mine?';
+
+                var hex = document.getElementById("fld_" + msg.coord);
+                hex.classList.add('highlight');
+
+                var dvYes = document.createElement('button');
+                prompt.appendChild(dvYes);
+                dvYes.innerHTML = "Yes";
+                dvYes.onclick = function() { socket.send('{ "choice": 1}'); clearHighlight(); };
+                
+                var dvNo = document.createElement('button');
+                prompt.appendChild(dvNo);
+                dvNo.innerHTML = "No";
+                dvNo.onclick = function() { socket.send('{ "choice": 0}'); clearHighlight(); };
+            }
+            if (msg.action === 'wannaCharge') {
+                var prompt = document.getElementById("input-box");
+                prompt.innerHTML = 'Do you want to charge ' + msg.amount + ' mana?';
+
+                var dvYes = document.createElement('button');
+                prompt.appendChild(dvYes);
+                dvYes.innerHTML = "Yes";
+                dvYes.onclick = function() { socket.send('{ "choice": 1}');};
+                
+                var dvNo = document.createElement('button');
+                prompt.appendChild(dvNo);
+                dvNo.innerHTML = "No";
+                dvNo.onclick = function() { socket.send('{ "choice": 0}'); };
+            }
+            if (msg.action === 'chooseFedTile') {
+                var prompt = document.getElementById("input-box");
+                prompt.innerHTML = 'Choose federation tile: ';
+
+                for (const tile of msg.variants) {
+                    var img = document.createElement('img');
+                    prompt.appendChild(img);
+                    img.data = tile;
+                    img.style.height = 100;
+                    img.classList.add('red-border');
+                    img.src = 'pics/fed_' + tile + '.png';
+                    img.onclick = function() { socket.send('{ "choice": ' + this.data + '}'); };
+                }
+            }
+            if (msg.action === 'chooseTechTile') {
+                var prompt = document.getElementById("input-box");
+                prompt.innerHTML = 'Choose tech tile!';
+
+                for (const tile of msg.variants) {
+                    var dv = document.getElementById("tech-g" + Math.floor(tile / 3) + "-p" + (tile % 3));
+                    dv.classList.add('highlight');
+                    dv.data = tile;
+                    dv.onclick = function() { socket.send('{ "choice": ' + this.data + '}'); clearHighlight(); };
+                }
+            }
+                        
             if (msg.action === 'choosePlaceToBuildForFree') {
                 var dv = document.querySelector("#input-box");
                 dv.innerHTML = 'Choose a place to build ' + Buildings[msg.building].name + ' for free';
 
                 for (const idx of msg.choices) {
-                    var dv = document.querySelector("#fld_" + idx);
+                    // var dv = document.querySelector("#fld_" + idx);
+                    var dv = document.getElementById("fld_" + idx);
                     dv.classList.add('highlight');
                     
                     dv.onclick = function() { socket.send('{ "choice": ' + this.data + '}'); clearHighlight(); };
                 }
             }
+            if (msg.action === 'choosePlaceToSpade') {
+                var dv = document.getElementById("input-box");
+                dv.innerHTML = 'Choose a place to use spade. Spades left: ' + msg.amount;
+
+                for (const pos of msg.possiblePos) {
+                    var dv = document.getElementById("fld_" + pos);
+                    dv.classList.add('highlight');
+                    
+                    dv.onclick = function() { socket.send('{ "choice": ' + this.data + '}'); clearHighlight(); };
+                }
+            }
+            
         });
     </script>
     </head>

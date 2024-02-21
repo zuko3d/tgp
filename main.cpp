@@ -18,6 +18,10 @@ int main() {
     GameEngine ge({ &bot1, &bot2 });
 
     ge.initializeRandomly(gs, g);
+    
+    gs.activePlayer = 0;
+    bot1.choosePlaceToSpade(gs, 4, {3, 5, 8});
+
     ge.playGame(gs);
 
     for (const auto& p: gs.players) {

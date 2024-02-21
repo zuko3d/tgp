@@ -30,4 +30,6 @@ public:
     virtual int8_t choosePlaceToSpade(const GameState& gs, int amount, const std::vector<int8_t>& possiblePos) = 0;
     virtual int8_t choosePlaceForBridge(const GameState& gs, const std::vector<int8_t>& possiblePos) = 0;
     virtual int8_t choosePlaceToBuildForFree(const GameState& gs, Building building, const std::vector<int8_t>& possiblePos) = 0;
+
+    virtual void triggerFinal(const GameState& gs) { };
 };

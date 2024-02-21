@@ -42,6 +42,15 @@ public:
         thread_->join();
     }
 
+    void triggerFinal(const GameState& gs) {
+        std::cout << "triggerFinal..." << std::endl;
+
+        nlohmann::json j;
+        j["action"] = "triggerFinal";
+
+        const auto ret = rpc(gs, j.dump());
+    };
+
     Race chooseRace(const GameState& gs, const std::vector<Race>& races) {
         std::cout << "chooseRace..." << std::endl;
 
@@ -86,65 +95,125 @@ public:
     }
 
     GodColor chooseGodToMove(const GameState& gs, int amount) {
-        return (GodColor) (rng() % 4);
+        std::cout << "chooseGodToMove..." << std::endl;
+
+        nlohmann::json j;
+        j["action"] = "chooseGodToMove";
+
+        const auto ret = rpc(gs, j.dump());
+
+        return (GodColor) ret["choice"].get<int>();
     }
 
-    FlatMap<BookColor, int8_t, 4> chooseBookColorToGet(const GameState& gs, int amount) { 
-        FlatMap<BookColor, int8_t, 4> ret = { 0, 0, 0, 0 };
-        ret[(BookColor) (rng() % 4)] = amount;
+    FlatMap<BookColor, int8_t, 4> chooseBookColorToGet(const GameState& gs, int amount) {
+        std::cout << "chooseBookColorToGet..." << std::endl;
+
+        FlatMap<BookColor, int8_t, 4> ret;
+
+        for (int i = 0; i < amount; i++) {
+            nlohmann::json j;
+            j["action"] = "chooseBookColorToGet";
+            j["amount"] = amount - i;
+            const auto response = rpc(gs, j.dump())["choice"].get<int>();
+            ret[(BookColor) response]++;
+        }
         return ret;
     }
     
     FlatMap<BookColor, int8_t, 4> chooseBooksToSpend(const GameState& gs, int amount) {
-        FlatMap<BookColor, int8_t, 4> ret = { 0, 0, 0, 0 };
-        const auto& ps = gs.players[gs.activePlayer];
-        assert(sum(ps.resources.books.values()) >= amount);
+        std::cout << "chooseBooksToSpend..." << std::endl;
 
-        for (const auto [color, val]: ps.resources.books) {
-            const auto amnt = std::min((int) val, amount);
-            amount -= amnt;
-            ret[color] = amnt;
-            if (amount == 0) break;
+        FlatMap<BookColor, int8_t, 4> ret;
+
+        for (int i = 0; i < amount; i++) {
+            nlohmann::json j;
+            j["action"] = "chooseBooksToSpend";
+            j["amount"] = amount - i;
+            const auto response = rpc(gs, j.dump())["choice"].get<int>();
+            ret[(BookColor) response]++;
         }
-
         return ret;
     }
 
     // How many bricks you want to spend on terraforming POS hex
     int8_t chooseBricks(const GameState& gs, int8_t pos) { return 0; }
     
-    bool wannaBuildMine(const GameState& gs, int8_t coord) { return true; }
-    bool wannaCharge(const GameState& gs, int amount) { return true; }
+    bool wannaBuildMine(const GameState& gs, int8_t coord) { 
+        std::cout << "wannaBuildMine..." << std::endl;
+
+        nlohmann::json j;
+        j["action"] = "wannaBuildMine";
+        j["coord"] = coord;
+
+        const auto ret = rpc(gs, j.dump());
+
+        return (bool) ret["choice"].get<int>();
+    }
+
+    bool wannaCharge(const GameState& gs, int amount) {
+        std::cout << "wannaCharge..." << std::endl;
+
+        nlohmann::json j;
+        j["action"] = "wannaCharge";
+        j["amount"] = amount;
+
+        const auto ret = rpc(gs, j.dump());
+
+        return (bool) ret["choice"].get<int>();
+    }
     
     FedTileOrigin chooseFedTile(const GameState& gs) {
+        std::vector<FedTileOrigin> variants;
         for (const auto [tile, amnt]: gs.fedTilesAvailable) {
             if (amnt > 0) {
-                return tile;
+                variants.push_back(tile);
             }
         }
-        assert(false);
-        return -1;
+        std::cout << "chooseFedTile..." << std::endl;
+
+        nlohmann::json j;
+        j["action"] = "chooseFedTile";
+        j["variants"] = toJson(variants);
+
+        const auto ret = rpc(gs, j.dump());
+
+        return (FedTileOrigin) ret["choice"].get<int>();
     }
 
     TechTile chooseTechTile(const GameState& gs) {
         const auto& ps = gs.players[gs.activePlayer];
+        std::vector<TechTile> variants;
         for (int i = 0; i < 12; i++) {
             TechTile tile = (TechTile) i;
-            if (!ps.techTiles[tile]) return tile;
+            if (!ps.techTiles[tile]) variants.push_back(tile);
         }
-        assert(false);
-        return (TechTile) -1;
+        std::cout << "chooseTechTile..." << std::endl;
+
+        nlohmann::json j;
+        j["action"] = "chooseTechTile";
+        j["variants"] = toJson(variants);
+
+        const auto ret = rpc(gs, j.dump());
+
+        return (TechTile) ret["choice"].get<int>();
     }
 
     int8_t choosePlaceToSpade(const GameState& gs, int amount, const std::vector<int8_t>& possiblePos) {
         if (possiblePos.empty()) return -1;
-        
-        const auto& ps = gs.players[gs.activePlayer];
-        const auto r = gs.field->reachable(gs.activePlayer, ps.navLevel);
-        return r[rng() % r.size()];
+        std::cout << "choosePlaceToSpade..." << std::endl;
+
+        nlohmann::json j;
+        j["action"] = "choosePlaceToSpade";
+        j["possiblePos"] = toJson(possiblePos);
+        j["amount"] = amount;
+
+        const auto ret = rpc(gs, j.dump());
+
+        return (int8_t) ret["choice"].get<int>();
     }
 
     int8_t choosePlaceForBridge(const GameState& gs, const std::vector<int8_t>& possiblePos) {
+        assert(false);
         if (possiblePos.empty()) return -1;
         return possiblePos[rng() % possiblePos.size()];
     }

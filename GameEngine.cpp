@@ -1096,6 +1096,9 @@ void GameEngine::playGame(GameState& gs) {
         doFinalScoring(gs);
     }
 
+    for (gs.activePlayer = 0; gs.activePlayer < 2; gs.activePlayer++) {
+        bots_[gs.activePlayer]->triggerFinal(gs);
+    }
 }
 
 void GameEngine::checkFederation(int8_t pos, bool isBridge, GameState& gs) {
