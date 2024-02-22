@@ -87,11 +87,34 @@ public:
     }
 
     FullAction chooseAction(const GameState& gs, const std::vector<Action>& actions) {
-        return FullAction{
-            .preAction = {},
-            .action = actions[rng() % actions.size()],
-            .postAction = {}
-        };
+
+        std::cout << "chooseAction..." << std::endl;
+
+        nlohmann::json j;
+        j["action"] = "chooseAction";
+        j["variants"] = toJson(actions);
+
+        const auto ret = rpc(gs, j.dump());
+
+        if (ret.contains("freeAction")) {
+            return FullAction{
+                .preAction = { (FreeActionMarketType) ret["freeAction"].get<int>()},
+                .action = Action{
+                    .type = ActionType::None
+                },
+                .postAction = {}
+            };
+        } else {
+            return FullAction{
+                .preAction = {},
+                .action = Action{
+                    .type = (ActionType) ret["type"].get<int>(),
+                    .param1 = ret["param1"].get<int>(),
+                    .param2 = ret["param2"].get<int>(),
+                },
+                .postAction = {}
+            };
+        }
     }
 
     GodColor chooseGodToMove(const GameState& gs, int amount) {

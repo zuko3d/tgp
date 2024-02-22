@@ -3,21 +3,19 @@
 #include <vector>
 
 enum class ActionType {
-    // Build,
-    UpgradeBuilding,
-    Market,
-    BookMarket,
-    ActivateAbility,
-    PutManToGod,
-    // MoveOnGods,
-    GetInnovation,
-    TerraformAndBuild,
-    UpgradeNav,
-    UpgradeTerraform,
-    // TerraformOnly,
-    Bridge,
-    Annex,
-    Pass,
+    UpgradeBuilding, // 0
+    Market, // 1
+    BookMarket, // 2
+    ActivateAbility, // 3
+    PutManToGod, // 4
+    GetInnovation, // 5
+    TerraformAndBuild, // 6
+    UpgradeNav, // 7
+    UpgradeTerraform, // 8
+    Bridge, // 9
+    Annex, // 10
+    Pass, // 11
+    None, // 12
 };
 
 enum class FreeActionMarketType {

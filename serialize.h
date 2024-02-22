@@ -2,6 +2,7 @@
 
 #include "json.hpp"
 
+#include "Action.h"
 #include "Field.h"
 #include "FlatMap.h"
 #include "ResizableArray.h"
@@ -37,6 +38,8 @@ nlohmann::json toJson(const Palace& op);
 nlohmann::json toJson(const BookButton& op);
 
 nlohmann::json toJson(const MarketButton& op);
+
+nlohmann::json toJson(const Action& op);
 
 int toJson(const TechTile& op);
 

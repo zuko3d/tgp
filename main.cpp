@@ -20,7 +20,28 @@ int main() {
     ge.initializeRandomly(gs, g);
     
     gs.activePlayer = 0;
-    bot1.choosePlaceToSpade(gs, 4, {3, 5, 8});
+    bot1.chooseAction(gs, {
+        Action{
+            .type = ActionType::Market,
+            .param1 = 0
+        },
+        Action{
+            .type = ActionType::Market,
+            .param1 = 1
+        },
+        Action{
+            .type = ActionType::Market,
+            .param1 = 3
+        },
+        Action{
+            .type = ActionType::Market,
+            .param1 = 4
+        },
+        Action{
+            .type = ActionType::Market,
+            .param1 = 5
+        },
+    });
 
     ge.playGame(gs);
 

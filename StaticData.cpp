@@ -207,8 +207,8 @@ std::array<MarketButton, 6> StaticData::generateMarketActions() {
     return std::array<MarketButton, 6> {
         MarketButton { .manaPrice = 3, .buttonOrigin = 0, .picOrigin = 0 },
         MarketButton { .manaPrice = 3, .buttonOrigin = 11, .picOrigin = 1 },
-        MarketButton { .manaPrice = 4, .buttonOrigin = 12, .picOrigin = 2 },
-        MarketButton { .manaPrice = 4, .buttonOrigin = 9, .picOrigin = 3 },
+        MarketButton { .manaPrice = 4, .buttonOrigin = 9, .picOrigin = 2 },
+        MarketButton { .manaPrice = 4, .buttonOrigin = 12, .picOrigin = 3 },
         MarketButton { .manaPrice = 4, .buttonOrigin = 1, .picOrigin = 4 },
         MarketButton { .manaPrice = 6, .buttonOrigin = 8, .picOrigin = 5 },
     };

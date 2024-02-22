@@ -6,6 +6,16 @@ int toJson(int8_t v) {
     return v;
 }
 
+nlohmann::json toJson(const Action& op) {
+    nlohmann::json j;
+
+    j["type"] = op.type;
+    j["param1"] = op.param1;
+    j["param2"] = op.param2;
+
+    return j;
+}
+
 nlohmann::json toJson(const RoundBoosterOnBoard& op) {
     nlohmann::json j;
     j["originIdx"] = op.originIdx;

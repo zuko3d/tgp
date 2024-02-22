@@ -23,38 +23,44 @@ void GameEngine::doFreeActionMarket(FreeActionMarketType action, GameState& gs) 
         case FreeActionMarketType::ManaToBook: {
             awardResources(IncomableResources{ .anyBook = 1 }, gs);
             spendResources(IncomableResources{ .manaCharge = 5 }, gs);
+            break;
         }
         case FreeActionMarketType::BookToGold: {
             ps.resources.gold++;
             spendResources(IncomableResources{ .anyBook = 1 }, gs);
-        }
-        
+            break;
+        }        
         case FreeActionMarketType::ManaToCube: {
             ps.resources.cube++;
             spendResources(IncomableResources{ .manaCharge = 3 }, gs);
+            break;
         }
         case FreeActionMarketType::ManaToGold: {
             ps.resources.gold++;
             spendResources(IncomableResources{ .manaCharge = 1 }, gs);
+            break;
         }
-
         case FreeActionMarketType::ManaToHuman: {
             assert (ps.humansLeft > 0);
             awardResources(Resources{ .humans = 1 }, gs);
             spendResources(IncomableResources{ .manaCharge = 5 }, gs);
+            break;
         }
         case FreeActionMarketType::HumanToCube: {
             ps.resources.humans--;
             ps.resources.cube++;
+            break;
         }
         case FreeActionMarketType::CubeToGold: {
             ps.resources.gold++;
             ps.resources.cube--;
+            break;
         }
         case FreeActionMarketType::BurnMana: {
             assert(ps.mana[1] >= 2);
             ps.mana[1] -= 2;
             ps.mana[2]++;
+            break;
         }
         default:
             assert(false);
@@ -1047,8 +1053,17 @@ void GameEngine::playGame(GameState& gs) {
                 if (!gs.players[ap].passed) {
                     allPassed = false;
 
-                    const auto actions = generateActions(gs);
-                    const auto fullAction = bots_[ap]->chooseAction(gs, actions);
+                    auto actions = generateActions(gs);
+                    auto fullAction = bots_[ap]->chooseAction(gs, actions);
+                    
+                    while (fullAction.action.type == ActionType::None) {
+                        for (const auto& a: fullAction.preAction) {
+                            doFreeActionMarket(a, gs);
+                        }
+                        actions = generateActions(gs);
+                        fullAction = bots_[ap]->chooseAction(gs, actions);
+                    }
+
                     for (const auto& a: fullAction.preAction) {
                         doFreeActionMarket(a, gs);
                     }
@@ -1249,6 +1264,7 @@ void GameEngine::spendResources(IncomableResources resources, GameState& gs) {
         }
     }
 
+    assert (ps.mana[2] >= resources.manaCharge);
     ps.mana[2] -= resources.manaCharge;
     ps.mana[0] += resources.manaCharge;
 }
