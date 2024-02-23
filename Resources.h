@@ -71,7 +71,7 @@ struct Resources
             books[(BookColor) i] += op.books[(BookColor) i];
         }
         for (size_t i = 0; i < 4; i++) {
-            gods[(GodColor) i] = std::min(gods[(GodColor) i] + op.gods[(GodColor) i], 12);
+            assert(op.gods[(GodColor) i] == 0); // Use moveGod(val, color, gs);
         }
         winPoints += op.winPoints;
     }

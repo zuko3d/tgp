@@ -16,7 +16,7 @@ struct FieldOrigin {
     std::array<ResizableArray<int8_t, 6>, FIELD_SIZE> neibs;
     std::array<ResizableArray<int8_t, 4>, FIELD_SIZE> bridgeIds;
     std::array<std::pair<int8_t, int8_t>, TOTAL_BRIDGES> bridgeConnections;
-    std::array<std::array<ResizableArray<int8_t, 32>, FIELD_SIZE>, 5> reachable;
+    std::array<std::array<std::vector<int8_t>, FIELD_SIZE>, 5> reachable;
 };
 
 // Don't forget to make it Copy-on-write

@@ -81,6 +81,9 @@ void GameEngine::awardBooster(int boosterIdx, GameState& gs) {
             .originIdx = ps.currentRoundBoosterOriginIdx,
             .gold = 0,
         };
+    } else {
+        std::remove_if(gs.boosters.begin(), gs.boosters.end(), [newBooster](const RoundBoosterOnBoard& op) { return op.originIdx == newBooster.originIdx; });
+        gs.boosters.pop_back();
     }
 
     ps.currentRoundBoosterOriginIdx = newBooster.originIdx;
@@ -534,8 +537,7 @@ std::vector<Action> GameEngine::generateActions(GameState& gs) {
     }
 
     // TerraformAndBuild,
-    // No "pure" terraforms, just with build
-
+    // No "pure" terraforms, only with build
     if (ps.buildingsAvailable[Building::Mine] > 0 && ps.resources >= StaticData::buildingOrigins()[Building::Mine].price) {
         if (ps.tfLevel == 2) {
             const auto poses = someHexes(true, false, gs, 1, 0);
@@ -544,7 +546,7 @@ std::vector<Action> GameEngine::generateActions(GameState& gs) {
                     ret.emplace_back(Action{
                         .type = ActionType::TerraformAndBuild,
                         .param1 = pos,
-                        .param2 = 1,
+                        .param2 = -1,
                     });
                 }
             }
@@ -555,7 +557,7 @@ std::vector<Action> GameEngine::generateActions(GameState& gs) {
                     ret.emplace_back(Action{
                         .type = ActionType::TerraformAndBuild,
                         .param1 = pos,
-                        .param2 = 1,
+                        .param2 = -1,
                     });
                 }
             }
@@ -1401,6 +1403,7 @@ void GameEngine::awardResources(Resources resources, GameState& gs) {
     for (const auto [color, val]: resources.gods) {
         if (val > 0) {
             moveGod(val, color, gs);
+            resources.gods[color] = 0;
         }
     }
 
@@ -1736,7 +1739,7 @@ void GameEngine::initializeRandomly(GameState& gs, std::default_random_engine& g
         }
     }
 
-    for (int i = 0; i < 2; ++i) {
+    for (int i = 1; i >= 0; --i) {
         gs.activePlayer = i;
         int idx = bots_[i]->chooseRoundBooster(gs);
         awardBooster(idx, gs);

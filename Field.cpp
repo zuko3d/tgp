@@ -117,10 +117,10 @@ ResizableArray<int8_t, 8> Field::adjacent(int pos) const {
 }
 
 std::vector<int8_t> Field::reachable(int owner, int range, TerrainType color) const {
-    std::array<bool, FieldOrigin::FIELD_SIZE> r;
+    std::array<bool, FieldOrigin::FIELD_SIZE> r{{false}};
     for (const auto& pos: ownedByPlayer[owner]) {
         for (const auto& p: StaticData::fieldOrigin().reachable[range][pos]) {
-            if (building.at(pos).owner == -1) r[p] = true;
+            if (building.at(p).owner == -1) r[p] = true;
         }
         for (const auto& br: StaticData::fieldOrigin().bridgeIds[pos]) {
             if (bridges[br] != -1) {
@@ -137,7 +137,7 @@ std::vector<int8_t> Field::reachable(int owner, int range, TerrainType color) co
         }
     } else {
         for (const auto& [idx, val]: enumerate(r)) {
-            if (val && type[idx] == color) ret.emplace_back(idx);
+            if (val && (type[idx] == color)) ret.emplace_back(idx);
         }
     }
     

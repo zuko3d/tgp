@@ -12,7 +12,7 @@ enum class ActionType {
     TerraformAndBuild, // 6
     UpgradeNav, // 7
     UpgradeTerraform, // 8
-    Bridge, // 9
+    Bridge, // 9, unused
     Annex, // 10
     Pass, // 11
     None, // 12

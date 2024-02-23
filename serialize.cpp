@@ -166,7 +166,7 @@ nlohmann::json toJson(const PlayerState& ps) {
     j["additionalIncome"] = toJson(ps.additionalIncome);
     j["boosterButton"] = toJson(ps.boosterButton);
 
-    j["boosterButton"] = ps.palaceIdx;
+    j["palaceIdx"] = ps.palaceIdx;
     j["bridgesLeft"] = ps.bridgesLeft;
     j["humansLeft"] = ps.humansLeft;
     j["navLevel"] = ps.navLevel;
@@ -193,6 +193,12 @@ nlohmann::json toJson(const Field& f) {
     }
     j["bridgesHexes"] = toJson(bridgesHexes);
     j["building"] = toJson(f.building);
+
+    std::vector<std::vector<int8_t>> adjacent;
+    for (int pos = 0; pos < FieldOrigin::FIELD_SIZE; pos++) {
+        adjacent.emplace_back(StaticData::fieldOrigin().reachable[1][pos]);
+    }
+    j["adjacent"] = toJson(adjacent);
 
     return j;
 }

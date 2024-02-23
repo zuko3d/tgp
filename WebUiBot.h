@@ -105,6 +105,10 @@ public:
                 .postAction = {}
             };
         } else {
+            std::vector<FreeActionMarketType> postAction;
+            if (ret.contains("freeActionPost")) {
+                postAction.push_back((FreeActionMarketType) ret["freeActionPost"].get<int>());
+            }
             return FullAction{
                 .preAction = {},
                 .action = Action{
@@ -112,7 +116,7 @@ public:
                     .param1 = ret["param1"].get<int>(),
                     .param2 = ret["param2"].get<int>(),
                 },
-                .postAction = {}
+                .postAction = postAction,
             };
         }
     }

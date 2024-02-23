@@ -314,18 +314,18 @@ FieldOrigin StaticData::generateFieldOrigin() {
         
         for (const auto& neib: fld.neibs[startPos]) {
             if (fld.basicType[neib] != TerrainType::River) {
-                visited[neib] = 1;
+                visited[neib] = 0;
             }
         }
         
         while (!q.empty()) {
             const auto [cur, curWeight] = q.front();
             q.pop();
-            if (visited[cur] < 20) continue;
+            if (visited[cur] <= curWeight) continue;
             visited[cur] = curWeight;
             for (const auto& neib: fld.neibs[cur]) {
                 if (fld.basicType[neib] == TerrainType::River) {
-                    if (visited[neib] == -1) {
+                    if (visited[neib] > curWeight + 1) {
                         q.push({neib, curWeight + 1});
                     }
                 } else {
@@ -335,8 +335,10 @@ FieldOrigin StaticData::generateFieldOrigin() {
         }
 
         for (const auto& [idx, range]: enumerate(visited)) {
-            for (int i = range; i < 5; i++) {
-                fld.reachable.at(i).at(startPos).push_back(idx);
+            for (int i = std::max(0, range - 1); i < 5; i++) {
+                if (fld.basicType[idx] != TerrainType::River) {
+                    fld.reachable.at(i).at(startPos).push_back(idx);
+                }
             }
         }
     }
