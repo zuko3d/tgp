@@ -41,7 +41,7 @@ struct GameState
     std::array<BookButton, 3> bookActions;
     std::array<MarketButton, 6> marketActions;
 
-    GamePhase phase = GamePhase::Preparation;
+    GamePhase phase = GamePhase::Upkeep;
 
     StaticGameState& staticGs;
 };

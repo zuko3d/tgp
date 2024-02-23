@@ -171,7 +171,7 @@ void GameEngine::upgradeBuilding(int8_t pos, Building building, GameState& gs, i
                 upgradeNav(gs, true);
                 break;
             case PalaceSpecial::None :
-                assert(false);
+                // assert(false);
                 break;
             case PalaceSpecial::Spades2Books2Bridges2 :
                 awardResources(IncomableResources{ .anyBook = 2, .spades = 2, }, gs);

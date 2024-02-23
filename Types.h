@@ -227,7 +227,6 @@ struct BookButton {
 };
 
 enum class GamePhase {
-    Preparation,
     Upkeep,
     Actions,
     EndOfTurn,
