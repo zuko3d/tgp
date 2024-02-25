@@ -13,6 +13,7 @@ struct FieldOrigin {
 
     std::array<TerrainType, FIELD_SIZE> basicType;
     std::array<bool, FIELD_SIZE> onEdge_;
+    std::array<bool, FIELD_SIZE> isNearRiver;
     std::array<ResizableArray<int8_t, 6>, FIELD_SIZE> neibs;
     std::array<ResizableArray<int8_t, 4>, FIELD_SIZE> bridgeIds;
     std::array<std::pair<int8_t, int8_t>, TOTAL_BRIDGES> bridgeConnections;

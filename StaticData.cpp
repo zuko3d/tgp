@@ -139,15 +139,15 @@ std::array<RoundScoreBonus, 16> StaticData::generateRoundScoreBonuses()
 std::array<RoundBoosterOrigin, 10> StaticData::generateRoundBoosters()
 {
     return std::array<RoundBoosterOrigin, 10> {
-        RoundBoosterOrigin{.navBooster = true},
+        RoundBoosterOrigin{.navBooster = true, .trigger = EventType::BuildNearRiver, .wpPerTrigger = 2 },
         RoundBoosterOrigin{.resources = IncomableResources{.humans = 1}, .trigger = EventType::PutManToGod, .wpPerTrigger = 2},
         RoundBoosterOrigin{.resources = IncomableResources{.anyBook = 1}, .buttonOriginIdx = 1},
         RoundBoosterOrigin{.resources = IncomableResources{.anyBook = 1}, .buttonOriginIdx = 0},
-        RoundBoosterOrigin{.resources = IncomableResources{.cube = 1}, .scoreHuge = true},
+        RoundBoosterOrigin{.resources = IncomableResources{.cube = 1}, .scoreHuge = true },
         RoundBoosterOrigin{.resources = IncomableResources{.cube = 2}, .buttonOriginIdx = 2},
         RoundBoosterOrigin{.resources = IncomableResources{.gold = 2, .manaCharge = 4}},
         RoundBoosterOrigin{.resources = IncomableResources{.gold = 6}},
-        RoundBoosterOrigin{.resources = IncomableResources{.manaCharge = 3}, .scoreGuilds = true},
+        RoundBoosterOrigin{.resources = IncomableResources{.manaCharge = 3}, .trigger = EventType::BuildGuild, .wpPerTrigger = 3 },
         RoundBoosterOrigin{.resources = IncomableResources{.gold = 4}, .godsForLabs = true},
     };
 }
@@ -156,39 +156,40 @@ std::array<RoundBoosterOrigin, 10> StaticData::generateRoundBoosters()
 
 std::array<RaceStartBonus, 12> StaticData::generateRaceStartBonus() {
     return std::array<RaceStartBonus, 12> {
-        RaceStartBonus{ .resources = IncomableResources{}, .gods = {1, 1, 1, 1} },
-        RaceStartBonus{ .resources = IncomableResources{}, .gods = {1, 0, 0, 1} },
-        RaceStartBonus{ .resources = IncomableResources{ .cube = 1 }, .gods = {1, 0, 1, 0} },
-        RaceStartBonus{ .resources = IncomableResources{}, .gods = {0, 0, 0, 2} },
-        RaceStartBonus{ .resources = IncomableResources{}, .gods = {0, 0, 0, 0} },
-        RaceStartBonus{ .resources = IncomableResources{ .anyGod = 2 }, .gods = {0, 0, 0, 0} },
-        RaceStartBonus{ .resources = IncomableResources{}, .gods = {0, 0, 3, 0} },
-        RaceStartBonus{ .resources = IncomableResources{}, .gods = {0, 1, 0, 0} },
-        RaceStartBonus{ .resources = IncomableResources{}, .gods = {0, 3, 0, 0} },
-        RaceStartBonus{ .resources = IncomableResources{}, .gods = {1, 1, 0, 0} },
-        RaceStartBonus{ .resources = IncomableResources{}, .gods = {2, 0, 0, 0} },
-        RaceStartBonus{ .resources = IncomableResources{ .cube = 1 }, .gods = {1, 0, 0, 1} }
+        RaceStartBonus{ .resources = IncomableResources{}, .gods = {1, 1, 1, 1} }, // Blessed
+        RaceStartBonus{ .resources = IncomableResources{}, .gods = {1, 0, 0, 1} }, // Felines
+        RaceStartBonus{ .resources = IncomableResources{ .cube = 1 }, .gods = {1, 0, 1, 0} }, // Goblins
+        RaceStartBonus{ .resources = IncomableResources{}, .gods = {0, 0, 0, 2} }, // Illusionists
+        RaceStartBonus{ .resources = IncomableResources{}, .gods = {0, 0, 0, 0} }, // Inventors
+        RaceStartBonus{ .resources = IncomableResources{ .anyGod = 2 }, .gods = {0, 0, 0, 0} }, // Lizards
+        RaceStartBonus{ .resources = IncomableResources{}, .gods = {0, 0, 2, 0} }, // Moles
+        RaceStartBonus{ .resources = IncomableResources{}, .gods = {0, 1, 0, 0} }, // Monks
+        RaceStartBonus{ .resources = IncomableResources{}, .gods = {0, 3, 0, 0} }, // Navigators
+        RaceStartBonus{ .resources = IncomableResources{}, .gods = {1, 0, 1, 0} }, // Omar
+        RaceStartBonus{ .resources = IncomableResources{}, .gods = {2, 0, 0, 0} }, // Philosophers
+        RaceStartBonus{ .resources = IncomableResources{ .cube = 1 }, .gods = {1, 0, 0, 1} } // Psychics
     };
 }
 
 std::array<Palace, 17> StaticData::generatePalaces() {
     return std::array<Palace, 17> {
-        Palace { .income = IncomableResources{ .manaCharge = 5, }, .buttonOrigin = 9 },
-        Palace { .income = IncomableResources{}, .buttonOrigin = 8 },
-        Palace { .income = IncomableResources{ .manaCharge = 2 }, .buttonOrigin = 7 },
-        Palace { .income = IncomableResources{ .manaCharge = 2 }, .buttonOrigin = 6 },
-        Palace { .income = IncomableResources{ .manaCharge = 4 }, .special = PalaceSpecial::GetTech },
-        Palace { .income = IncomableResources{ .anyBook = 1, .manaCharge = 2 }, .buttonOrigin = 4 },
-        Palace { .income = IncomableResources{ .manaCharge = 4 }, .special = PalaceSpecial::Lab3wp },
-        Palace { .income = IncomableResources{ .gold = 2, .cube = 1, .manaCharge = 2 }, .special = PalaceSpecial::Fed6nrg },
-        Palace { .income = IncomableResources{ .gold = 6 }, .special = PalaceSpecial::Charge12book2 },
-        Palace { .income = IncomableResources{ .cube = 1 }, .special = PalaceSpecial::Fed },
-        Palace { .income = IncomableResources{ .manaCharge = 8 }, .special = PalaceSpecial::Mine2wp },
-        Palace { .income = IncomableResources{ }, .buttonOrigin = 5, .special = PalaceSpecial::Guild3wp },
-        Palace { .income = IncomableResources{ .manaCharge = 6 }, .special = PalaceSpecial::Nav2 },
-        Palace { .income = IncomableResources{ .manaCharge = 6 }, .special = PalaceSpecial::Spades2Books2Bridges2 },
-        Palace { .income = IncomableResources{ .anyBook = 1, .manaCharge = 2 }, .special = PalaceSpecial::FreeGuild },
-        Palace { .income = IncomableResources{ .manaCharge = 2 }, .special = PalaceSpecial::Wp10 },
+        Palace { .income = IncomableResources{ .manaCharge = 5, }, .buttonOrigin = 9 }, // 0
+        Palace { .income = IncomableResources{}, .buttonOrigin = 8 }, // 1
+        Palace { .income = IncomableResources{ .manaCharge = 2 }, .buttonOrigin = 7 }, // 2
+        Palace { .income = IncomableResources{ .manaCharge = 2 }, .buttonOrigin = 6 }, // 3
+        Palace { .income = IncomableResources{ .manaCharge = 4 }, .special = PalaceSpecial::GetTech }, // 4
+        Palace { .income = IncomableResources{ .anyBook = 1, .manaCharge = 2 }, .buttonOrigin = 4 }, // 5
+        Palace { .income = IncomableResources{ .manaCharge = 4 }, .special = PalaceSpecial::Lab3wp }, // 6
+        Palace { .income = IncomableResources{ .gold = 2, .cube = 1, .manaCharge = 2 }, .special = PalaceSpecial::Fed6nrg }, // 7
+        Palace { .income = IncomableResources{ .humans = 1 }, .special = PalaceSpecial::FlyingMan }, // 8
+        Palace { .income = IncomableResources{ .gold = 6 }, .special = PalaceSpecial::Charge12book2 }, // 9
+        Palace { .income = IncomableResources{ .cube = 1 }, .special = PalaceSpecial::Fed }, // 10
+        Palace { .income = IncomableResources{ .manaCharge = 8 }, .special = PalaceSpecial::Mine2wp }, // 11
+        Palace { .income = IncomableResources{ }, .buttonOrigin = 5, .special = PalaceSpecial::Guild3wp }, // 12
+        Palace { .income = IncomableResources{ .manaCharge = 6 }, .special = PalaceSpecial::Nav2 }, // 13
+        Palace { .income = IncomableResources{ .manaCharge = 6 }, .special = PalaceSpecial::Spades2Books2Bridges2 }, // 14
+        Palace { .income = IncomableResources{ .anyBook = 1, .manaCharge = 2 }, .special = PalaceSpecial::FreeGuild }, // 15
+        Palace { .income = IncomableResources{ .manaCharge = 2 }, .special = PalaceSpecial::Wp10 }, // 16
     };
 }
 
@@ -246,6 +247,13 @@ FieldOrigin StaticData::generateFieldOrigin() {
     for (const auto& pos: onEdge) {
         fld.onEdge_[pos] = true;
     }
+
+    std::vector<int> nearRiver = {0, 3, 5, 8, 11, 14, 16, 18, 20, 22, 24, 27, 30, 32, 33, 35, 38, 39, 44, 45, 46, 47, 51, 52, 54, 55, 57, 58, 59, 61, 62, 71, 73, 74, 75, 76, 77, 78, 81, 89};
+    for (auto& f: fld.isNearRiver) { f = false; }
+    for (const auto& pos: nearRiver) {
+        fld.isNearRiver[pos] = true;
+    }
+
     fld.bridgeConnections[1] = {-1, -1};
     fld.bridgeConnections[1] = {5, 14};
     fld.bridgeConnections[2] = {8, 20};

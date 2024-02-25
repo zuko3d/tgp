@@ -79,9 +79,7 @@ public:
     int8_t choosePlaceToSpade(const GameState& gs, int amount, const std::vector<int8_t>& possiblePos) {
         if (possiblePos.empty()) return -1;
         
-        const auto& ps = gs.players[gs.activePlayer];
-        const auto r = gs.field->reachable(gs.activePlayer, ps.navLevel);
-        return r[rng() % r.size()];
+        return possiblePos[rng() % possiblePos.size()];
     }
 
     int8_t choosePlaceForBridge(const GameState& gs, const std::vector<int8_t>& possiblePos) {

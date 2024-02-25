@@ -25,7 +25,7 @@ public:
         server_.set_open_handler(std::bind(&WebUiBot::on_open, this, _1));
 
         server_.init_asio();
-        server_.listen(9002);
+        server_.listen(9004);
         server_.start_accept();
         // server_.run();
         thread_.reset(new websocketpp::lib::thread(&Server::run, &server_));

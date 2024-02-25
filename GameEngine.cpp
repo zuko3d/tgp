@@ -161,7 +161,7 @@ void GameEngine::upgradeBuilding(int8_t pos, Building building, GameState& gs, i
                 ps.wpPerEvent[EventType::BuildGuild] += 3;
                 break;
             case PalaceSpecial::Lab3wp :
-                ps.wpPerEvent[EventType::BuildLab] += 3;
+                // Only at EoT
                 break;
             case PalaceSpecial::Mine2wp :
                 ps.wpPerEvent[EventType::BuildMine] += 2;
@@ -430,7 +430,7 @@ std::vector<Action> GameEngine::generateActions(GameState& gs) {
 
     // ActivateAbility,
     // booster action
-    if (!ps.boosterButton.isUsed) {
+    if (!ps.boosterButton.isUsed && ps.boosterButton.buttonOrigin >= 0) {
         const auto& origin = StaticData::buttonOrigins().at(ps.boosterButton.buttonOrigin);
         if (origin.special == ButtonActionSpecial::None) {
             ret.emplace_back(Action{
@@ -860,7 +860,10 @@ void GameEngine::buildForFree(int8_t pos, Building building, bool isNeutral, Gam
         if (building == Building::Guild) ps.additionalIncome.manaCharge += additionalCharges[ps.buildingsAvailable[Building::Guild]];
     } else {
         ps.neutralBuildingsAmount[building]++;
+        if (building == Building::Tower) ps.additionalIncome += StaticData::buildingOrigins()[building].income;
     }
+
+    awardWp(ps.wpPerEvent[StaticData::buildingOrigins()[building].buildEvent], gs);
 
     chargeOpp(pos, gs);
     checkFederation(pos, false, gs);
@@ -881,6 +884,14 @@ void GameEngine::buildMine(int8_t pos, GameState& gs) {
     ps.buildingsAvailable[Building::Mine]--;
 
     spendResources(StaticData::buildingOrigins()[Building::Mine].price, gs);
+
+    awardWp(ps.wpPerEvent[EventType::BuildMine], gs);
+    if (StaticData::fieldOrigin().onEdge_[pos]) {
+        awardWp(ps.wpPerEvent[EventType::BuildOnEdge], gs);
+    }
+    if (StaticData::fieldOrigin().isNearRiver[pos]) {
+        awardWp(ps.wpPerEvent[EventType::BuildNearRiver], gs);
+    }
 
     chargeOpp(pos, gs);
     checkFederation(pos, false, gs);
@@ -1004,7 +1015,7 @@ void GameEngine::doAction(Action action, GameState& gs) {
                 }
             }
 
-            if (ps.palaceIdx == 7) {
+            if (ps.palaceIdx >= 0 && (StaticData::palaces()[ps.palaceIdx].special == PalaceSpecial::Lab3wp)) {
                 awardWp( 3 * ps.countBuildings(Building::Laboratory), gs);
             }
         
@@ -1095,10 +1106,14 @@ void GameEngine::playGame(GameState& gs) {
             }
 
             ps.wpPerEvent[curBonus.event] -= curBonus.bonusWp;
+            ps.passed = false;
         }
 
         for (auto& ma: gs.marketActions) {
             ma.isUsed = false;
+        }
+        for (auto& ba: gs.bookActions) {
+            ba.isUsed = false;
         }
 
         for (auto& rb: gs.boosters) {
@@ -1368,6 +1383,9 @@ void GameEngine::useSpades(int amount, GameState& gs) {
     // if (getRace(gs) == Race::Goblins) awardResources(IncomableResources { .gold = spareSpades * 2 }, gs);
 
     const auto pos = bot->choosePlaceToSpade(gs, spareSpades, someHexes(true, false, gs, 0, amount));
+    if (pos < 0) {
+        return;
+    }
     const auto needed = spadesNeeded(gs.field->type.at(pos), pColor);
 
     if (spareSpades < needed) {
@@ -1380,10 +1398,16 @@ void GameEngine::useSpades(int amount, GameState& gs) {
             }
         }
         spareSpades = 0;
+    } else {
+        spareSpades -= needed;
+        terraform(pos, needed, gs);
     }
 
     while (spareSpades > 0) {
         const auto pos = bot->choosePlaceToSpade(gs, spareSpades, someHexes(true, false, gs, 0, spareSpades));
+        if (pos < 0) {
+            return;
+        }
         const auto needed = spadesNeeded(gs.field->type.at(pos), pColor);
         const auto used = std::min(spareSpades, needed);
         terraform(pos, used, gs);
@@ -1517,7 +1541,10 @@ std::vector<int8_t> GameEngine::someHexes(bool onlyInReach, bool onlyNative, con
         } else {
             const auto cubesLeft = ps.resources.cube - cubesDetained;
             constexpr int8_t tfPrice[] = { 3, 2, 1 };
-            const int tfLeft = cubesLeft / tfPrice[ps.tfLevel] + freeSpades;
+            int tfLeft = freeSpades;
+            if (gs.phase == GamePhase::Actions) {
+                tfLeft += cubesLeft / tfPrice[ps.tfLevel];
+            }
             if (tfLeft >= 3) {
                 return gs.field->reachable(gs.activePlayer, ps.navLevel);
             } else {
@@ -1534,7 +1561,7 @@ std::vector<int8_t> GameEngine::someHexes(bool onlyInReach, bool onlyNative, con
                 poses.resize(std::distance(
                     poses.begin(),
                     std::remove_if(poses.begin(), poses.end(), [&] (int8_t p) {
-                        return tfable[gs.field->type[p]];
+                        return !tfable[gs.field->type[p]];
                     })
                 ));
 
@@ -1627,9 +1654,9 @@ void GameEngine::initializeRandomly(GameState& gs, std::default_random_engine& g
         gs.staticGs.techTiles.at(i / 3).at(i % 3) = static_cast<TechTile>(indices.at(i));
         GodColor godColor = (GodColor) (i / 3);
         FlatMap<GodColor, int8_t, 4> gods;
-        gods[godColor] = 3 - ((i + 1) % 3);
+        gods[godColor] = 3 - (i % 3);
         FlatMap<BookColor, int8_t, 4> books;
-        books[godColor] = (i + 1) % 3;
+        books[godColor] = i % 3;
 
         gs.staticGs.bookAndGodPerTech[(TechTile) indices.at(i)] = Resources{ .gods = gods, .books = books };
     }
@@ -1672,6 +1699,10 @@ void GameEngine::initializeRandomly(GameState& gs, std::default_random_engine& g
         gs.activePlayer = i;
         awardResources(raceStartBonuses[SC(race)].resources, gs);
         awardResources(Resources{.gods = raceStartBonuses[SC(race)].gods}, gs);
+
+        if (race == Race::Navigators) {
+            gs.players[i].wpPerEvent[EventType::BuildNearRiver] += 2;
+        }
     }
 
     const auto landTypeBonuses = StaticData::generateLandTypeBonuses();
@@ -1684,14 +1715,14 @@ void GameEngine::initializeRandomly(GameState& gs, std::default_random_engine& g
         gs.staticGs.playerColors[i] = color;
         std::remove(colors.begin(), colors.end(), color);
         colors.pop_back();
-        gs.activePlayer = i;
-        awardResources(landTypeBonuses[SC(color)].resources, gs);
-        if (color == TerrainType::Lake) {
-            gs.players[i].navLevel = 1;
-        }
-        if (color == TerrainType::Mountain) {
-            gs.players[i].additionalIncome.gold += 2;
-        }
+        // gs.activePlayer = i;
+        // awardResources(landTypeBonuses[SC(color)].resources, gs);
+        // if (color == TerrainType::Lake) {
+        //     gs.players[i].navLevel = 1;
+        // }
+        // if (color == TerrainType::Mountain) {
+        //     gs.players[i].additionalIncome.gold += 2;
+        // }
     }
     
     gs.activePlayer = 0;
@@ -1737,6 +1768,19 @@ void GameEngine::initializeRandomly(GameState& gs, std::default_random_engine& g
             const auto towerPos = bots_[i]->choosePlaceToBuildForFree(gs, Building::Tower, poses);
             buildForFree(towerPos, Building::Tower, true, gs);
         }
+    }
+
+    for (int i = 0; i < 2; i++) {
+        gs.activePlayer = i;
+        const auto color = gs.staticGs.playerColors[i];
+        awardResources(landTypeBonuses[SC(color)].resources, gs);
+        if (color == TerrainType::Lake) {
+            gs.players[i].navLevel = 1;
+        }
+        if (color == TerrainType::Mountain) {
+            gs.players[i].additionalIncome.gold += 2;
+        }
+        gs.players[i].additionalIncome.cube += 1;
     }
 
     for (int i = 1; i >= 0; --i) {

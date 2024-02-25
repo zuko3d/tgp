@@ -117,9 +117,8 @@ struct RoundBoosterOrigin {
     int8_t buttonOriginIdx = -1;
 
     bool navBooster = false;
-    bool scoreHuge = false;
-    bool scoreGuilds = false;
     bool godsForLabs = false;
+    bool scoreHuge = false;
 };
 
 struct RoundBoosterOnBoard {
