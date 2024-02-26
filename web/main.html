@@ -52,11 +52,10 @@
                             <div id="tech-g3-p1" style="position: absolute; top: 119px; left: 358px; width: 47px; height: 45px;; background-size: contain; background-repeat: no-repeat;"></div>
                             <div id="tech-g3-p2" style="position: absolute; top: 180px; left: 358px; width: 47px; height: 45px;; background-size: contain; background-repeat: no-repeat;"></div>
                         </div>
-                        <div id="round-boosters-all" style="position: absolute; top: 421px; width:425px;height: 173px;">
-                            <div id="rb-0-gold" style="position: absolute; top: 77px; left: 0px"></div>
-                            <div id="rb-1-gold" style="position: absolute; top: 77px; left: 62px"></div>
-                            <div id="rb-2-gold" style="position: absolute; top: 77px; left: 124px"></div>
-                        </div>
+                        <div id="round-boosters-all" style="position: absolute; top: 421px; width:425px;height: 173px;"></div>
+                        <div id="rb-0-gold" style="position: absolute; top: 481px; left: 4px"></div>
+                        <div id="rb-1-gold" style="position: absolute; top: 481px; left: 58px"></div>
+                        <div id="rb-2-gold" style="position: absolute; top: 481px; left: 118px"></div>
                         <div id="palaces-all" style="position: absolute; top: 424px; left: 148px; width: 300;"></div>
                     </td><td>
                         <div id="field-all" style="position: relative; background-image: url('pics/field.jpg');width:902px;height: 605px; background-repeat: no-repeat; background-size: contain;">
@@ -181,7 +180,7 @@
         <style>
             .highlight {
               border: 4px dashed black;
-              background-color: rgb(161, 248, 180);
+              /* background-color: rgb(161, 248, 180); */
             }
             .highlight:hover {
               border: 4px solid red;
@@ -616,7 +615,7 @@
             }
             
             {
-                const topByLevel = [83, 62, 38, 38];
+                const topByLevel = [83, 62, 38, 14, 14];
                 var dv = document.getElementById("p" + pIdx + "-navLevel");
                 dv.style.top = topByLevel[ps.navLevel];
             }
@@ -682,7 +681,7 @@
                         var dv = document.querySelector("#building_" + idx);
                         // dv.style.backgroundPosition = 'center';
                         dv.classList.add('has-building-' + building.type);
-                        if (!building.isNeutral) {
+                        if (!building.neutral) {
                             dv.classList.add('player-' + building.owner);
                         } else {
                             dv.classList.add('pcolor-neutral');
@@ -866,7 +865,7 @@
                     highlightDv.classList.add('nonmoving-rect');
                     highlightDv.style.height = heights[r];
                     highlightDv.style.zIndex = 10;
-                    highlightDv.style.opacity = 0.6;
+                    // highlightDv.style.opacity = 0.6;
                     highlightDv.id = 'fld_' + curHex;
                     highlightDv.data = curHex;
 
@@ -1036,7 +1035,7 @@
                     var dvP0 = document.createElement('div');
                     dvP0.classList.add('nonmoving-rect');
                     dvP0.id = "god-selector-" + i;
-                    dvP0.style.opacity = 0.4;
+                    // dvP0.style.opacity = 0.4;
                     dvP0.data = i;
                     otd.appendChild(dvP0);
 
@@ -1055,7 +1054,7 @@
                     var dvP0 = document.createElement('div');
                     dvP0.classList.add('nonmoving-rect');
                     dvP0.id = "god-humans-selector-" + i;
-                    dvP0.style.opacity = 0.4
+                    // dvP0.style.opacity = 0.4
                     dvP0.data = i;
                     otd.appendChild(dvP0);
 
@@ -1302,7 +1301,7 @@
                         };
                     } else if (action.type == 4) { // PutManToGod
                         var dv;
-                        if (action.param2 == 0) {
+                        if (action.param2 == 1) {
                             dv = document.getElementById("god-selector-" + action.param1);
                             dv.onclick = function() {
                                 actionFSM.push(4);
@@ -1338,6 +1337,7 @@
                         dv.onclick = function() {
                             actionFSM.push(6);
                             actionFSM.push(this.data);
+                            actionFSM.push(1); // build mine immediately
                             clearHighlight();
                             sendActionFromFSM();
                         };
@@ -1408,8 +1408,9 @@
                 prompt.innerHTML = 'Choose book color to get, left: ' + msg.amount;
 
                 for (var i = 0; i < 4; i++) {
-                    var dv = document.getElementById("god-selector-" + i);
+                    var dv = addImg("pics/book_" + i + ".png", prompt, 50);
                     dv.classList.add('highlight');
+                    dv.data = i;
                     dv.onclick = function() { socket.send('{ "choice": ' + this.data + '}'); clearHighlight(); };
                 }
             }
@@ -1417,9 +1418,10 @@
                 var prompt = document.getElementById("input-box");
                 prompt.innerHTML = 'Choose book color to SPEND, left: ' + msg.amount;
 
-                for (var i = 0; i < 4; i++) {
-                    var dv = document.getElementById("god-selector-" + i);
+                for (const i of msg.colors) {
+                    var dv = addImg("pics/book_" + i + ".png", prompt, 50);
                     dv.classList.add('highlight');
+                    dv.data = i;
                     dv.onclick = function() { socket.send('{ "choice": ' + this.data + '}'); clearHighlight(); };
                 }
             }

@@ -135,6 +135,10 @@ int toJson(const TechTile& op) {
     return SC(op);
 }
 
+int toJson(const BookColor& op) {
+    return SC(op);
+}
+
 int toJson(const TerrainType& op) {
     return SC(op);
 }

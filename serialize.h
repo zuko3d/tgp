@@ -43,6 +43,8 @@ nlohmann::json toJson(const Action& op);
 
 int toJson(const TechTile& op);
 
+int toJson(const BookColor& op);
+
 int toJson(const TerrainType& op);
 
 int toJson(const Race& op);

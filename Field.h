@@ -34,7 +34,7 @@ struct Field {
     ResizableArray<int8_t, 8> adjacent(int pos) const;
 
     std::array<TerrainType, FieldOrigin::FIELD_SIZE> type;
-    std::array<int8_t, FieldOrigin::TOTAL_BRIDGES> bridges = {{ -1 }}; // owner
+    std::array<int8_t, FieldOrigin::TOTAL_BRIDGES> bridges; // owner
     std::array<BuildingOnMap, FieldOrigin::FIELD_SIZE> building;
     std::array<ResizableArray<int8_t, 20>, 2> ownedByPlayer;
     int stateIdx = 0;

@@ -98,6 +98,7 @@ struct Resources
         FlatMap<BookColor, int8_t, 4> booksLeft = books;
         for (const auto [color, _]: booksLeft) {
             booksLeft[color] -= op.books[color];
+            if (booksLeft[color] < 0) return false;
         }
 
         return sum(booksLeft.values()) >= op.anyBooks;

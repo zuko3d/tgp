@@ -87,7 +87,7 @@ void GameEngine::awardBooster(int boosterIdx, GameState& gs) {
     }
 
     ps.currentRoundBoosterOriginIdx = newBooster.originIdx;
-    const auto& origin =StaticData::roundBoosters()[newBooster.originIdx];
+    const auto& origin = StaticData::roundBoosters()[newBooster.originIdx];
     ps.wpPerEvent[origin.trigger] += origin.wpPerTrigger;
 
     if (origin.buttonOriginIdx >= 0) {
@@ -287,7 +287,14 @@ void GameEngine::awardTechTile(TechTile tile, GameState& gs) {
 
     awardResources(gs.staticGs.bookAndGodPerTech[tile], gs);
     if (getRace(gs) == Race::Philosophers) {
-        assert(false);
+        FlatMap<BookColor, int8_t, 4> books;
+        for (const auto [color, val] : gs.staticGs.bookAndGodPerTech[tile].gods) {
+            if (val > 0) {
+                books[color] = 1;
+                break;
+            }
+        }
+        awardResources(Resources{ .books = books }, gs);
     }
 }
 
@@ -539,27 +546,14 @@ std::vector<Action> GameEngine::generateActions(GameState& gs) {
     // TerraformAndBuild,
     // No "pure" terraforms, only with build
     if (ps.buildingsAvailable[Building::Mine] > 0 && ps.resources >= StaticData::buildingOrigins()[Building::Mine].price) {
-        if (ps.tfLevel == 2) {
-            const auto poses = someHexes(true, false, gs, 1, 0);
-            for (const auto& pos: poses) {
-                if (gs.field->building[pos].type == Building::None) {
-                    ret.emplace_back(Action{
-                        .type = ActionType::TerraformAndBuild,
-                        .param1 = pos,
-                        .param2 = -1,
-                    });
-                }
-            }
-        } else {
-            const auto poses = someHexes(true, true, gs, 1, 0);
-            for (const auto& pos: poses) {
-                if (gs.field->building[pos].type == Building::None) {
-                    ret.emplace_back(Action{
-                        .type = ActionType::TerraformAndBuild,
-                        .param1 = pos,
-                        .param2 = -1,
-                    });
-                }
+        const auto poses = someHexes(true, false, gs, 1, 0);
+        for (const auto& pos: poses) {
+            if (gs.field->building[pos].type == Building::None) {
+                ret.emplace_back(Action{
+                    .type = ActionType::TerraformAndBuild,
+                    .param1 = pos,
+                    .param2 = -1,
+                });
             }
         }
     }
@@ -569,7 +563,8 @@ std::vector<Action> GameEngine::generateActions(GameState& gs) {
             .type = ActionType::UpgradeNav
         });
     }
-    if (ps.tfLevel < 2 && ps.resources >= Resources { .gold = 5, .cube = 1, .humans = 1 }) {
+    int8_t goldDiscount = (color == TerrainType::Plains)? 4 : 0;
+    if (ps.tfLevel < 2 && ps.resources >= Resources { .gold = (int8_t) (5 - goldDiscount), .cube = 1, .humans = 1 }) {
         ret.emplace_back(Action{
             .type = ActionType::UpgradeTerraform
         });
@@ -610,6 +605,8 @@ void GameEngine::putManToGod(GodColor color, bool discard, GameState& gs) {
         moveGod(movePerPos[gd.size()], color, gs);
         gd.push_back(gs.activePlayer);
     }
+
+    awardWp(ps.wpPerEvent[EventType::PutManToGod], gs);
 }
 
 void GameEngine::populateField(GameState& gs) {
@@ -696,6 +693,7 @@ void GameEngine::awardInnovation(Innovation inno, GameState& gs) {
     const auto& bot = bots_.at(gs.activePlayer);
 
     ps.innovations.push_back(inno);
+    awardWp(ps.wpPerEvent[EventType::GetInvention], gs);
 
     switch (inno) {
         case Innovation::AcademyAnd2wp: {
@@ -715,19 +713,28 @@ void GameEngine::awardInnovation(Innovation inno, GameState& gs) {
         }
         case Innovation::Gods2xwp: {
             auto vals = ps.resources.gods.values();
-            std::sort(vals.begin(), vals.end());
+            std::sort(vals.rbegin(), vals.rend());
             awardWp(vals[0] + vals[1], gs);
             break;
         }
         case Innovation::GodsAnd10wp: {
             awardWp(10, gs);
+            int8_t types = 0;
             for (int i = 0; i < 7; i++) {
-                if (ps.countBuildings((Building) i) > 0) awardResources(IncomableResources { .anyGod = 1 }, gs);
+                if (ps.countBuildings((Building) i) > 0) types++;
             }
+            awardResources(IncomableResources { .anyGod = (int8_t) (-types) }, gs);
             break;
         }
         case Innovation::GroupsWp : {
-            assert(false); // to be implemented
+            const auto nGroups = countGroups(gs);
+            if (nGroups >= 6) { 
+                awardWp(18, gs);
+            } else if (nGroups == 5) { 
+                awardWp(12, gs);
+            } if (nGroups == 4) { 
+                awardWp(8, gs);
+            }
             break;
         }
         case Innovation::Guild2Wp : {
@@ -805,8 +812,7 @@ void GameEngine::awardInnovation(Innovation inno, GameState& gs) {
         }
         case Innovation::SpadeBookGods : {
             ps.buttons.push_back( Button{ .buttonOrigin = 1, .isUsed = false });
-            awardResources(IncomableResources{ .anyBook = 1 }, gs);
-            awardResources(Resources{ .gods = { 1, 1, 1, 1 } }, gs);
+            awardResources(IncomableResources{ .anyGod = -20, .anyBook = 1 }, gs);
             break;
         }
         default:
@@ -848,7 +854,7 @@ void GameEngine::upgradeTerraform(GameState& gs, bool forFree) {
     if (ps.tfLevel < 2) {
         ps.tfLevel++;
         if (!forFree) {
-            spendResources(Resources{ .gold = 4, .cube = 1, .humans = 1 }, gs);
+            spendResources(Resources{ .gold = 5, .cube = 1, .humans = 1 }, gs);
             if (getColor(gs) == TerrainType::Plains) {
                 ps.resources.gold += 4;
             }
@@ -873,6 +879,13 @@ void GameEngine::buildForFree(int8_t pos, Building building, bool isNeutral, Gam
     gs.field->ownedByPlayer[gs.activePlayer].push_back(pos);
 
     auto& ps = getPs(gs);
+
+    if (gs.field->type[pos] != getColor(gs)) {
+        int amount = spadesNeeded(gs.field->type[pos], getColor(gs));
+        constexpr int cubePerTf[] = { 3, 2, 1 };
+        spendResources(Resources { .cube = (int8_t) (cubePerTf[ps.tfLevel] * amount) }, gs);
+        terraform(pos, amount, gs);
+    }
 
     if (!isNeutral) {
         ps.additionalIncome += StaticData::buildingOrigins()[building].income;
@@ -923,7 +936,11 @@ void GameEngine::buildMine(int8_t pos, GameState& gs) {
 
 void GameEngine::terraformAndBuildMine(int8_t pos, bool build, GameState& gs) {
     const auto amnt = spadesNeeded(gs.field->type[pos], getColor(gs));
-    if (amnt > 0) terraform(pos, amnt, gs);
+    if (amnt > 0) {
+        constexpr int8_t cubePerTf[] = { 3, 2, 1 };
+        spendResources(Resources{ .cube = (int8_t) (amnt * cubePerTf[getPs(gs).tfLevel]) }, gs);
+        terraform(pos, amnt, gs);
+    }
     if (build) buildMine(pos, gs);
 }
 
@@ -1070,11 +1087,15 @@ void GameEngine::playGame(GameState& gs) {
     while (gs.round < 6) {
         if (gs.phase == GamePhase::Upkeep) {
             const auto& curBonus = StaticData::roundScoreBonuses()[gs.staticGs.bonusByRound[gs.round]];
+            const auto& lastRoundBonus = StaticData::roundScoreBonuses()[gs.staticGs.lastRoundBonus];
 
             for (gs.activePlayer = 0; gs.activePlayer < 2; gs.activePlayer++) {
                 auto& ps = gs.players[gs.activePlayer];
 
                 ps.wpPerEvent[curBonus.event] += curBonus.bonusWp;
+                if (gs.round == 5) {
+                    ps.wpPerEvent[lastRoundBonus.event] += lastRoundBonus.bonusWp;
+                }
                 awardResources(ps.additionalIncome, gs);
                 awardResources(StaticData::roundBoosters()[ps.currentRoundBoosterOriginIdx].resources, gs);
             }
@@ -1124,7 +1145,6 @@ void GameEngine::playGame(GameState& gs) {
                 awardResources(curBonus.resourceBonus, gs);
             }
 
-            ps.boosterButton.buttonOrigin = -1;
             for (auto& b: ps.buttons) {
                 b.isUsed = false;
             }
@@ -1157,6 +1177,10 @@ void GameEngine::playGame(GameState& gs) {
     }
 }
 
+int GameEngine::countGroups(GameState& gs) const {
+    return maximum(gs.field->bfs(gs.activePlayer, 0));
+}
+
 void GameEngine::checkFederation(int8_t pos, bool isBridge, GameState& gs) {
     auto& ps = getPs(gs);
 
@@ -1165,9 +1189,21 @@ void GameEngine::checkFederation(int8_t pos, bool isBridge, GameState& gs) {
 
     std::queue<int8_t> q;
     if (isBridge) {
+        if (gs.field->building.at(StaticData::fieldOrigin().bridgeConnections.at(pos).first).fedIdx >= 0) {
+            gs.field->building.at(StaticData::fieldOrigin().bridgeConnections.at(pos).second).fedIdx = gs.field->building.at(StaticData::fieldOrigin().bridgeConnections.at(pos).first).fedIdx;
+            return; // already in Fed
+        }
+        if (gs.field->building.at(StaticData::fieldOrigin().bridgeConnections.at(pos).second).fedIdx >= 0) {
+            gs.field->building.at(StaticData::fieldOrigin().bridgeConnections.at(pos).first).fedIdx = gs.field->building.at(StaticData::fieldOrigin().bridgeConnections.at(pos).second).fedIdx;
+            return; // already in Fed
+        }
+
         q.push(StaticData::fieldOrigin().bridgeConnections.at(pos).first);
         q.push(StaticData::fieldOrigin().bridgeConnections.at(pos).second);
     } else {
+        if (gs.field->building.at(pos).fedIdx >= 0) {
+            return; // already in Fed
+        }
         q.push(pos);
     }
 
@@ -1195,21 +1231,23 @@ void GameEngine::checkFederation(int8_t pos, bool isBridge, GameState& gs) {
         int totalPower = 0;
         for (const auto& [idx, v]: enumerate(visited)) {
             if (v) {
-                totalPower += StaticData::buildingOrigins()[gs.field->building.at(pos).type].power;
-                totalPower += gs.field->building.at(pos).hasAnnex ? 1 : 0;
+                totalPower += StaticData::buildingOrigins()[gs.field->building.at(idx).type].power;
+                totalPower += gs.field->building.at(idx).hasAnnex ? 1 : 0;
             }
         }
         if (totalPower >= 7 || (totalPower >= 6 && StaticData::palaces()[ps.palaceIdx].special == PalaceSpecial::Fed6nrg)) {
             inFedIdx = ps.feds.size();
             for (const auto& [idx, v]: enumerate(visited)) {
                 if (v) {
-                    gs.field->building.at(pos).fedIdx = inFedIdx;
+                    gs.field->building.at(idx).fedIdx = inFedIdx;
                 }
             }
 
             const auto tile = bots_[gs.activePlayer]->chooseFedTile(gs);
             awardFedTile(tile, gs);
         }
+    } else {
+        gs.field->building.at(pos).fedIdx = inFedIdx;
     }
 }
 
@@ -1242,6 +1280,21 @@ int GameEngine::moveGod(int amount, GodColor godColor, GameState& gs) {
 
     const size_t i = SC(godColor);
     int godCharges = 0;
+
+    if (psrg < 8 && (psrg + amount >= 8)) {
+        int flipIdx = -1;
+        for (const auto& [idx, fedTile]: enumerate(ps.feds)) {
+            if (!fedTile.flipped) {
+                flipIdx = idx;
+                break;
+            }
+        }
+        if (flipIdx >= 0) {
+            ps.feds[flipIdx].flipped = true;
+        } else {
+            amount = 7 - psrg;
+        }
+    }
 
     if (psrg < 9 && (psrg + amount >= 9)) {
         switch (godColor) {

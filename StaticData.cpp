@@ -92,7 +92,7 @@ std::array<IncomableResources, 7> StaticData::generateFedTiles()
 {
     return std::array<IncomableResources, 7> {
         IncomableResources{.anyBook = 2, .winPoints = 5},
-        IncomableResources{.anyGod = 4, .winPoints = 7},
+        IncomableResources{.anyGod = -20, .winPoints = 7},
         IncomableResources{.spades = 2, .winPoints = 5},
         IncomableResources{.manaCharge = 8, .winPoints = 8},
         IncomableResources{.cube = 3, .winPoints = 4},
@@ -161,7 +161,7 @@ std::array<RaceStartBonus, 12> StaticData::generateRaceStartBonus() {
         RaceStartBonus{ .resources = IncomableResources{ .cube = 1 }, .gods = {1, 0, 1, 0} }, // Goblins
         RaceStartBonus{ .resources = IncomableResources{}, .gods = {0, 0, 0, 2} }, // Illusionists
         RaceStartBonus{ .resources = IncomableResources{}, .gods = {0, 0, 0, 0} }, // Inventors
-        RaceStartBonus{ .resources = IncomableResources{ .anyGod = 2 }, .gods = {0, 0, 0, 0} }, // Lizards
+        RaceStartBonus{ .resources = IncomableResources{ .anyGod = -2 }, .gods = {0, 0, 0, 0} }, // Lizards
         RaceStartBonus{ .resources = IncomableResources{}, .gods = {0, 0, 2, 0} }, // Moles
         RaceStartBonus{ .resources = IncomableResources{}, .gods = {0, 1, 0, 0} }, // Monks
         RaceStartBonus{ .resources = IncomableResources{}, .gods = {0, 3, 0, 0} }, // Navigators

@@ -153,12 +153,21 @@ public:
 
         FlatMap<BookColor, int8_t, 4> ret;
 
+        auto books = gs.players[gs.activePlayer].resources.books;
         for (int i = 0; i < amount; i++) {
             nlohmann::json j;
             j["action"] = "chooseBooksToSpend";
             j["amount"] = amount - i;
-            const auto response = rpc(gs, j.dump())["choice"].get<int>();
-            ret[(BookColor) response]++;
+            std::vector<BookColor> colors;
+            for (const auto [color, val]: books) {
+                if (val > 0) {
+                    colors.push_back(color);
+                }
+            }
+            j["colors"] = toJson(colors);
+            const BookColor response = (BookColor) rpc(gs, j.dump())["choice"].get<int>();
+            ret[response]++;
+            books[response]--;
         }
         return ret;
     }

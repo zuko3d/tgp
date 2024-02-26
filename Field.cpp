@@ -59,7 +59,8 @@ std::vector<int8_t> Field::buildingByPlayer(Building b, int p, bool withNeutrals
 }
 
 std::array<int8_t, FieldOrigin::FIELD_SIZE> Field::bfs(int owner, int reach) const {
-    std::array<int8_t, FieldOrigin::FIELD_SIZE> ret = {-1};
+    std::array<int8_t, FieldOrigin::FIELD_SIZE> ret;
+    std::fill_n(ret.begin(), FieldOrigin::FIELD_SIZE, -1);
     int curComponent = 0;
 
     for (const auto& start: ownedByPlayer[owner]) {
@@ -78,6 +79,12 @@ std::array<int8_t, FieldOrigin::FIELD_SIZE> Field::bfs(int owner, int reach) con
                             q.push(r);
                         }
                     }
+                    for (const auto& br: StaticData::fieldOrigin().bridgeIds[pos]) {
+                        if (bridges[br] != -1) {
+                            q.push(StaticData::fieldOrigin().bridgeConnections[br].first);
+                            q.push(StaticData::fieldOrigin().bridgeConnections[br].second);
+                        }
+                    }
                 }
             }
         }
@@ -89,7 +96,7 @@ std::array<int8_t, FieldOrigin::FIELD_SIZE> Field::bfs(int owner, int reach) con
 int Field::countReachableBuildings(int owner, int reach) const {
     const auto components = bfs(owner, reach);
 
-    std::array<int, 20> countByComponent = {0};
+    std::array<int, 20> countByComponent = {{0}};
     for (const auto& c: components) {
         countByComponent[c]++;
     }

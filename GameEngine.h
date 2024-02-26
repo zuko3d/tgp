@@ -51,6 +51,8 @@ public:
 private:
     int moveGod(int amount, GodColor godColor, GameState& gs);
 
+    int countGroups(GameState& gs) const;
+
     Race getRace(const GameState& gs) const;
     PlayerState& getPs(GameState& gs);
     TerrainType getColor(const GameState& gs) const;
