@@ -646,14 +646,38 @@ void GameEngine::pushButton(int8_t buttonIdx, int param, GameState& gs) {
 
     switch (button.special) {
         case ButtonActionSpecial::BuildBridge: {
-            buildBridge(param, gs);
+            if (param < 0) {
+                buildBridge(gs);
+            } else {
+                buildBridge(param, gs);
+            }
             break;
         }
         case ButtonActionSpecial::FiraksButton: {
+            if (param < 0) {
+                std::vector<int8_t> possiblePos;
+                possiblePos.reserve(10);
+                for (const auto& pos : gs.field->ownedByPlayer[gs.activePlayer]) {
+                    if (gs.field->building[pos].type == Building::Laboratory) {
+                        possiblePos.push_back(pos);
+                    }
+                }
+                param = bot->choosePlaceToBuildForFree(gs, Building::Guild, possiblePos);
+            }
             upgradeBuilding(param, Building::Guild, gs);
             break;
         }
         case ButtonActionSpecial::UpgradeMine: {
+            if (param < 0) {
+                std::vector<int8_t> possiblePos;
+                possiblePos.reserve(10);
+                for (const auto& pos : gs.field->ownedByPlayer[gs.activePlayer]) {
+                    if (gs.field->building[pos].type == Building::Mine) {
+                        possiblePos.push_back(pos);
+                    }
+                }
+                param = bot->choosePlaceToBuildForFree(gs, Building::Guild, possiblePos);
+            }
             upgradeBuilding(param, Building::Guild, gs);
             break;
         }

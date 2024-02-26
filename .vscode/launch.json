@@ -24,7 +24,7 @@
       "cwd": "${workspaceFolder}",
       "environment": [],
       "externalConsole": false,
-      "preLaunchTask": "C/C++: Release"
+      "preLaunchTask": "C/C++: Release Windows"
     },
     {
       "name": "C/C++: cl.exe Debug",
@@ -36,7 +36,7 @@
       "cwd": "${workspaceFolder}",
       "environment": [],
       "externalConsole": false,
-      "preLaunchTask": "C/C++: Debug"
+      "preLaunchTask": "C/C++: Debug Windows"
     },
     {
       "name": "C/C++ Runner: Debug Session",

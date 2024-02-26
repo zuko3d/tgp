@@ -327,6 +327,8 @@
         ]
 
         var actionFSM = [];
+        var bridgables = [];
+        var posByTile = [];
         var socket = new WebSocket('ws://localhost:9004');
         
         function createLineElement(x, y, length, angle) {
@@ -462,6 +464,8 @@
                     var pos = 0;
                     for (const tileIdx of teches) {
                         var dv = document.getElementById("tech-g" + god + "-p" + pos);
+                        posByTile[tileIdx] = god * 3 + pos;
+                        dv.data = tileIdx;
                         dv.style.backgroundImage = "url('pics/tech/" + tileIdx + ".png')";
                         pos++;
                     }
@@ -1184,31 +1188,47 @@
                         dv.data = p;
                         dv.onclick = function() { actionFSM.push(this.data); clearHighlight(); sendActionFromFSM(); };
                     } else {
-                        const tile = -1 - p;
+                        const tile = posByTile[-1 - p];
                         var dv = document.getElementById("tech-g" + Math.floor(tile / 3) + "-p" + (tile % 3));
                         dv.classList.add('highlight');
-                        dv.data = p;
-                        dv.onclick = function() { actionFSM.push(this.data); clearHighlight(); sendActionFromFSM(); };
+                        // dv.data = p;
+                        dv.onclick = function() { actionFSM.push(-1 - this.data); clearHighlight(); sendActionFromFSM(); };
                     }
                 }
             }
             if (building == 3) {
-                for (const tile of upgrades) {
+                for (const p of upgrades) {
+                    var tile = posByTile[p];
                     var dv = document.getElementById("tech-g" + Math.floor(tile / 3) + "-p" + (tile % 3));
                     dv.classList.add('highlight');
-                    dv.data = tile;
+                    // dv.data = tile;
                     dv.onclick = function() { actionFSM.push(this.data); clearHighlight(); sendActionFromFSM(); };
                 }
             }
         }
         
+        function generateBridgeChoices(firstPos) {
+            var dv = document.getElementById("input-box");
+            dv.innerHTML = 'Choose a place to bridge to';
+
+            for (const p of bridgables[firstPos]) {
+                var dv = document.getElementById("fld_" + p);
+                dv.classList.add('highlight');
+                dv.onclick = function() {
+                    actionFSM.push(this.data);
+                    clearHighlight();
+                    socket.send('{ "from": ' + actionFSM[0] + ', "to": ' + actionFSM[1] + '}');
+                };
+            }
+        }
+
         function generateAnnexChoices(choices) {
             for (const p of choices) {
                 var dv = document.getElementById("fld_" + p);
                 dv.classList.add('highlight');
                 dv.onclick = function() { actionFSM.push(this.data); clearHighlight(); sendActionFromFSM(); };
             }
-        }   
+        }
 
         genStartTable()
 
@@ -1227,6 +1247,7 @@
             const pIdx = obj.gs.activePlayer;
 
             // debugField(obj.gs);
+            bridgables = [];
 
             if (msg.action === 'chooseAction') {
                 var prompt = document.getElementById("input-box");
@@ -1304,6 +1325,7 @@
                     } else if (action.type == 5) { // GetInnovation
                         var dv = document.getElementById("inno-" + action.param1);
                         dv.classList.add('highlight');
+                        dv.data = action.param1;
                         dv.onclick = function() {
                             actionFSM.push(5);
                             actionFSM.push(this.data);
@@ -1450,14 +1472,35 @@
                 var prompt = document.getElementById("input-box");
                 prompt.innerHTML = 'Choose tech tile!';
 
-                for (const tile of msg.variants) {
+                for (const p of msg.variants) {
+                    var tile = posByTile[p];
                     var dv = document.getElementById("tech-g" + Math.floor(tile / 3) + "-p" + (tile % 3));
                     dv.classList.add('highlight');
-                    dv.data = tile;
+                    // dv.data = tile;
                     dv.onclick = function() { socket.send('{ "choice": ' + this.data + '}'); clearHighlight(); };
                 }
             }
-                        
+            if (msg.action === 'choosePlaceForBridge') {
+                var dv = document.getElementById("input-box");
+                dv.innerHTML = 'Choose a place to bridge from';
+                actionFSM = [];
+
+                for (const poses of msg.possiblePairs) {
+                    if (!(poses[0] in bridgables)) bridgables[poses[0]] = [];
+                    bridgables[poses[0]].push(poses[1])
+                }
+
+                for (const idx in bridgables) {
+                    var dv = document.getElementById("fld_" + idx);
+                    dv.classList.add('highlight');
+                    
+                    dv.onclick = function() {
+                        actionFSM.push(this.data);
+                        clearHighlight();
+                        generateBridgeChoices(this.data);
+                    };
+                }
+            }                        
             if (msg.action === 'choosePlaceToBuildForFree') {
                 var dv = document.querySelector("#input-box");
                 dv.innerHTML = 'Choose a place to build ' + Buildings[msg.building].name + ' for free';

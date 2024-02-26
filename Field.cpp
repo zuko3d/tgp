@@ -6,7 +6,7 @@
 
 std::vector<int8_t> Field::buildableBridges(int owner) const {
     std::vector<int8_t> ret;
-    std::array<bool, FieldOrigin::TOTAL_BRIDGES> r;
+    std::array<bool, FieldOrigin::TOTAL_BRIDGES> r {{false}};
     ret.reserve(40);
     for (const auto& pos: ownedByPlayer[owner]) {
         for (const auto& br: StaticData::fieldOrigin().bridgeIds[pos]) {

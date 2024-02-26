@@ -1,6 +1,7 @@
 #pragma once
 #include "Bot.h"
 #include "serialize.h"
+#include "StaticData.h"
 
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
@@ -240,9 +241,30 @@ public:
     }
 
     int8_t choosePlaceForBridge(const GameState& gs, const std::vector<int8_t>& possiblePos) {
-        assert(false);
         if (possiblePos.empty()) return -1;
-        return possiblePos[rng() % possiblePos.size()];
+        std::cout << "choosePlaceForBridge..." << std::endl;
+
+        std::vector<std::array<int8_t, 2>> possiblePairs;
+        for (const auto& p: possiblePos) {
+            const auto& pair = StaticData::fieldOrigin().bridgeConnections[p];
+            possiblePairs.push_back({pair.first, pair.second});
+            possiblePairs.push_back({pair.second, pair.first});
+        }
+
+        nlohmann::json j;
+        j["action"] = "choosePlaceForBridge";
+        j["possiblePairs"] = toJson(possiblePairs);
+
+        const auto ret = rpc(gs, j.dump());
+
+        for (const auto& p: possiblePos) {
+            const auto& pair = StaticData::fieldOrigin().bridgeConnections[p];
+            if ((ret["from"].get<int>() == pair.first && ret["to"].get<int>() == pair.second) || (ret["from"].get<int>() == pair.second && ret["to"].get<int>() == pair.first)) {
+                return p;
+            }
+        }
+
+        return -1;
     }
 
     int8_t choosePlaceToBuildForFree(const GameState& gs,  Building building, const std::vector<int8_t>& possiblePos) {

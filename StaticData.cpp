@@ -139,7 +139,7 @@ std::array<RoundScoreBonus, 16> StaticData::generateRoundScoreBonuses()
 std::array<RoundBoosterOrigin, 10> StaticData::generateRoundBoosters()
 {
     return std::array<RoundBoosterOrigin, 10> {
-        RoundBoosterOrigin{.navBooster = true, .trigger = EventType::BuildNearRiver, .wpPerTrigger = 2 },
+        RoundBoosterOrigin{.trigger = EventType::BuildNearRiver, .wpPerTrigger = 2, .navBooster = true },
         RoundBoosterOrigin{.resources = IncomableResources{.humans = 1}, .trigger = EventType::PutManToGod, .wpPerTrigger = 2},
         RoundBoosterOrigin{.resources = IncomableResources{.anyBook = 1}, .buttonOriginIdx = 1},
         RoundBoosterOrigin{.resources = IncomableResources{.anyBook = 1}, .buttonOriginIdx = 0},
@@ -197,9 +197,9 @@ std::array<BookButton, 6> StaticData::generateBookActions() {
     return std::array<BookButton, 6> {
         BookButton { .bookPrice = 1, .buttonOrigin = 13, .picOrigin = 0 },
         BookButton { .bookPrice = 1, .buttonOrigin = 4, .picOrigin = 1 },
-        BookButton { .bookPrice = 2, .buttonOrigin = 14, .picOrigin = 2 },
+        BookButton { .bookPrice = 2, .buttonOrigin = 15, .picOrigin = 2 },
         BookButton { .bookPrice = 2, .buttonOrigin = 6, .picOrigin = 3 },
-        BookButton { .bookPrice = 2, .buttonOrigin = 15, .picOrigin = 4 },
+        BookButton { .bookPrice = 2, .buttonOrigin = 14, .picOrigin = 4 },
         BookButton { .bookPrice = 3, .buttonOrigin = 16, .picOrigin = 5 },
     };
 };
