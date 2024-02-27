@@ -868,6 +868,28 @@ void GameEngine::upgradeTerraform(GameState& gs, bool forFree) {
     }
 }
 
+void GameEngine::doTurnGuided(GameState& gs) {
+    const auto bot = bots_.at(gs.activePlayer);
+    auto actions = generateActions(gs);
+    auto fullAction = bot->chooseAction(gs, actions);
+    
+    while (fullAction.action.type == ActionType::None) {
+        for (const auto& a: fullAction.preAction) {
+            doFreeActionMarket(a, gs);
+        }
+        actions = generateActions(gs);
+        fullAction = bot->chooseAction(gs, actions);
+    }
+
+    for (const auto& a: fullAction.preAction) {
+        doFreeActionMarket(a, gs);
+    }
+    doAction(fullAction.action, gs);
+    for (const auto& a: fullAction.postAction) {
+        doFreeActionMarket(a, gs);
+    }
+}
+
 void GameEngine::buildForFree(int8_t pos, Building building, bool isNeutral, GameState& gs) {
     assert(pos >= 0 && pos < FieldOrigin::FIELD_SIZE);
     assert(gs.field->building[pos].type == Building::None);
@@ -1083,6 +1105,91 @@ void GameEngine::doAction(Action action, GameState& gs) {
     }
 }
 
+bool GameEngine::gameEnded(const GameState& gs) const {
+    return gs.round >= 6;
+}
+
+void GameEngine::advanceGs(GameState& gs) {
+    if (!gameEnded(gs)) {
+        if (gs.phase == GamePhase::Upkeep) {
+            const auto& curBonus = StaticData::roundScoreBonuses()[gs.staticGs.bonusByRound[gs.round]];
+            const auto& lastRoundBonus = StaticData::roundScoreBonuses()[gs.staticGs.lastRoundBonus];
+
+            for (gs.activePlayer = 0; gs.activePlayer < 2; gs.activePlayer++) {
+                auto& ps = gs.players[gs.activePlayer];
+
+                ps.wpPerEvent[curBonus.event] += curBonus.bonusWp;
+                if (gs.round == 5) {
+                    ps.wpPerEvent[lastRoundBonus.event] += lastRoundBonus.bonusWp;
+                }
+                awardResources(ps.additionalIncome, gs);
+                awardResources(StaticData::roundBoosters()[ps.currentRoundBoosterOriginIdx].resources, gs);
+            }
+
+            gs.phase = GamePhase::Actions;
+            gs.activePlayer = gs.playersOrder.front();
+        }
+
+        if (gs.phase == GamePhase::Actions) {
+            bool allPassed = true;
+            for (gs.activePlayer = 0; gs.activePlayer < 2; gs.activePlayer++) {
+                if (!gs.players[gs.activePlayer].passed) {
+                    allPassed = false;
+                }
+            }
+            if (!allPassed) {
+                doTurnGuided(gs);
+                ++gs.activePlayer;
+                gs.activePlayer %= 2;
+            } else {
+                gs.phase = GamePhase::EndOfTurn;
+            }
+        }
+
+        if (gs.phase == GamePhase::EndOfTurn) {
+            const auto& curBonus = StaticData::roundScoreBonuses()[gs.staticGs.bonusByRound[gs.round]];
+            for (gs.activePlayer = 0; gs.activePlayer < 2; gs.activePlayer++) {
+                auto& ps = gs.players[gs.activePlayer];
+                const int8_t blessedBonus = (gs.staticGs.playerRaces[gs.activePlayer] == Race::Blessed) ? 3 : 0;
+                for (int i = 0; i < (ps.resources.gods[curBonus.god] + blessedBonus) / curBonus.godAmount; i++) {
+                    awardResources(curBonus.resourceBonus, gs);
+                }
+
+                for (auto& b: ps.buttons) {
+                    b.isUsed = false;
+                }
+
+                ps.wpPerEvent[curBonus.event] -= curBonus.bonusWp;
+                ps.passed = false;
+            }
+
+            for (auto& ma: gs.marketActions) {
+                ma.isUsed = false;
+            }
+            for (auto& ba: gs.bookActions) {
+                ba.isUsed = false;
+            }
+
+            for (auto& rb: gs.boosters) {
+                rb.gold++;
+            }
+
+            gs.round++;
+            gs.phase = GamePhase::Upkeep;
+
+            if (gameEnded(gs)) {
+                for (gs.activePlayer = 0; gs.activePlayer < 2; gs.activePlayer++) {
+                    doFinalScoring(gs);
+                }
+
+                for (gs.activePlayer = 0; gs.activePlayer < 2; gs.activePlayer++) {
+                    bots_[gs.activePlayer]->triggerFinal(gs);
+                }
+            }
+        }
+    }
+}
+
 void GameEngine::playGame(GameState& gs) {
     while (gs.round < 6) {
         if (gs.phase == GamePhase::Upkeep) {
@@ -1099,11 +1206,12 @@ void GameEngine::playGame(GameState& gs) {
                 awardResources(ps.additionalIncome, gs);
                 awardResources(StaticData::roundBoosters()[ps.currentRoundBoosterOriginIdx].resources, gs);
             }
+
+            gs.phase = GamePhase::Actions;
+            gs.activePlayer = gs.playersOrder.front();
         }
 
         bool allPassed = false;
-        gs.phase = GamePhase::Actions;
-        gs.activePlayer = gs.playersOrder.front();
         while (!allPassed) {
             allPassed = true;
             while (gs.activePlayer < 2) {
@@ -1111,32 +1219,15 @@ void GameEngine::playGame(GameState& gs) {
                 if (!gs.players[ap].passed) {
                     allPassed = false;
 
-                    auto actions = generateActions(gs);
-                    auto fullAction = bots_[ap]->chooseAction(gs, actions);
-                    
-                    while (fullAction.action.type == ActionType::None) {
-                        for (const auto& a: fullAction.preAction) {
-                            doFreeActionMarket(a, gs);
-                        }
-                        actions = generateActions(gs);
-                        fullAction = bots_[ap]->chooseAction(gs, actions);
-                    }
-
-                    for (const auto& a: fullAction.preAction) {
-                        doFreeActionMarket(a, gs);
-                    }
-                    doAction(fullAction.action, gs);
-                    for (const auto& a: fullAction.postAction) {
-                        doFreeActionMarket(a, gs);
-                    }
+                    doTurnGuided(gs);
                 }
                 ++gs.activePlayer;
             }
 
             gs.activePlayer = 0;
         }
-
         gs.phase = GamePhase::EndOfTurn;
+        
         const auto& curBonus = StaticData::roundScoreBonuses()[gs.staticGs.bonusByRound[gs.round]];
         for (gs.activePlayer = 0; gs.activePlayer < 2; gs.activePlayer++) {
             auto& ps = gs.players[gs.activePlayer];

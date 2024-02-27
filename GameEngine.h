@@ -17,6 +17,8 @@ public:
 
     void doFreeActionMarket(FreeActionMarketType action, GameState& gs);
     void doAction(Action action, GameState& gs);
+    void doTurnGuided(GameState& gs);
+    void advanceGs(GameState& gs);
     std::vector<Action> generateActions(GameState& gs);
 
     void checkFederation(int8_t pos, bool isBridge, GameState& gs);
@@ -45,7 +47,8 @@ public:
     void useSpades(int amount, GameState& gs);
     void terraformAndBuildMine(int8_t pos, bool build, GameState& gs);
     void buildForFree(int8_t pos, Building building, bool isNeutral, GameState& gs);
-        
+    
+    bool gameEnded(const GameState& gs) const;
     // static std::vector<ResizableArray<uint16_t, 6>> generateFieldTopology(int mapSize);
 
 private:
@@ -73,4 +76,6 @@ private:
 
     std::vector<IBot*> bots_;
     int fieldStateIdx = 0;
+    bool withLogs_ = false;
+    bool withStats_ = false;
 };
