@@ -167,7 +167,8 @@
     "__tree": "cpp",
     "__tuple": "cpp",
     "stack": "cpp",
-    "string_view": "cpp"
+    "string_view": "cpp",
+    "*.ipp": "cpp"
   },
   "C_Cpp.errorSquiggles": "disabled",
   "cmake.configureOnOpen": true,

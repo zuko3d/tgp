@@ -9,7 +9,7 @@
 #include <assert.h>
 
 template <typename T>
-int SC(T x) {
+constexpr int SC(T x) {
 	return static_cast<int>(x);
 }
 

@@ -7,6 +7,8 @@
 
 #include <random>
 
+int spadesNeeded(TerrainType src, TerrainType dst);
+
 class GameEngine {
 public:
     GameEngine(std::vector<IBot*> bots);
@@ -51,6 +53,8 @@ public:
     bool gameEnded(const GameState& gs) const;
     // static std::vector<ResizableArray<uint16_t, 6>> generateFieldTopology(int mapSize);
 
+    std::vector<int8_t> someHexes(bool onlyInReach, bool onlyNative, const GameState& gs, int cubesDetained = 0, int freeSpades = 0) const;
+
 private:
     int moveGod(int amount, GodColor godColor, GameState& gs);
 
@@ -71,8 +75,7 @@ private:
 
     InnoPrice getInnoFullPrice(int pos, GameState& gs);
 
-    std::vector<int8_t> someHexes(bool onlyInReach, bool onlyNative, const GameState& gs, int cubesDetained = 0, int freeSpades = 0) const;
-    std::vector<int8_t> terraformableHexes(const GameState& gs) const;
+    std::vector<int8_t> terraformableHexes(const GameState& gs, int spareSpades) const;
 
     std::vector<IBot*> bots_;
     int fieldStateIdx = 0;

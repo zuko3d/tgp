@@ -3,12 +3,28 @@
 #include "StaticData.h"
 #include "Utils.h"
 
+#include <array>
 #include <queue>
 
-int spadesNeeded(TerrainType src, TerrainType dst) {
+constexpr int spadesNeeded__(TerrainType src, TerrainType dst) {
     int dist = (SC(dst) + 7 - SC(src)) % 7;
     dist = std::min(dist, 7 - dist);
     return dist;
+}
+
+constexpr std::array<std::array<int, 7>, 7> spadesNeeded_() {
+    std::array<std::array<int, 7>, 7> ret;
+    for (int i = 0; i < 7; i++) {
+        for (int j = 0; j < 7; j++) {
+            ret[i][j] = spadesNeeded__((TerrainType) i, (TerrainType) j);
+        }
+    }
+    return ret;
+}
+
+int spadesNeeded(TerrainType src, TerrainType dst) {
+    constexpr auto r = spadesNeeded_();
+    return r[SC(src)][SC(dst)];
 }
 
 GameEngine::GameEngine(std::vector<IBot*> bots)
@@ -151,7 +167,9 @@ void GameEngine::upgradeBuilding(int8_t pos, Building building, GameState& gs, i
             case PalaceSpecial::FreeGuild: {
                 const auto poses = someHexes(false, true, gs);
                 const auto pos = bot->choosePlaceToBuildForFree(gs, Building::Guild, poses);
-                buildForFree(pos, Building::Guild, false, gs);
+                if (pos >= 0) {
+                    buildForFree(pos, Building::Guild, false, gs);
+                }
                 break;
             }
             case PalaceSpecial::GetTech:
@@ -278,7 +296,9 @@ void GameEngine::awardTechTile(TechTile tile, GameState& gs) {
         case TechTile::tower : {
             const auto poses = someHexes(true, false, gs);
             const auto pos = bots_[gs.activePlayer]->choosePlaceToBuildForFree(gs, Building::Tower, poses);
-            buildForFree(pos, Building::Tower, true, gs);
+            if (pos >= 0) {
+                buildForFree(pos, Building::Tower, true, gs);
+            }
             break;
         }
         default:
@@ -699,7 +719,7 @@ void GameEngine::awardInnovation(Innovation inno, GameState& gs) {
         case Innovation::AcademyAnd2wp: {
             const auto poses = someHexes(true, false, gs);
             const auto pos = bot->choosePlaceToBuildForFree(gs, Building::Academy, poses);
-            buildForFree(pos, Building::Academy, true, gs);
+            if (pos >= 0) buildForFree(pos, Building::Academy, true, gs);
             ps.additionalIncome.winPoints += 2;
             break;
         }
@@ -744,7 +764,7 @@ void GameEngine::awardInnovation(Innovation inno, GameState& gs) {
         case Innovation::GuildAnd5gold : {
             const auto poses = someHexes(true, false, gs);
             const auto pos = bot->choosePlaceToBuildForFree(gs, Building::Guild, poses);
-            buildForFree(pos, Building::Guild, true, gs);
+            if (pos >= 0) buildForFree(pos, Building::Guild, true, gs);
             ps.additionalIncome.gold += 5;
             break;
         }
@@ -761,7 +781,7 @@ void GameEngine::awardInnovation(Innovation inno, GameState& gs) {
         case Innovation::LabAndTech : {
             const auto poses = someHexes(true, false, gs);
             const auto pos = bot->choosePlaceToBuildForFree(gs, Building::Laboratory, poses);
-            buildForFree(pos, Building::Laboratory, true, gs);
+            if (pos >= 0) buildForFree(pos, Building::Laboratory, true, gs);
             awardTechTile(bot->chooseTechTile(gs), gs);
             break;
         }
@@ -772,7 +792,7 @@ void GameEngine::awardInnovation(Innovation inno, GameState& gs) {
         case Innovation::MineAnd3cubes : {
             const auto poses = someHexes(true, false, gs);
             const auto pos = bot->choosePlaceToBuildForFree(gs, Building::Mine, poses);
-            buildForFree(pos, Building::Mine, true, gs);
+            if (pos >= 0) buildForFree(pos, Building::Mine, true, gs);
             ps.additionalIncome.cube += 3;
             break;
         }
@@ -783,7 +803,9 @@ void GameEngine::awardInnovation(Innovation inno, GameState& gs) {
         case Innovation::MonumentAnd7wp : {
             const auto poses = someHexes(true, false, gs);
             const auto pos = bot->choosePlaceToBuildForFree(gs, Building::Monument, poses);
-            buildForFree(pos, Building::Monument, true, gs);
+            if (pos >= 0) {
+                buildForFree(pos, Building::Monument, true, gs);
+            }
             awardWp(7, gs);
             break;
         }
@@ -805,7 +827,9 @@ void GameEngine::awardInnovation(Innovation inno, GameState& gs) {
         case Innovation::PalaceAndMana : {
             const auto poses = someHexes(true, false, gs);
             const auto pos = bot->choosePlaceToBuildForFree(gs, Building::Palace, poses);
-            buildForFree(pos, Building::Palace, true, gs);
+            if (pos >= 0) {
+                buildForFree(pos, Building::Palace, true, gs);
+            }
             ps.mana[2] += 2;
             ps.additionalIncome.manaCharge += 4;
             break;
@@ -869,6 +893,10 @@ void GameEngine::upgradeTerraform(GameState& gs, bool forFree) {
 }
 
 void GameEngine::doTurnGuided(GameState& gs) {
+    if (getPs(gs).passed) {
+        return;
+    }
+
     const auto bot = bots_.at(gs.activePlayer);
     auto actions = generateActions(gs);
     auto fullAction = bot->chooseAction(gs, actions);
@@ -1132,8 +1160,8 @@ void GameEngine::advanceGs(GameState& gs) {
 
         if (gs.phase == GamePhase::Actions) {
             bool allPassed = true;
-            for (gs.activePlayer = 0; gs.activePlayer < 2; gs.activePlayer++) {
-                if (!gs.players[gs.activePlayer].passed) {
+            for (int i = 0; i < 2; i++) {
+                if (!gs.players[i].passed) {
                     allPassed = false;
                 }
             }
@@ -1518,6 +1546,7 @@ Race GameEngine::getRace(const GameState& gs) const {
 }
 
 PlayerState& GameEngine::getPs(GameState& gs) {
+    assert (gs.activePlayer < 2);
     return gs.players[gs.activePlayer];
 }
 
@@ -1550,7 +1579,7 @@ void GameEngine::useSpades(int amount, GameState& gs) {
     int spareSpades = amount;
     // if (getRace(gs) == Race::Goblins) awardResources(IncomableResources { .gold = spareSpades * 2 }, gs);
 
-    const auto pos = bot->choosePlaceToSpade(gs, spareSpades, someHexes(true, false, gs, 0, amount));
+    const auto pos = bot->choosePlaceToSpade(gs, spareSpades, terraformableHexes(gs, spareSpades));
     if (pos < 0) {
         return;
     }
@@ -1572,9 +1601,9 @@ void GameEngine::useSpades(int amount, GameState& gs) {
     }
 
     while (spareSpades > 0) {
-        const auto pos = bot->choosePlaceToSpade(gs, spareSpades, someHexes(true, false, gs, 0, spareSpades));
+        const auto pos = bot->choosePlaceToSpade(gs, spareSpades, terraformableHexes(gs, spareSpades));
         if (pos < 0) {
-            return;
+            break;
         }
         const auto needed = spadesNeeded(gs.field->type.at(pos), pColor);
         const auto used = std::min(spareSpades, needed);
@@ -1688,8 +1717,8 @@ void GameEngine::doFinalScoring(GameState& gs) {
     awardWp((ps.resources.cube + sum(ps.resources.books.values()) + ps.resources.gold + ps.resources.humans + ps.mana[1] / 1 + ps.mana[2]) / 5, gs);
 }
 
-std::vector<int8_t> GameEngine::terraformableHexes(const GameState& gs) const {
-    auto r = someHexes(true, false, gs);
+std::vector<int8_t> GameEngine::terraformableHexes(const GameState& gs, int spareSpades) const {
+    auto r = someHexes(true, false, gs, 0, spareSpades);
     r.resize(std::distance(
         r.begin(),
         std::remove_if(r.begin(), r.end(), [t = getColor(gs), &gs](int8_t pos) {

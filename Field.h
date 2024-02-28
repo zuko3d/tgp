@@ -36,6 +36,6 @@ struct Field {
     std::array<TerrainType, FieldOrigin::FIELD_SIZE> type;
     std::array<int8_t, FieldOrigin::TOTAL_BRIDGES> bridges; // owner
     std::array<BuildingOnMap, FieldOrigin::FIELD_SIZE> building;
-    std::array<ResizableArray<int8_t, 20>, 2> ownedByPlayer;
+    std::array<ResizableArray<int8_t, 22>, 2> ownedByPlayer;
     int stateIdx = 0;
 };

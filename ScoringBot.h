@@ -1,29 +1,48 @@
 #pragma once
+
 #include "Bot.h"
+#include "GameEngine.h"
+#include "Serialize.h"
 
 #include <array>
+#include <iostream>
 #include <random>
 
 struct ScoreWeights {
-    double gold;
-    double cube;
-    double humans;
-    double totalBooks;
-    double reachableHexes[4]; // per terraforms, 0 = native
-    double winPoints;
-    double goldIncome;
-    double cubeIncome;
-    double humansIncome;
-    double manaIncome;
-    double godsIncome;
-    double booksIncome;
+    double gold = 0;
+    double cube = 0;
+    double humans = 0;
+    double totalBooks = 0;
+    double totalGods = 0;
+    double winPoints = 0;
+
+    double goldIncome = 0;
+    double cubeIncome = 0;
+    double humansIncome = 0;
+    double godsIncome = 0;
+    double booksIncome = 0;
+    double winPointsIncome = 0;
+    double manaIncome = 0;
+
+    double targetGod = 0;
+
+    double totalPower = 0;
+    double scorePerBuilding[7] = {0};
+
+    double navLevel[4] = {0};
+    double tfLevel[3] = {0};
+
+    double reachableHexes[4] = {0}; // per terraforms, 0 = native
 };
 
 using AllScoreWeights = std::array<ScoreWeights, 7>; // per round, at round's start
 
 class ScoringBot: public IBot {
 public:
-    RandomBot(std::default_random_engine g) : rng(g) { }
+    ScoringBot(AllScoreWeights allScoreWeights)
+        : allScoreWeights_(allScoreWeights)
+        , ownGe_({ this, this })
+    { }
 
     Race chooseRace(const GameState& gs, const std::vector<Race>& races) {
         return races[rng() % races.size()];
@@ -36,10 +55,58 @@ public:
         return rng() % gs.boosters.size();
     }
 
-    FullAction chooseAction(const GameState& gs, const std::vector<Action>& actions) {
+    FullAction chooseActionGreedy(const GameState& gs, const std::vector<Action>& actions) {
+        auto bestAction = actions.front();
+        double bestPts = -1e9;
+
+        for (const auto& action : actions) {
+            auto newGs = gs;
+            ownGe_.doAction(action, newGs);
+            const auto pts = evalPs(newGs, gs.activePlayer);
+            if (bestPts < pts) {
+                bestPts = pts;
+                bestAction = action;
+            }
+        }
+
         return FullAction{
             .preAction = {},
-            .action = actions[rng() % actions.size()],
+            .action = bestAction,
+            .postAction = {}
+        };
+    }
+
+    double playOut(GameState& gs, int pIdx) {
+        const int nextRound = gs.round + 1;
+        while (!ownGe_.gameEnded(gs) && (gs.round != nextRound || gs.phase != GamePhase::Actions)) {
+            ownGe_.advanceGs(gs);
+        }
+        return evalPs(gs, pIdx);
+    }
+
+    FullAction chooseAction(const GameState& gs, const std::vector<Action>& actions) {
+        // if (greedy_) return chooseActionGreedy(gs, actions);
+
+        auto bestAction = actions.front();
+        double bestPts = -1e9;
+        for (const auto& action : actions) {
+            auto newGs = gs;
+            ownGe_.doAction(action, newGs);
+            greedy_ = true;
+            const auto pts = playOut(newGs, gs.activePlayer);
+            greedy_ = false;
+
+            if (!greedy_) std::cerr << "Action " << toJson(action).dump() << " \t pts: " << pts << std::endl;
+
+            if (bestPts < pts) {
+                bestPts = pts;
+                bestAction = action;
+            }
+        }
+
+        return FullAction{
+            .preAction = {},
+            .action = bestAction,
             .postAction = {}
         };
     }
@@ -113,6 +180,9 @@ public:
 private:
     double evalPs(const GameState& gs, int pIdx);
 
-    std::default_random_engine rng;
+    std::default_random_engine rng{43};
     AllScoreWeights allScoreWeights_;
+
+    GameEngine ownGe_;
+    bool greedy_ = false;
 };

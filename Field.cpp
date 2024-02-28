@@ -75,14 +75,20 @@ std::array<int8_t, FieldOrigin::FIELD_SIZE> Field::bfs(int owner, int reach) con
                 if (ret[pos] == -1) {
                     ret[pos] = curComponent;
                     for (const auto& r: StaticData::fieldOrigin().reachable[reach].at(pos)) {
-                        if (building[pos].owner == owner && ret[r] == -1) {
+                        if (building[r].owner == owner && ret[r] == -1) {
                             q.push(r);
                         }
                     }
                     for (const auto& br: StaticData::fieldOrigin().bridgeIds[pos]) {
                         if (bridges[br] != -1) {
-                            q.push(StaticData::fieldOrigin().bridgeConnections[br].first);
-                            q.push(StaticData::fieldOrigin().bridgeConnections[br].second);
+                            auto r = StaticData::fieldOrigin().bridgeConnections[br].first;
+                            if (building[r].owner == owner && ret[r] == -1) {
+                                q.push(r);
+                            }
+                            r = StaticData::fieldOrigin().bridgeConnections[br].second;
+                            if (building[r].owner == owner && ret[r] == -1) {
+                                q.push(r);
+                            }
                         }
                     }
                 }
@@ -98,8 +104,9 @@ int Field::countReachableBuildings(int owner, int reach) const {
 
     std::array<int, 20> countByComponent = {{0}};
     for (const auto& c: components) {
-        countByComponent[c]++;
+        if (c >= 0) countByComponent[c]++;
     }
+    assert(sum(countByComponent) == ownedByPlayer[owner].size());
 
     return maximum(countByComponent);
 }
