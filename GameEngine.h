@@ -11,7 +11,7 @@ int spadesNeeded(TerrainType src, TerrainType dst);
 
 class GameEngine {
 public:
-    GameEngine(std::vector<IBot*> bots);
+    GameEngine(std::vector<IBot*> bots, bool withLogs = false, bool withStats = false);
     
     void initializeRandomly(GameState& gs, std::default_random_engine& g);
 
@@ -54,6 +54,8 @@ public:
     // static std::vector<ResizableArray<uint16_t, 6>> generateFieldTopology(int mapSize);
 
     std::vector<int8_t> someHexes(bool onlyInReach, bool onlyNative, const GameState& gs, int cubesDetained = 0, int freeSpades = 0) const;
+
+    void log(const std::string& str);
 
 private:
     int moveGod(int amount, GodColor godColor, GameState& gs);

@@ -4,6 +4,8 @@
 #include "Utils.h"
 
 #include <array>
+#include <iostream>
+#include <map>
 #include <queue>
 
 constexpr int spadesNeeded__(TerrainType src, TerrainType dst) {
@@ -27,8 +29,10 @@ int spadesNeeded(TerrainType src, TerrainType dst) {
     return r[SC(src)][SC(dst)];
 }
 
-GameEngine::GameEngine(std::vector<IBot*> bots)
+GameEngine::GameEngine(std::vector<IBot*> bots, bool withLogs, bool withStats)
     : bots_(std::move(bots))
+    , withLogs_(withLogs)
+    , withStats_(withStats)
 { }
 
 void GameEngine::doFreeActionMarket(FreeActionMarketType action, GameState& gs) {
@@ -1300,6 +1304,10 @@ int GameEngine::countGroups(GameState& gs) const {
     return maximum(gs.field->bfs(gs.activePlayer, 0));
 }
 
+void GameEngine::log(const std::string& str) {
+    if (withLogs_) std::cerr << str << std::endl;
+}
+
 void GameEngine::checkFederation(int8_t pos, bool isBridge, GameState& gs) {
     auto& ps = getPs(gs);
 
@@ -1317,8 +1325,11 @@ void GameEngine::checkFederation(int8_t pos, bool isBridge, GameState& gs) {
             return; // already in Fed
         }
 
-        q.push(StaticData::fieldOrigin().bridgeConnections.at(pos).first);
-        q.push(StaticData::fieldOrigin().bridgeConnections.at(pos).second);
+        auto p = StaticData::fieldOrigin().bridgeConnections.at(pos).first;
+        if (gs.field->building[p].owner == gs.activePlayer) q.push(p);
+
+        p = StaticData::fieldOrigin().bridgeConnections.at(pos).second;
+        if (gs.field->building[p].owner == gs.activePlayer) q.push(p);
     } else {
         if (gs.field->building.at(pos).fedIdx >= 0) {
             return; // already in Fed
@@ -1333,6 +1344,9 @@ void GameEngine::checkFederation(int8_t pos, bool isBridge, GameState& gs) {
         if (visited[pos]) {
             continue;
         }
+
+        assert(gs.field->building[pos].owner == gs.activePlayer);
+
         if (gs.field->building.at(pos).fedIdx >= 0) {
             inFedIdx = gs.field->building.at(pos).fedIdx;
         }
@@ -1361,6 +1375,8 @@ void GameEngine::checkFederation(int8_t pos, bool isBridge, GameState& gs) {
                     gs.field->building.at(idx).fedIdx = inFedIdx;
                 }
             }
+
+            log("Federation: " + std::to_string(inFedIdx) + " of power " + std::to_string(totalPower));
 
             const auto tile = bots_[gs.activePlayer]->chooseFedTile(gs);
             awardFedTile(tile, gs);

@@ -55,37 +55,28 @@ public:
         return rng() % gs.boosters.size();
     }
 
-    FullAction chooseActionGreedy(const GameState& gs, const std::vector<Action>& actions) {
-        auto bestAction = actions.front();
-        double bestPts = -1e9;
-
-        for (const auto& action : actions) {
-            auto newGs = gs;
-            ownGe_.doAction(action, newGs);
-            const auto pts = evalPs(newGs, gs.activePlayer);
-            if (bestPts < pts) {
-                bestPts = pts;
-                bestAction = action;
-            }
-        }
-
-        return FullAction{
-            .preAction = {},
-            .action = bestAction,
-            .postAction = {}
-        };
-    }
-
     double playOut(GameState& gs, int pIdx) {
-        const int nextRound = gs.round + 1;
-        while (!ownGe_.gameEnded(gs) && (gs.round != nextRound || gs.phase != GamePhase::Actions)) {
+        // const int nextRound = gs.round + 1;
+        while (!ownGe_.gameEnded(gs)) {
             ownGe_.advanceGs(gs);
         }
         return evalPs(gs, pIdx);
     }
 
     FullAction chooseAction(const GameState& gs, const std::vector<Action>& actions) {
-        // if (greedy_) return chooseActionGreedy(gs, actions);
+        const auto& ps = gs.players[gs.activePlayer];
+
+        if (ps.mana[1] >= 2 && sum(ps.mana) > 7) {
+            return FullAction{
+                .preAction = { FreeActionMarketType::BurnMana },
+                .action = Action{
+                    .type = ActionType::None
+                },
+                .postAction = {}
+            };
+        }
+
+        if (greedy_) return chooseActionGreedy(gs, actions);
 
         auto bestAction = actions.front();
         double bestPts = -1e9;
@@ -178,6 +169,27 @@ public:
     }
 
 private:
+    FullAction chooseActionGreedy(const GameState& gs, const std::vector<Action>& actions) {
+        auto bestAction = actions.front();
+        double bestPts = -1e9;
+
+        for (const auto& action : actions) {
+            auto newGs = gs;
+            ownGe_.doAction(action, newGs);
+            const auto pts = evalPs(newGs, gs.activePlayer);
+            if (bestPts < pts) {
+                bestPts = pts;
+                bestAction = action;
+            }
+        }
+
+        return FullAction{
+            .preAction = {},
+            .action = bestAction,
+            .postAction = {}
+        };
+    }
+
     double evalPs(const GameState& gs, int pIdx);
 
     std::default_random_engine rng{43};

@@ -138,8 +138,11 @@ std::vector<int8_t> Field::reachable(int owner, int range, TerrainType color) co
         }
         for (const auto& br: StaticData::fieldOrigin().bridgeIds[pos]) {
             if (bridges[br] != -1) {
-                r[StaticData::fieldOrigin().bridgeConnections[br].first] = true;
-                r[StaticData::fieldOrigin().bridgeConnections[br].second] = true;
+                auto p = StaticData::fieldOrigin().bridgeConnections[br].first;
+                if (building.at(p).owner == -1) r[p] = true;
+
+                p = StaticData::fieldOrigin().bridgeConnections[br].second;
+                if (building.at(p).owner == -1) r[p] = true;
             }
         }
     }

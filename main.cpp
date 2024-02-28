@@ -206,7 +206,7 @@ int main() {
     StaticGameState sgs;
     GameState gs { .staticGs = sgs };
 
-    GameEngine ge({ &bot1, &bot2 });
+    GameEngine ge({ &bot1, &bot2 }, true);
 
     ge.initializeRandomly(gs, g);
     ge.playGame(gs);

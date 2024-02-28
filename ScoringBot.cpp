@@ -4,7 +4,8 @@
 
 double ScoringBot::evalPs(const GameState& gs, int pIdx) {
     const auto ap = gs.activePlayer;
-    gs.activePlayer = pIdx;
+    GameState* hackedGs = const_cast<GameState*>(&gs);
+    hackedGs->activePlayer = pIdx;
     const auto& ps = gs.players[pIdx];
 
     double ret = 0.0;
@@ -43,5 +44,6 @@ double ScoringBot::evalPs(const GameState& gs, int pIdx) {
         ret += curWeights.targetGod * res.gods[StaticData::roundScoreBonuses()[gs.staticGs.bonusByRound[gs.round]].god];
     }
 
+    hackedGs->activePlayer = ap;
     return ret;
 }
