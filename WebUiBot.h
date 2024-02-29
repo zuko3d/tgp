@@ -276,7 +276,22 @@ public:
         return -1;
     }
 
-    int8_t choosePlaceToBuildForFree(const GameState& gs,  Building building, const std::vector<int8_t>& possiblePos) {
+    int8_t choosePlaceToBuildForFree(const GameState& gs,  Building building, bool isNeutral, const std::vector<int8_t>& possiblePos) {
+        if (possiblePos.empty()) return -1;
+        std::cout << "choosePlaceToBuildForFree..." << std::endl;
+
+        nlohmann::json j;
+        j["action"] = "choosePlaceToBuildForFree";
+        j["choices"] = toJson(possiblePos);
+        j["building"] = toJson(building);
+        j["isNeutral"] = toJson(isNeutral);
+
+        const auto ret = rpc(gs, j.dump());
+
+        return ret["choice"].get<int>();
+    }
+
+    int8_t chooseBuildingToConvertForFree(const GameState& gs, Building building, const std::vector<int8_t>& possiblePos) {
         if (possiblePos.empty()) return -1;
         std::cout << "choosePlaceToBuildForFree..." << std::endl;
 

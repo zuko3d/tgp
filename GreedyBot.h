@@ -1,20 +1,49 @@
 #pragma once
 
 #include "Bot.h"
-#include "GreedyBot.h"
 #include "GameEngine.h"
 #include "Serialize.h"
+#include "StaticData.h"
+#include "Utils.h"
 
 #include <array>
 #include <iostream>
 #include <random>
 
-class ScoringBot: public IBot {
+struct ScoreWeights {
+    double gold = 0;
+    double cube = 0;
+    double humans = 0;
+    double totalBooks = 0;
+    double totalGods = 0;
+    double winPoints = 0;
+
+    double goldIncome = 0;
+    double cubeIncome = 0;
+    double humansIncome = 0;
+    double godsIncome = 0;
+    double booksIncome = 0;
+    double winPointsIncome = 0;
+    double manaIncome = 0;
+
+    double targetGod = 0;
+
+    double totalPower = 0;
+    double scorePerBuilding[7] = {0};
+
+    double navLevel[4] = {0};
+    double tfLevel[3] = {0};
+
+    double reachableHexes[4] = {0}; // per terraforms, 0 = native
+};
+
+using AllScoreWeights = std::array<ScoreWeights, 7>; // per round, at round's start
+
+class GreedyBot: public IBot {
 public:
-    ScoringBot(AllScoreWeights allScoreWeights)
+    GreedyBot(AllScoreWeights allScoreWeights)
         : allScoreWeights_(allScoreWeights)
-        , greedyBot_(allScoreWeights)
-        , ownGe_({ &greedyBot_, &greedyBot_ })
+        , ownGe_({ this, this })
     { }
 
     Race chooseRace(const GameState& gs, const std::vector<Race>& races) {
@@ -41,15 +70,6 @@ public:
         return bestAction;
     }
 
-    double playOut(GameState& gs, int pIdx) {
-        // const int nextRound = gs.round + 1;
-        while (!ownGe_.gameEnded(gs)) {
-            ownGe_.advanceGs(gs);
-        }
-        // return evalPs(gs, pIdx);
-        return gs.players[pIdx].resources.winPoints;
-    }
-
     FullAction chooseAction(const GameState& gs, const std::vector<Action>& actions) {
         const auto& ps = gs.players[gs.activePlayer];
 
@@ -68,10 +88,7 @@ public:
         for (const auto& action : actions) {
             auto newGs = gs;
             ownGe_.doAction(action, newGs);
-            newGs.activePlayer = (newGs.activePlayer + 1) % 2;
             const auto pts = playOut(newGs, gs.activePlayer);
-
-            std::cerr << "Action " << toJson(action).dump() << " \t pts: " << pts << std::endl;
 
             if (bestPts < pts) {
                 bestPts = pts;
@@ -126,6 +143,7 @@ public:
 
         return ret;
     }
+
     FlatMap<BookColor, int8_t, 4> chooseBooksToSpend(const GameState& gs, int amount) {
         FlatMap<BookColor, int8_t, 4> ret = { 0, 0, 0, 0 };
         const auto& ps = gs.players[gs.activePlayer];
@@ -168,24 +186,12 @@ public:
 
     TechTile chooseTechTile(const GameState& gs) {
         const auto& ps = gs.players[gs.activePlayer];
-
-        int bestAction = 0;
-        double bestPts = -1e9;
         for (int i = 0; i < 12; i++) {
             TechTile tile = (TechTile) i;
-            if (ps.techTiles[tile]) continue;
-
-            auto newGs = gs;
-            ownGe_.awardTechTile(tile, newGs);
-            const auto pts = playOut(newGs, gs.activePlayer);
-
-            if (bestPts < pts) {
-                bestPts = pts;
-                bestAction = i;
-            }
+            if (!ps.techTiles[tile]) return tile;
         }
-
-        return (TechTile) bestAction;
+        assert(false);
+        return (TechTile) -1;
     }
 
     int8_t choosePlaceToSpade(const GameState& gs, int amount, const std::vector<int8_t>& possiblePos) {
@@ -201,46 +207,68 @@ public:
 
     int8_t choosePlaceToBuildForFree(const GameState& gs,  Building building, bool isNeutral, const std::vector<int8_t>& possiblePos) {
         if (possiblePos.empty()) return -1;
-
-        int8_t bestAction = 0;
-        double bestPts = -1e9;
-        for (const auto pos: possiblePos) {
-            auto newGs = gs;
-            ownGe_.buildForFree(pos, building, isNeutral, newGs);
-            const auto pts = playOut(newGs, gs.activePlayer);
-
-            if (bestPts < pts) {
-                bestPts = pts;
-                bestAction = pos;
-            }
-        }
-
-        return bestAction;
+        return possiblePos[rng() % possiblePos.size()];
     }
 
     int8_t chooseBuildingToConvertForFree(const GameState& gs, Building building, const std::vector<int8_t>& possiblePos) {
         if (possiblePos.empty()) return -1;
-
-        int8_t bestAction = 0;
-        double bestPts = -1e9;
-        for (const auto pos: possiblePos) {
-            auto newGs = gs;
-            ownGe_.upgradeBuilding(pos, building, newGs);
-            const auto pts = playOut(newGs, gs.activePlayer);
-
-            if (bestPts < pts) {
-                bestPts = pts;
-                bestAction = pos;
-            }
-        }
-
-        return bestAction;
+        return possiblePos[rng() % possiblePos.size()];
     }
 
 private:
+    double playOut(GameState& gs, int pIdx) {
+        return evalPs(gs, pIdx);
+    }
+
+    double evalPs(const GameState& gs, int pIdx) {
+        const auto ap = gs.activePlayer;
+        GameState* hackedGs = const_cast<GameState*>(&gs);
+        hackedGs->activePlayer = pIdx;
+        const auto& ps = gs.players[pIdx];
+
+        double ret = 0.0;
+
+        const auto& res = ps.resources;
+        const auto& curWeights = allScoreWeights_[gs.round];
+
+        ret += res.gold * curWeights.gold;
+        ret += res.cube * curWeights.cube;
+        ret += res.humans * curWeights.humans;
+        ret += sum(res.books.values()) * curWeights.totalBooks;
+        ret += sum(res.gods.values()) * curWeights.totalGods;
+        ret += res.winPoints * curWeights.winPoints;
+
+        ret += ps.additionalIncome.gold * curWeights.goldIncome;
+        ret += ps.additionalIncome.cube * curWeights.cubeIncome;
+        ret += ps.additionalIncome.humans * curWeights.humansIncome;
+        ret += ps.additionalIncome.anyBook * curWeights.booksIncome;
+        ret += ps.additionalIncome.anyGod * curWeights.godsIncome;
+        ret += ps.additionalIncome.manaCharge * curWeights.manaIncome;
+        
+        const auto hexes = ownGe_.someHexes(true, false, gs, 0, 0);
+        const auto color = gs.staticGs.playerColors[pIdx];
+        std::array<int, 4> tfs = {{0}};
+        for (const auto pos: hexes) {
+            tfs[spadesNeeded(gs.field->type[pos], color)]++;
+        }
+        for (int i = 0; i < 4; i++) {
+            ret += curWeights.reachableHexes[i] * tfs[i];
+        }
+
+        ret += curWeights.navLevel[ps.navLevel];
+        ret += curWeights.tfLevel[ps.tfLevel];
+
+        if (gs.round < 5) {
+            ret += curWeights.targetGod * res.gods[StaticData::roundScoreBonuses()[gs.staticGs.bonusByRound[gs.round]].god];
+        }
+
+        hackedGs->activePlayer = ap;
+        return ret;
+    }
+
     std::default_random_engine rng{43};
     AllScoreWeights allScoreWeights_;
-    GreedyBot greedyBot_;
 
     GameEngine ownGe_;
+    bool greedy_ = false;
 };

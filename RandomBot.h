@@ -87,7 +87,12 @@ public:
         return possiblePos[rng() % possiblePos.size()];
     }
 
-    int8_t choosePlaceToBuildForFree(const GameState& gs,  Building building, const std::vector<int8_t>& possiblePos) {
+    int8_t choosePlaceToBuildForFree(const GameState& gs,  Building building, bool isNeutral, const std::vector<int8_t>& possiblePos) {
+        if (possiblePos.empty()) return -1;
+        return possiblePos[rng() % possiblePos.size()];
+    }
+
+    int8_t chooseBuildingToConvertForFree(const GameState& gs, Building building, const std::vector<int8_t>& possiblePos) {
         if (possiblePos.empty()) return -1;
         return possiblePos[rng() % possiblePos.size()];
     }

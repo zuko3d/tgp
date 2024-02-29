@@ -57,16 +57,16 @@ public:
 
     void log(const std::string& str);
 
-private:
     int moveGod(int amount, GodColor godColor, GameState& gs);
+    void upgradeBuilding(int8_t pos, Building building, GameState& gs, int palaceIdx = -1);
 
+private:
     int countGroups(GameState& gs) const;
 
     Race getRace(const GameState& gs) const;
     PlayerState& getPs(GameState& gs);
     TerrainType getColor(const GameState& gs) const;
 
-    void upgradeBuilding(int8_t pos, Building building, GameState& gs, int palaceIdx = -1);
     void populateField(GameState& gs);
 
     void chargeOpp(int8_t pos, GameState& gs);

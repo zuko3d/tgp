@@ -104,3 +104,9 @@ struct Resources
         return sum(booksLeft.values()) >= op.anyBooks;
     }
 };
+
+inline FlatMap<BookColor, int8_t, 4> genBook(const BookColor book, int8_t amount) {
+    FlatMap<BookColor, int8_t, 4> ret;
+    ret[book] = amount;
+    return ret;
+}

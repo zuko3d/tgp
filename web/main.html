@@ -1515,6 +1515,18 @@
                     dv.onclick = function() { socket.send('{ "choice": ' + this.data + '}'); clearHighlight(); };
                 }
             }
+            if (msg.action === 'chooseBuildingToConvertForFree') {
+                var dv = document.querySelector("#input-box");
+                dv.innerHTML = 'Choose a building to convert into ' + Buildings[msg.building].name + ' for free';
+
+                for (const idx of msg.choices) {
+                    // var dv = document.querySelector("#fld_" + idx);
+                    var dv = document.getElementById("fld_" + idx);
+                    dv.classList.add('highlight');
+                    
+                    dv.onclick = function() { socket.send('{ "choice": ' + this.data + '}'); clearHighlight(); };
+                }
+            }
             if (msg.action === 'choosePlaceToSpade') {
                 var dv = document.getElementById("input-box");
                 dv.innerHTML = 'Choose a place to use spade. Spades left: ' + msg.amount;
