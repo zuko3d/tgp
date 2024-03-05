@@ -5,6 +5,7 @@
 #include "GameState.h"
 #include "Types.h"
 
+#include <mutex>
 #include <random>
 
 int spadesNeeded(TerrainType src, TerrainType dst);
@@ -13,74 +14,77 @@ class GameEngine {
 public:
     GameEngine(std::vector<IBot*> bots, bool withLogs = false, bool withStats = false);
     
-    void initializeRandomly(GameState& gs, std::default_random_engine& g);
+    void initializeRandomly(GameState& gs, std::default_random_engine& g) const;
 
-    void playGame(GameState& gs);
+    void playGame(GameState& gs) const;
 
-    void doFreeActionMarket(FreeActionMarketType action, GameState& gs);
-    void doAction(Action action, GameState& gs);
-    void doTurnGuided(GameState& gs);
-    void advanceGs(GameState& gs);
-    std::vector<Action> generateActions(GameState& gs);
+    void doFreeActionMarket(FreeActionMarketType action, GameState& gs) const;
+    void doAction(Action action, GameState& gs) const;
+    void dealWithUpkeep(GameState& gs) const;
+    void doAfterTurnActions(GameState& gs) const;
+    void doTurnGuided(GameState& gs) const;
+    void advanceGs(GameState& gs) const;
+    std::vector<Action> generateActions(const GameState& gs) const;
 
-    void checkFederation(int8_t pos, bool isBridge, GameState& gs);
-    void doFinalScoring(GameState& gs);
+    void checkFederation(int8_t pos, bool isBridge, GameState& gs) const;
+    void doFinalScoring(GameState& gs) const;
 
-    void pushButton(int8_t buttonIdx, int param, GameState& gs);
-    void buildBridge(GameState& gs);
+    void pushButton(int8_t buttonIdx, int param, GameState& gs) const;
+    void buildBridge(GameState& gs) const;
 
-    void awardWp(int amount, GameState& gs);
-    void spendResources(IncomableResources resources, GameState& gs);
-    void spendResources(Resources resources, GameState& gs);
-    void awardResources(IncomableResources resources, GameState& gs);
-    void awardResources(Resources resources, GameState& gs);
+    void awardWp(int amount, GameState& gs) const;
+    void spendResources(IncomableResources resources, GameState& gs) const;
+    void spendResources(Resources resources, GameState& gs) const;
+    void awardResources(IncomableResources resources, GameState& gs) const;
+    void awardResources(Resources resources, GameState& gs) const;
     
-    void awardInnovation(Innovation inno, GameState& gs);
-    void awardTechTile(TechTile tile, GameState& gs);
-    void awardBooster(int boosterIdx, GameState& gs);
-    void awardFedTile(FedTileOrigin tile, GameState& gs);
+    void awardInnovation(Innovation inno, GameState& gs) const;
+    void awardTechTile(TechTile tile, GameState& gs) const;
+    void awardBooster(int boosterIdx, GameState& gs) const;
+    void awardFedTile(FedTileOrigin tile, GameState& gs) const;
 
-    int charge(int amount, GameState& gs);
+    int charge(int amount, GameState& gs) const;
 
-    void putManToGod(GodColor color, bool discard, GameState& gs);
-    void upgradeNav(GameState& gs, bool forFree = false);
-    void upgradeTerraform(GameState& gs, bool forFree = false);
+    void putManToGod(GodColor color, bool discard, GameState& gs) const;
+    void upgradeNav(GameState& gs, bool forFree = false) const;
+    void upgradeTerraform(GameState& gs, bool forFree = false) const;
 
-    void useSpades(int amount, GameState& gs);
-    void terraformAndBuildMine(int8_t pos, bool build, GameState& gs);
-    void buildForFree(int8_t pos, Building building, bool isNeutral, GameState& gs);
+    void useSpades(int amount, GameState& gs) const;
+    void terraformAndBuildMine(int8_t pos, bool build, GameState& gs) const;
+    void buildForFree(int8_t pos, Building building, bool isNeutral, GameState& gs) const;
     
     bool gameEnded(const GameState& gs) const;
     // static std::vector<ResizableArray<uint16_t, 6>> generateFieldTopology(int mapSize);
 
     std::vector<int8_t> someHexes(bool onlyInReach, bool onlyNative, const GameState& gs, int cubesDetained = 0, int freeSpades = 0) const;
 
-    void log(const std::string& str);
+    void log(const std::string& str) const;
 
-    int moveGod(int amount, GodColor godColor, GameState& gs);
-    void upgradeBuilding(int8_t pos, Building building, GameState& gs, int palaceIdx = -1);
+    int moveGod(int amount, GodColor godColor, GameState& gs) const;
+    void upgradeBuilding(int8_t pos, Building building, GameState& gs, int palaceIdx = -1) const;
 
 private:
     int countGroups(GameState& gs) const;
 
     Race getRace(const GameState& gs) const;
-    PlayerState& getPs(GameState& gs);
+    PlayerState& getPs(GameState& gs) const;
     TerrainType getColor(const GameState& gs) const;
 
-    void populateField(GameState& gs);
+    void populateField(GameState& gs) const;
 
-    void chargeOpp(int8_t pos, GameState& gs);
+    void chargeOpp(int8_t pos, GameState& gs) const;
 
-    void buildBridge(int8_t pos, GameState& gs);
-    void terraform(int8_t pos, int amount, GameState& gs);
-    void buildMine(int8_t pos, GameState& gs);
+    void buildBridge(int8_t pos, GameState& gs) const;
+    void terraform(int8_t pos, int amount, GameState& gs) const;
+    void buildMine(int8_t pos, GameState& gs) const;
 
-    InnoPrice getInnoFullPrice(int pos, GameState& gs);
+    InnoPrice getInnoFullPrice(int pos, const GameState& gs) const;
 
-    std::vector<int8_t> terraformableHexes(const GameState& gs, int spareSpades) const;
+    std::vector<int8_t> terraformableHexes(const GameState& gs) const;
 
     std::vector<IBot*> bots_;
-    int fieldStateIdx = 0;
+    mutable int fieldStateIdx = 0;
+    mutable std::mutex populateFieldMutex_;
     bool withLogs_ = false;
     bool withStats_ = false;
 };

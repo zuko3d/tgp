@@ -111,8 +111,8 @@ int Field::countReachableBuildings(int owner, int reach) const {
     return maximum(countByComponent);
 }
 
-ResizableArray<int8_t, 8> Field::adjacent(int pos) const {
-    ResizableArray<int8_t, 8> ret;
+ResizableArray<int8_t, 10> Field::adjacent(int pos) const {
+    ResizableArray<int8_t, 10> ret;
     for (const auto& p: StaticData::fieldOrigin().neibs[pos]) {
         ret.push_back(p);
     }

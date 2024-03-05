@@ -27,7 +27,7 @@ struct GameState
 
     ResizableArray<RoundBoosterOnBoard, 5> boosters;
     
-    std::array<uint8_t, 2> playersOrder;
+    ResizableArray<uint8_t, 2> playersOrder;
 
     std::array<PlayerState, 2> players;
 

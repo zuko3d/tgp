@@ -31,7 +31,7 @@ struct Field {
     std::array<int8_t, FieldOrigin::FIELD_SIZE> bfs(int owner, int reach) const;
 
     std::vector<int8_t> reachable(int owner, int range, TerrainType color = TerrainType::None) const;
-    ResizableArray<int8_t, 8> adjacent(int pos) const;
+    ResizableArray<int8_t, 10> adjacent(int pos) const;
 
     std::array<TerrainType, FieldOrigin::FIELD_SIZE> type;
     std::array<int8_t, FieldOrigin::TOTAL_BRIDGES> bridges; // owner

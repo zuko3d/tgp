@@ -1,16 +1,19 @@
 #include "GameEngine.h"
 #include "RandomBot.h"
 #include "WebUiBot.h"
-#include "ScoringBot.h"
 
+#include "GreedyBot.h"
+#include "ScoringBot.h"
+#include "MctsBot.h"
+#include "Tournament.h"
 #include "serialize.h"
 
+#include <memory>
 #include <random>
 #include <iostream>
 
 int main() {
-    std::default_random_engine g{42};
-    auto bot1 = WebUiBot(std::default_random_engine{1});
+    // auto bot1 = WebUiBot(std::default_random_engine{1});
 
     AllScoreWeights allScoreWeights {
         ScoreWeights{ // round 0
@@ -192,7 +195,7 @@ int main() {
 
             .targetGod = 0,
 
-            .totalPower = 1,
+            .totalPower = 0,
             .scorePerBuilding = { 0, 0, 0, 0, 0, 0, 0 },
 
             .navLevel = { 0, 0, 0, 0 },
@@ -201,21 +204,11 @@ int main() {
             .reachableHexes = { 0, 0, 0, 0 }
         },
     };
-    auto bot2 = ScoringBot(allScoreWeights);
+    auto bot2 = MctsBot(new GreedyBot(allScoreWeights), allScoreWeights, 300, 1);
+    auto bot3 = MctsBot(new GreedyBot(allScoreWeights), allScoreWeights, 300, 2);
 
-    StaticGameState sgs;
-    GameState gs { .staticGs = sgs };
+    Tournament::playAllInAll({ &bot2, &bot3}, 10);
 
-    GameEngine ge({ &bot1, &bot2 }, true);
-
-    ge.initializeRandomly(gs, g);
-    ge.playGame(gs);
-
-    for (const auto& p: gs.players) {
-        std::cout << p.resources.winPoints << std::endl;
-    }
-
-    // std::cout << toJson(gs) << std::endl;
-
+    // Tournament::playSingleGame({ &bot1, &bot2}, 42);
     return 0;
 }
