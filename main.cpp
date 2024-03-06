@@ -207,7 +207,10 @@ int main() {
     auto bot2 = MctsBot(new GreedyBot(allScoreWeights), allScoreWeights, 300, 1);
     auto bot3 = MctsBot(new GreedyBot(allScoreWeights), allScoreWeights, 300, 2);
 
-    Tournament::playAllInAll({ &bot2, &bot3}, 10);
+    std::cout << "Good!" << std::endl;
+
+    Tournament::playSingleGame({ &bot2, &bot3 }, 0);
+    // Tournament::playAllInAll({ &bot2, &bot3}, 1);
 
     // Tournament::playSingleGame({ &bot1, &bot2}, 42);
     return 0;

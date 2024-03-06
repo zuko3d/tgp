@@ -1121,11 +1121,13 @@ void GameEngine::doAction(Action action, GameState& gs) const {
                 awardWp( 3 * ps.countBuildings(Building::Laboratory), gs);
             }
         
-            if (StaticData::roundBoosters()[ps.currentRoundBoosterOriginIdx].godsForLabs == true) {
-                awardResources(IncomableResources { .anyGod = ps.countBuildings(Building::Laboratory)}, gs);
-            }
-            if (StaticData::roundBoosters()[ps.currentRoundBoosterOriginIdx].scoreHuge == true) {
-                awardWp( 4 * (ps.countBuildings(Building::Academy) + ps.countBuildings(Building::Palace)), gs);
+            if (ps.currentRoundBoosterOriginIdx >= 0) {
+                if (StaticData::roundBoosters()[ps.currentRoundBoosterOriginIdx].godsForLabs == true) {
+                    awardResources(IncomableResources{ .anyGod = ps.countBuildings(Building::Laboratory) }, gs);
+                }
+                if (StaticData::roundBoosters()[ps.currentRoundBoosterOriginIdx].scoreHuge == true) {
+                    awardWp(4 * (ps.countBuildings(Building::Academy) + ps.countBuildings(Building::Palace)), gs);
+                }
             }
 
             if (ps.techTiles[TechTile::scoreFeds]) {
@@ -1229,7 +1231,10 @@ void GameEngine::dealWithUpkeep(GameState& gs) const {
                 ps.wpPerEvent[lastRoundBonus.event] += lastRoundBonus.bonusWp;
             }
             awardResources(ps.additionalIncome, gs);
-            awardResources(StaticData::roundBoosters()[ps.currentRoundBoosterOriginIdx].resources, gs);
+            awardResources(ps.additionalIncome, gs);
+            if (ps.currentRoundBoosterOriginIdx >= 0) {
+                awardResources(StaticData::roundBoosters()[ps.currentRoundBoosterOriginIdx].resources, gs);
+            }
         }
 
         gs.phase = GamePhase::Actions;
@@ -1320,7 +1325,7 @@ void GameEngine::checkFederation(int8_t pos, bool isBridge, GameState& gs) const
                 totalPower += gs.field->building.at(idx).hasAnnex ? 1 : 0;
             }
         }
-        if (totalPower >= 7 || (totalPower >= 6 && StaticData::palaces()[ps.palaceIdx].special == PalaceSpecial::Fed6nrg)) {
+        if (totalPower >= 7 || (totalPower >= 6 && (ps.palaceIdx >= 0 && StaticData::palaces()[ps.palaceIdx].special == PalaceSpecial::Fed6nrg))) {
             inFedIdx = ps.feds.size();
             for (const auto& [idx, v]: enumerate(visited)) {
                 if (v) {
