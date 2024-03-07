@@ -22,6 +22,8 @@ struct StaticGameState {
 
 struct GameState
 {
+    const Field& field() const { return Field::fieldByState_[fieldIdx]; }
+
     uint8_t activePlayer;
     uint8_t round = 0;
 
@@ -35,7 +37,7 @@ struct GameState
     std::array<Innovation, 6> innovations;
     ResizableArray<uint8_t, 4> palacesAvailable;
 
-    std::shared_ptr<Field> field;
+    int fieldIdx;
     FlatMap<GodColor, ResizableArray<uint8_t, 3>, 4> humansOnGods;
 
     std::array<BookButton, 3> bookActions;

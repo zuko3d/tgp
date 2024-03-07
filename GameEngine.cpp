@@ -33,7 +33,8 @@ GameEngine::GameEngine(std::vector<IBot*> bots, bool withLogs, bool withStats)
     : bots_(std::move(bots))
     , withLogs_(withLogs)
     , withStats_(withStats)
-{ }
+{
+}
 
 void GameEngine::doFreeActionMarket(FreeActionMarketType action, GameState& gs) const {
     auto& ps = gs.players[gs.activePlayer];
@@ -118,7 +119,7 @@ void GameEngine::awardBooster(int boosterIdx, GameState& gs) const {
 }
 
 void GameEngine::chargeOpp(int8_t pos, GameState& gs) const {
-    int power = gs.field->adjacentEnemiesPower(pos, gs.activePlayer);
+    int power = gs.field().adjacentEnemiesPower(pos, gs.activePlayer);
     if (power > 0) {
         const auto& oppPs = gs.players[1 - gs.activePlayer];
         if (power == 1) {
@@ -140,11 +141,10 @@ void GameEngine::chargeOpp(int8_t pos, GameState& gs) const {
 void GameEngine::upgradeBuilding(int8_t pos, Building building, GameState& gs, int param) const {
     auto& ps = getPs(gs);
     const auto& bot = bots_[gs.activePlayer];
-    populateField(gs);
+    Field::populateField(gs, FieldActionType::ChangeBuildingType, pos, SC(building), 0);
     ps.buildingsAvailable[building]--;
-    ps.buildingsAvailable[gs.field->building[pos].type]++;
+    ps.buildingsAvailable[gs.field().building[pos].type]++;
     awardWp(ps.wpPerEvent[StaticData::buildingOrigins()[building].buildEvent], gs);
-    gs.field->building[pos].type = building;
 
     if (building == Building::Palace) {
         assert(param >= 0);
@@ -212,7 +212,7 @@ void GameEngine::upgradeBuilding(int8_t pos, Building building, GameState& gs, i
     spendResources(StaticData::buildingOrigins()[building].price, gs);
     constexpr int additionalCharges[] = { 1, 1, 0, 0, 0 };
     if (building == Building::Guild) {
-        if (!gs.field->hasAdjacentEnemies(pos, gs.activePlayer)) {
+        if (!gs.field().hasAdjacentEnemies(pos, gs.activePlayer)) {
             spendResources( Resources{ .gold = 3 }, gs);
         }
         if (ps.buildingsAvailable[Building::Mine] != 5) {
@@ -243,7 +243,7 @@ void GameEngine::upgradeBuilding(int8_t pos, Building building, GameState& gs, i
 
     chargeOpp(pos, gs);
 
-    checkFederation(pos, false, gs);
+    checkFederation(gs);
 }
 
 void GameEngine::awardTechTile(TechTile tile, GameState& gs) const {
@@ -353,9 +353,9 @@ std::vector<Action> GameEngine::generateActions(const GameState& gs) const {
 
     // UpgradeBuilding,
     if (ps.buildingsAvailable[Building::Guild] > 0 && ps.resources >= StaticData::buildingOrigins()[Building::Guild].price) {
-        for (const auto pos: gs.field->buildingByPlayer(Building::Mine, gs.activePlayer)) {
+        for (const auto pos: gs.field().buildingByPlayer(Building::Mine, gs.activePlayer)) {
             int extraPrice = 0;
-            if (!gs.field->hasAdjacentEnemies(pos, gs.activePlayer)) {
+            if (!gs.field().hasAdjacentEnemies(pos, gs.activePlayer)) {
                 extraPrice = 3;
             }
             if (ps.resources.gold >= 3 + extraPrice) {
@@ -368,7 +368,7 @@ std::vector<Action> GameEngine::generateActions(const GameState& gs) const {
         }
     }
     if (ps.buildingsAvailable[Building::Palace] > 0 && (ps.resources >= StaticData::buildingOrigins()[Building::Palace].price)) {
-        for (const auto pos: gs.field->buildingByPlayer(Building::Guild, gs.activePlayer)) {
+        for (const auto pos: gs.field().buildingByPlayer(Building::Guild, gs.activePlayer)) {
             for (const auto& palaceIdx: gs.palacesAvailable) {
                 ret.emplace_back(Action{
                     .type = ActionType::UpgradeBuilding,
@@ -381,7 +381,7 @@ std::vector<Action> GameEngine::generateActions(const GameState& gs) const {
     if (ps.buildingsAvailable[Building::Laboratory] > 0 && (ps.resources >= StaticData::buildingOrigins()[Building::Laboratory].price)) {
         for (int i = 0; i < 12; i++) {
             if (!ps.techTiles[(TechTile) i]) {
-                for (const auto pos: gs.field->buildingByPlayer(Building::Guild, gs.activePlayer)) {
+                for (const auto pos: gs.field().buildingByPlayer(Building::Guild, gs.activePlayer)) {
                     ret.emplace_back(Action{
                         .type = ActionType::UpgradeBuilding,
                         .param1 = pos,
@@ -394,7 +394,7 @@ std::vector<Action> GameEngine::generateActions(const GameState& gs) const {
     if (ps.buildingsAvailable[Building::Academy] > 0 && (ps.resources >= StaticData::buildingOrigins()[Building::Academy].price)) {
         for (int i = 0; i < 12; i++) {
             if (!ps.techTiles[(TechTile) i]) {
-                for (const auto pos: gs.field->buildingByPlayer(Building::Laboratory, gs.activePlayer)) {
+                for (const auto pos: gs.field().buildingByPlayer(Building::Laboratory, gs.activePlayer)) {
                     ret.emplace_back(Action{
                         .type = ActionType::UpgradeBuilding,
                         .param1 = pos,
@@ -409,9 +409,9 @@ std::vector<Action> GameEngine::generateActions(const GameState& gs) const {
 
     int8_t manaDiscount = (race == Race::Illusionists) ? 1 : 0;
     if (ps.bridgesLeft > 0 && !gs.marketActions[0].isUsed && ps.mana[2] >= 3 - manaDiscount) {
-        for (const auto idxFrom: gs.field->ownedByPlayer.at(gs.activePlayer)) {
+        for (const auto idxFrom: gs.field().ownedByPlayer.at(gs.activePlayer)) {
             for (const auto bridge: StaticData::fieldOrigin().bridgeIds.at(idxFrom)) {
-                if (gs.field->bridges.at(bridge) == -1) {
+                if (gs.field().bridges.at(bridge) == -1) {
                     ret.emplace_back(Action{
                         .type = ActionType::Market,
                         .param1 = 0,
@@ -443,7 +443,7 @@ std::vector<Action> GameEngine::generateActions(const GameState& gs) const {
         if (!action.isUsed && totalBooks >= action.bookPrice) {
             const auto& origin = StaticData::buttonOrigins()[action.buttonOrigin];
             if (origin.special == ButtonActionSpecial::UpgradeMine) {
-                for (const auto minePos: gs.field->buildingByPlayer(Building::Mine, gs.activePlayer)) {
+                for (const auto minePos: gs.field().buildingByPlayer(Building::Mine, gs.activePlayer)) {
                     ret.emplace_back(Action{
                         .type = ActionType::BookMarket,
                         .param1 = (int) idx,
@@ -470,9 +470,9 @@ std::vector<Action> GameEngine::generateActions(const GameState& gs) const {
             });
         } else if (origin.special == ButtonActionSpecial::BuildBridge) {
             if (ps.bridgesLeft > 0) {
-                for (const auto idxFrom: gs.field->ownedByPlayer.at(gs.activePlayer)) {
+                for (const auto idxFrom: gs.field().ownedByPlayer.at(gs.activePlayer)) {
                     for (const auto bridge: StaticData::fieldOrigin().bridgeIds.at(idxFrom)) {
-                        if (gs.field->bridges.at(bridge) == -1) {
+                        if (gs.field().bridges.at(bridge) == -1) {
                             ret.emplace_back(Action{
                                 .type = ActionType::ActivateAbility,
                                 .param1 = -1,
@@ -504,7 +504,7 @@ std::vector<Action> GameEngine::generateActions(const GameState& gs) const {
                 }
                 case ButtonActionSpecial::FiraksButton: {
                     if (ps.buildingsAvailable[Building::Guild] > 0) {
-                        for (const auto labPos: gs.field->buildingByPlayer(Building::Laboratory, gs.activePlayer)) {
+                        for (const auto labPos: gs.field().buildingByPlayer(Building::Laboratory, gs.activePlayer)) {
                             ret.emplace_back(Action{
                                 .type = ActionType::ActivateAbility,
                                 .param1 = (int) idx,
@@ -518,7 +518,7 @@ std::vector<Action> GameEngine::generateActions(const GameState& gs) const {
                     assert(false); // Invalid button
                 }
                 case ButtonActionSpecial::UpgradeMine: {
-                    for (const auto minePos: gs.field->buildingByPlayer(Building::Mine, gs.activePlayer)) {
+                    for (const auto minePos: gs.field().buildingByPlayer(Building::Mine, gs.activePlayer)) {
                         ret.emplace_back(Action{
                             .type = ActionType::ActivateAbility,
                             .param1 = (int) idx,
@@ -572,7 +572,7 @@ std::vector<Action> GameEngine::generateActions(const GameState& gs) const {
     if (ps.buildingsAvailable[Building::Mine] > 0 && ps.resources >= StaticData::buildingOrigins()[Building::Mine].price) {
         const auto poses = someHexes(true, false, gs, 1, 0);
         for (const auto& pos: poses) {
-            if (gs.field->building[pos].type == Building::None) {
+            if (gs.field().building[pos].type == Building::None) {
                 ret.emplace_back(Action{
                     .type = ActionType::TerraformAndBuild,
                     .param1 = pos,
@@ -596,8 +596,8 @@ std::vector<Action> GameEngine::generateActions(const GameState& gs) const {
 
     // Annex,
     if (ps.annexLeft > 0) {
-        for (const auto& bIdx: gs.field->ownedByPlayer[gs.activePlayer]) {
-            if (!gs.field->building[bIdx].hasAnnex) {
+        for (const auto& bIdx: gs.field().ownedByPlayer[gs.activePlayer]) {
+            if (!gs.field().building[bIdx].hasAnnex) {
                 ret.emplace_back(Action{
                     .type = ActionType::Annex,
                     .param1 = bIdx
@@ -633,20 +633,12 @@ void GameEngine::putManToGod(GodColor color, bool discard, GameState& gs) const 
     awardWp(ps.wpPerEvent[EventType::PutManToGod], gs);
 }
 
-void GameEngine::populateField(GameState& gs) const {
-    std::lock_guard<std::mutex> lock(populateFieldMutex_);
-
-    gs.field = std::make_shared<Field>(*gs.field);
-    ++fieldStateIdx;
-    gs.field->stateIdx = fieldStateIdx;
-}
-
 void GameEngine::buildBridge(GameState& gs) const {
     const auto& ps = gs.players[gs.activePlayer];
     const auto& bot = bots_.at(gs.activePlayer);
 
     if (getPs(gs).bridgesLeft > 0) {
-        const auto poses = gs.field->buildableBridges(gs.activePlayer);
+        const auto poses = gs.field().buildableBridges(gs.activePlayer);
         const auto pos = bot->choosePlaceForBridge(gs, poses);
         if (pos >= 0) {
             buildBridge(pos, gs);
@@ -655,13 +647,11 @@ void GameEngine::buildBridge(GameState& gs) const {
 }
 
 void GameEngine::buildBridge(int8_t pos, GameState& gs) const {
-    populateField(gs);
-    assert(gs.field->bridges[pos] == -1);
+    Field::populateField(gs, FieldActionType::BuildBridge, pos);
     assert(getPs(gs).bridgesLeft > 0);
-    gs.field->bridges[pos] = gs.activePlayer;
     getPs(gs).bridgesLeft--;
 
-    checkFederation(pos, true, gs);
+    checkFederation(gs);
 }
 
 void GameEngine::pushButton(int8_t buttonIdx, int param, GameState& gs) const {
@@ -684,8 +674,8 @@ void GameEngine::pushButton(int8_t buttonIdx, int param, GameState& gs) const {
             if (param < 0) {
                 std::vector<int8_t> possiblePos;
                 possiblePos.reserve(10);
-                for (const auto& pos : gs.field->ownedByPlayer[gs.activePlayer]) {
-                    if (gs.field->building[pos].type == Building::Laboratory) {
+                for (const auto& pos : gs.field().ownedByPlayer[gs.activePlayer]) {
+                    if (gs.field().building[pos].type == Building::Laboratory) {
                         possiblePos.push_back(pos);
                     }
                 }
@@ -698,8 +688,8 @@ void GameEngine::pushButton(int8_t buttonIdx, int param, GameState& gs) const {
             if (param < 0) {
                 std::vector<int8_t> possiblePos;
                 possiblePos.reserve(10);
-                for (const auto& pos : gs.field->ownedByPlayer[gs.activePlayer]) {
-                    if (gs.field->building[pos].type == Building::Mine) {
+                for (const auto& pos : gs.field().ownedByPlayer[gs.activePlayer]) {
+                    if (gs.field().building[pos].type == Building::Mine) {
                         possiblePos.push_back(pos);
                     }
                 }
@@ -820,7 +810,7 @@ void GameEngine::awardInnovation(Innovation inno, GameState& gs) const {
             break;
         }
         case Innovation::Nbuildings : {
-            const auto b = gs.field->ownedByPlayer[gs.activePlayer].size();
+            const auto b = gs.field().ownedByPlayer[gs.activePlayer].size();
             if (b >= 11) {
                 awardWp(18, gs);
             } else if (b >= 9) {
@@ -930,18 +920,13 @@ void GameEngine::doTurnGuided(GameState& gs) const {
 
 void GameEngine::buildForFree(int8_t pos, Building building, bool isNeutral, GameState& gs) const {
     assert(pos >= 0 && pos < FieldOrigin::FIELD_SIZE);
-    assert(gs.field->building[pos].type == Building::None);
-    populateField(gs);
-
-    gs.field->building[pos].type = building;
-    gs.field->building[pos].owner = gs.activePlayer;
-    gs.field->building[pos].neutral = isNeutral;
-    gs.field->ownedByPlayer[gs.activePlayer].push_back(pos);
+    assert(gs.field().building[pos].type == Building::None);
+    Field::populateField(gs, FieldActionType::BuildNew, pos, SC(building), isNeutral);
 
     auto& ps = getPs(gs);
 
-    if (gs.field->type[pos] != getColor(gs)) {
-        int amount = spadesNeeded(gs.field->type[pos], getColor(gs));
+    if (gs.field().type[pos] != getColor(gs)) {
+        int amount = spadesNeeded(gs.field().type[pos], getColor(gs));
         constexpr int cubePerTf[] = { 3, 2, 1 };
         spendResources(Resources { .cube = (int8_t) (cubePerTf[ps.tfLevel] * amount) }, gs);
         terraform(pos, amount, gs);
@@ -963,19 +948,15 @@ void GameEngine::buildForFree(int8_t pos, Building building, bool isNeutral, Gam
     awardWp(ps.wpPerEvent[StaticData::buildingOrigins()[building].buildEvent], gs);
 
     chargeOpp(pos, gs);
-    checkFederation(pos, false, gs);
+    checkFederation(gs);
 }
 
 void GameEngine::buildMine(int8_t pos, GameState& gs) const {
     auto& ps = getPs(gs);
 
-    assert(gs.field->building[pos].type == Building::None);
+    assert(gs.field().building[pos].type == Building::None);
     assert(ps.buildingsAvailable[Building::Mine] > 0);
-    populateField(gs);
-
-    gs.field->building[pos].type = Building::Mine;
-    gs.field->building[pos].owner = gs.activePlayer;
-    gs.field->ownedByPlayer[gs.activePlayer].push_back(pos);
+    Field::populateField(gs, FieldActionType::BuildNew, pos, SC(Building::Mine), 0);
 
     if (ps.buildingsAvailable[Building::Mine] != 5) ps.additionalIncome.cube++;
     ps.buildingsAvailable[Building::Mine]--;
@@ -991,11 +972,11 @@ void GameEngine::buildMine(int8_t pos, GameState& gs) const {
     }
 
     chargeOpp(pos, gs);
-    checkFederation(pos, false, gs);
+    checkFederation(gs);
 }
 
 void GameEngine::terraformAndBuildMine(int8_t pos, bool build, GameState& gs) const {
-    const auto amnt = spadesNeeded(gs.field->type[pos], getColor(gs));
+    const auto amnt = spadesNeeded(gs.field().type[pos], getColor(gs));
     if (amnt > 0) {
         constexpr int8_t cubePerTf[] = { 3, 2, 1 };
         spendResources(Resources{ .cube = (int8_t) (amnt * cubePerTf[getPs(gs).tfLevel]) }, gs);
@@ -1021,15 +1002,15 @@ void GameEngine::doAction(Action action, GameState& gs) const {
     switch (action.type) {
         case ActionType::UpgradeBuilding: {
             const auto pos = action.param1;
-            if (gs.field->building[pos].type == Building::Guild) {
+            if (gs.field().building[pos].type == Building::Guild) {
                 if (action.param2 >= 0) {
                     upgradeBuilding(pos, Building::Palace, gs, action.param2);
                 } else {
                     upgradeBuilding(pos, Building::Laboratory, gs, -1 - action.param2);
                 }
-            } else if (gs.field->building[pos].type == Building::Mine) {
+            } else if (gs.field().building[pos].type == Building::Mine) {
                 upgradeBuilding(pos, Building::Guild, gs, action.param2);
-            } else if (gs.field->building[pos].type == Building::Laboratory) {
+            } else if (gs.field().building[pos].type == Building::Laboratory) {
                 upgradeBuilding(pos, Building::Academy, gs, action.param2);
             }
             break;
@@ -1097,11 +1078,7 @@ void GameEngine::doAction(Action action, GameState& gs) const {
         }
 
         case ActionType::Annex: {
-            populateField(gs);
-
-            assert(gs.field->building.at(action.param1).hasAnnex == false);
-            gs.field->building.at(action.param1).hasAnnex = true;
-
+            Field::populateField(gs, FieldActionType::AddAnnex, action.param1);
             assert(ps.annexLeft > 0);
             ps.annexLeft--;
             break;
@@ -1258,88 +1235,18 @@ void GameEngine::playGame(GameState& gs) const {
 }
 
 int GameEngine::countGroups(GameState& gs) const {
-    return maximum(gs.field->bfs(gs.activePlayer, 0));
+    return maximum(gs.field().bfs(gs.activePlayer, 0));
 }
 
 void GameEngine::log(const std::string& str) const {
     if (withLogs_) std::cerr << str << std::endl;
 }
 
-void GameEngine::checkFederation(int8_t pos, bool isBridge, GameState& gs) const {
-    auto& ps = getPs(gs);
-
-    std::array<bool, FieldOrigin::FIELD_SIZE> visited = { false };
-    int inFedIdx = -1;
-
-    std::queue<int8_t> q;
-    if (isBridge) {
-        if (gs.field->building.at(StaticData::fieldOrigin().bridgeConnections.at(pos).first).fedIdx >= 0) {
-            gs.field->building.at(StaticData::fieldOrigin().bridgeConnections.at(pos).second).fedIdx = gs.field->building.at(StaticData::fieldOrigin().bridgeConnections.at(pos).first).fedIdx;
-            return; // already in Fed
-        }
-        if (gs.field->building.at(StaticData::fieldOrigin().bridgeConnections.at(pos).second).fedIdx >= 0) {
-            gs.field->building.at(StaticData::fieldOrigin().bridgeConnections.at(pos).first).fedIdx = gs.field->building.at(StaticData::fieldOrigin().bridgeConnections.at(pos).second).fedIdx;
-            return; // already in Fed
-        }
-
-        auto p = StaticData::fieldOrigin().bridgeConnections.at(pos).first;
-        if (gs.field->building[p].owner == gs.activePlayer) q.push(p);
-
-        p = StaticData::fieldOrigin().bridgeConnections.at(pos).second;
-        if (gs.field->building[p].owner == gs.activePlayer) q.push(p);
-    } else {
-        if (gs.field->building.at(pos).fedIdx >= 0) {
-            return; // already in Fed
-        }
-        q.push(pos);
-    }
-
-    while (!q.empty()) {
-        const auto pos = q.front();
-        q.pop();
-
-        if (visited[pos]) {
-            continue;
-        }
-
-        assert(gs.field->building[pos].owner == gs.activePlayer);
-
-        if (gs.field->building.at(pos).fedIdx >= 0) {
-            inFedIdx = gs.field->building.at(pos).fedIdx;
-        }
-    
-        visited[pos] = true;
-
-        for (const auto& neib: gs.field->adjacent(pos)) {
-            if (gs.field->building[neib].owner == gs.activePlayer && !visited[neib]) {
-                q.push(neib);
-            }
-        }
-    }
-
-    if (inFedIdx == -1) {
-        int totalPower = 0;
-        for (const auto& [idx, v]: enumerate(visited)) {
-            if (v) {
-                totalPower += StaticData::buildingOrigins()[gs.field->building.at(idx).type].power;
-                totalPower += gs.field->building.at(idx).hasAnnex ? 1 : 0;
-            }
-        }
-        if (totalPower >= 7 || (totalPower >= 6 && (ps.palaceIdx >= 0 && StaticData::palaces()[ps.palaceIdx].special == PalaceSpecial::Fed6nrg))) {
-            inFedIdx = ps.feds.size();
-            for (const auto& [idx, v]: enumerate(visited)) {
-                if (v) {
-                    gs.field->building.at(idx).fedIdx = inFedIdx;
-                }
-            }
-
-            log("Federation: " + std::to_string(inFedIdx) + " of power " + std::to_string(totalPower));
-
-            const auto tile = bots_[gs.activePlayer]->chooseFedTile(gs);
-            awardFedTile(tile, gs);
-        }
-    } else {
-        gs.field->building.at(pos).fedIdx = inFedIdx;
+void GameEngine::checkFederation(GameState& gs) const {
+    while (gs.field().fedsCount[gs.activePlayer] > getPs(gs).fedsCount) {
+        getPs(gs).fedsCount++;
+        const auto tile = bots_[gs.activePlayer]->chooseFedTile(gs);
+        awardFedTile(tile, gs);
     }
 }
 
@@ -1528,20 +1435,20 @@ TerrainType GameEngine::getColor(const GameState& gs) const {
 }
 
 void GameEngine::terraform(int8_t pos, int amount, GameState& gs) const {
-    populateField(gs);
     auto& ps = getPs(gs);
 
     awardWp(amount * ps.wpPerEvent[EventType::Terraform], gs);
 
     const int8_t dstColor = (int8_t) getColor(gs);
-    const int8_t srcColor = (int8_t) gs.field->type.at(pos);
+    const int8_t srcColor = (int8_t) gs.field().type.at(pos);
     assert(srcColor != dstColor);
 
     int8_t direction = dstColor - srcColor;
     direction /= (abs(direction) > 3) ? -abs(direction) : abs(direction);
 
     if (getRace(gs) == Race::Goblins) awardResources(IncomableResources{ .gold = (int8_t) (2 * amount) }, gs);
-    gs.field->type.at(pos) = (TerrainType) ((srcColor + direction * amount + 7) % 7);
+
+    Field::populateField(gs, FieldActionType::Terraform, pos, ((srcColor + direction * amount + 7) % 7));
 }
 
 void GameEngine::useSpades(int amount, GameState& gs) const {
@@ -1556,7 +1463,7 @@ void GameEngine::useSpades(int amount, GameState& gs) const {
     if (pos < 0) {
         return;
     }
-    const auto needed = spadesNeeded(gs.field->type.at(pos), pColor);
+    const auto needed = spadesNeeded(gs.field().type.at(pos), pColor);
 
     if (spareSpades < needed) {
         terraform(pos, spareSpades, gs);
@@ -1578,13 +1485,13 @@ void GameEngine::useSpades(int amount, GameState& gs) const {
         if (pos < 0) {
             break;
         }
-        const auto needed = spadesNeeded(gs.field->type.at(pos), pColor);
+        const auto needed = spadesNeeded(gs.field().type.at(pos), pColor);
         const auto used = std::min(spareSpades, needed);
         terraform(pos, used, gs);
         spareSpades -= used;
     }
 
-    if (gs.phase == GamePhase::Actions && (ps.buildingsAvailable[Building::Mine] > 0) && (gs.field->type.at(pos) == pColor) && ps.resources.cube >= 1 && ps.resources.gold >= 2) {
+    if (gs.phase == GamePhase::Actions && (ps.buildingsAvailable[Building::Mine] > 0) && (gs.field().type.at(pos) == pColor) && ps.resources.cube >= 1 && ps.resources.gold >= 2) {
         if (bot->wannaBuildMine(gs, pos)) {
             buildMine(pos, gs);
         }
@@ -1637,8 +1544,8 @@ void GameEngine::doFinalScoring(GameState& gs) const {
     auto& ps = getPs(gs);
     auto& oppPs = gs.players[1 - gs.activePlayer];
 
-    const int myCount = gs.field->countReachableBuildings(gs.activePlayer, ps.navLevel);
-    const int oppCount = gs.field->countReachableBuildings(1 - gs.activePlayer, oppPs.navLevel);
+    const int myCount = gs.field().countReachableBuildings(gs.activePlayer, ps.navLevel);
+    const int oppCount = gs.field().countReachableBuildings(1 - gs.activePlayer, oppPs.navLevel);
     const int pNcount = 14;
 
     int bRank = 0;
@@ -1695,28 +1602,47 @@ std::vector<int8_t> GameEngine::terraformableHexes(const GameState& gs) const {
     r.resize(std::distance(
         r.begin(),
         std::remove_if(r.begin(), r.end(), [t = getColor(gs), &gs](int8_t pos) {
-            return gs.field->type[pos] == t;
+            return gs.field().type[pos] == t;
         })
     ));
     
     return r;
 }
 
-std::vector<int8_t> GameEngine::someHexes(bool onlyInReach, bool onlyNative, const GameState& gs, int cubesDetained, int freeSpades) const {
+const std::vector<int8_t>& GameEngine::someHexes(bool onlyInReach, bool onlyNative, const GameState& gs, int cubesDetained, int freeSpades) const {
     const auto& ps = gs.players[gs.activePlayer];
+
+    uint64_t hash = gs.field().stateIdx;
+    hash *= 2;
+    hash += onlyInReach;
+    hash *= 2;
+    hash += onlyNative;
+    hash *= 2;
+    hash += gs.activePlayer;
+    hash *= 5;
+    hash += ps.navLevel;
+    const auto cubesLeft = ps.resources.cube - cubesDetained;
+    constexpr int8_t tfPrice[] = { 3, 2, 1 };
+    int tfLeft = freeSpades;
+    if (gs.phase == GamePhase::Actions) {
+        tfLeft += cubesLeft / tfPrice[ps.tfLevel];
+    }
+    tfLeft = std::min(tfLeft, 3);
+    hash *= 4;
+    hash += tfLeft;
+
+    if (Field::someHexesCache_.contains(hash)) {
+        return Field::someHexesCache_.at(hash);
+    }
 
     if (onlyInReach) {
         if (onlyNative) {
-            return gs.field->reachable(gs.activePlayer, ps.navLevel, getColor(gs));
+            Field::someHexesCache_.emplace(hash, gs.field().reachable(gs.activePlayer, ps.navLevel, getColor(gs)));
+            return Field::someHexesCache_.at(hash);
         } else {
-            const auto cubesLeft = ps.resources.cube - cubesDetained;
-            constexpr int8_t tfPrice[] = { 3, 2, 1 };
-            int tfLeft = freeSpades;
-            if (gs.phase == GamePhase::Actions) {
-                tfLeft += cubesLeft / tfPrice[ps.tfLevel];
-            }
             if (tfLeft >= 3) {
-                return gs.field->reachable(gs.activePlayer, ps.navLevel);
+                Field::someHexesCache_.emplace(hash, gs.field().reachable(gs.activePlayer, ps.navLevel));
+                return Field::someHexesCache_.at(hash);
             } else {
                 FlatMap<TerrainType, bool, 7> tfable;
                 const auto myColor = getColor(gs);
@@ -1727,27 +1653,30 @@ std::vector<int8_t> GameEngine::someHexes(bool onlyInReach, bool onlyNative, con
                         tfable[(TerrainType) i] = false;
                     }
                 }
-                auto poses = gs.field->reachable(gs.activePlayer, ps.navLevel);
+                auto poses = gs.field().reachable(gs.activePlayer, ps.navLevel);
                 poses.resize(std::distance(
                     poses.begin(),
                     std::remove_if(poses.begin(), poses.end(), [&] (int8_t p) {
-                        return !tfable[gs.field->type[p]];
+                        return !tfable[gs.field().type[p]];
                     })
                 ));
 
-                return poses;
+                Field::someHexesCache_.emplace(hash, poses);
+                return Field::someHexesCache_.at(hash);
             }
         }
     } else {
         if (onlyNative) {
             std::vector<int8_t> ret;
             ret.reserve(20);
-            for (const auto [pos, color]: enumerate(gs.field->type)) {
-                if (color == getColor(gs) && gs.field->building[pos].owner == -1) {
+            for (const auto [pos, color]: enumerate(gs.field().type)) {
+                if (color == getColor(gs) && gs.field().building[pos].owner == -1) {
                     ret.emplace_back(pos);
                 }
             }
-            return ret;
+
+            Field::someHexesCache_.emplace(hash, ret);
+            return Field::someHexesCache_.at(hash);
         } else {
             // Why should you want that?
             assert(false);
@@ -1776,10 +1705,8 @@ void GameEngine::initializeRandomly(GameState& gs, std::default_random_engine& g
     
     gs.fedTilesAvailable = {3, 3, 3, 3, 3, 3, 3};
 
-    gs.field = std::make_shared<Field>();
-    gs.field->type = StaticData::fieldOrigin().basicType;
-    for (auto& b: gs.field->bridges) b = -1;
-
+    gs.fieldIdx = Field::newField().stateIdx;
+    
     std::vector<int> indices;
 
     gs.staticGs.neutralGods[GodColor::Yellow] = 2;

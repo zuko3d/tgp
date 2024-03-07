@@ -1,8 +1,14 @@
 #include "Field.h"
 
+#include "GameState.h"
 #include "StaticData.h"
 #include "Utils.h"
 #include <queue>
+
+std::unordered_map<uint64_t, std::vector<int8_t>> Field::someHexesCache_;
+std::unordered_map<uint64_t, uint64_t> Field::fieldActionsCache_;
+std::vector<Field> Field::fieldByState_;
+std::mutex Field::populateFieldMutex_;
 
 std::vector<int8_t> Field::buildableBridges(int owner) const {
     std::vector<int8_t> ret;
@@ -159,4 +165,156 @@ std::vector<int8_t> Field::reachable(int owner, int range, TerrainType color) co
     }
     
     return ret;
+}
+
+void Field::populateField(GameState& gs, FieldActionType action, int pos, int param1, int param2) {
+    uint64_t actionHash = gs.fieldIdx;
+    actionHash *= 2;
+    actionHash += gs.activePlayer;
+    actionHash *= 8;
+    actionHash += SC(action);
+    actionHash *= 128;
+    actionHash += pos;
+    actionHash *= 8;
+    actionHash += param1;
+    actionHash *= 2;
+    actionHash += param2;
+
+    if (fieldActionsCache_.contains(actionHash)) {
+        gs.fieldIdx = fieldActionsCache_.at(actionHash);
+        return;
+    }
+
+    std::lock_guard<std::mutex> lock(populateFieldMutex_);
+
+    fieldActionsCache_.emplace(actionHash, fieldByState_.size());
+
+    fieldByState_.push_back(gs.field());
+    auto& newField = fieldByState_.back();
+    newField.stateIdx = fieldByState_.size() - 1;
+
+    switch (action)
+    {
+    case FieldActionType::BuildNew:
+        assert(newField.building[pos].owner == -1);
+        newField.type[pos] = gs.staticGs.playerColors[gs.activePlayer];
+        newField.building[pos].owner = gs.activePlayer;
+        newField.building[pos].type = (Building)param1;
+        newField.building[pos].neutral = param2;
+        newField.ownedByPlayer[gs.activePlayer].push_back(pos);
+        break;
+
+    case FieldActionType::BuildBridge:
+        assert(newField.bridges[pos] == -1);
+        newField.bridges[pos] = gs.activePlayer;
+        break;
+
+    case FieldActionType::AddAnnex:
+        assert(newField.building[pos].owner == gs.activePlayer);
+        newField.building[pos].hasAnnex = true;
+        break;
+
+    case FieldActionType::ChangeBuildingType:
+        assert(newField.building[pos].owner == gs.activePlayer);
+        newField.building[pos].type = (Building)param1;
+        break;
+
+    case FieldActionType::Terraform:
+        assert(newField.building[pos].owner == -1);
+        newField.type[pos] = (TerrainType)param1;
+        break;
+
+    default:
+        assert(false);
+        break;
+    }
+
+    if (SC(action) <= 3) {
+        auto& ps = gs.players[gs.activePlayer];
+
+        std::array<bool, FieldOrigin::FIELD_SIZE> visited = { false };
+        int inFedIdx = -1;
+
+        std::queue<int8_t> q;
+        if (action == FieldActionType::BuildBridge) {
+            if (newField.building.at(StaticData::fieldOrigin().bridgeConnections.at(pos).first).fedIdx >= 0) {
+                newField.building.at(StaticData::fieldOrigin().bridgeConnections.at(pos).second).fedIdx = newField.building.at(StaticData::fieldOrigin().bridgeConnections.at(pos).first).fedIdx;
+                return; // already in Fed
+            }
+            if (newField.building.at(StaticData::fieldOrigin().bridgeConnections.at(pos).second).fedIdx >= 0) {
+                newField.building.at(StaticData::fieldOrigin().bridgeConnections.at(pos).first).fedIdx = newField.building.at(StaticData::fieldOrigin().bridgeConnections.at(pos).second).fedIdx;
+                return; // already in Fed
+            }
+
+            auto p = StaticData::fieldOrigin().bridgeConnections.at(pos).first;
+            if (newField.building[p].owner == gs.activePlayer) q.push(p);
+
+            p = StaticData::fieldOrigin().bridgeConnections.at(pos).second;
+            if (newField.building[p].owner == gs.activePlayer) q.push(p);
+        }
+        else {
+            if (newField.building.at(pos).fedIdx >= 0) {
+                return; // already in Fed
+            }
+            q.push(pos);
+        }
+
+        while (!q.empty()) {
+            const auto pos = q.front();
+            q.pop();
+
+            if (visited[pos]) {
+                continue;
+            }
+
+            assert(newField.building[pos].owner == gs.activePlayer);
+
+            if (newField.building.at(pos).fedIdx >= 0) {
+                inFedIdx = newField.building.at(pos).fedIdx;
+            }
+
+            visited[pos] = true;
+
+            for (const auto& neib : newField.adjacent(pos)) {
+                if (newField.building[neib].owner == gs.activePlayer && !visited[neib]) {
+                    q.push(neib);
+                }
+            }
+        }
+
+        if (inFedIdx == -1) {
+            int totalPower = 0;
+            for (const auto& [idx, v] : enumerate(visited)) {
+                if (v) {
+                    totalPower += StaticData::buildingOrigins()[newField.building.at(idx).type].power;
+                    totalPower += newField.building.at(idx).hasAnnex ? 1 : 0;
+                }
+            }
+            if (totalPower >= 7 || (totalPower >= 6 && (ps.palaceIdx >= 0 && StaticData::palaces()[ps.palaceIdx].special == PalaceSpecial::Fed6nrg))) {
+                newField.fedsCount[gs.activePlayer]++;
+                inFedIdx = newField.fedsCount[gs.activePlayer];
+                for (const auto& [idx, v] : enumerate(visited)) {
+                    if (v) {
+                        newField.building.at(idx).fedIdx = inFedIdx;
+                    }
+                }
+
+                // log("Federation: " + std::to_string(inFedIdx) + " of power " + std::to_string(totalPower));
+            }
+        }
+        else {
+            newField.building.at(pos).fedIdx = inFedIdx;
+        }
+    }
+}
+
+const Field& Field::newField() {
+    std::lock_guard<std::mutex> lock(populateFieldMutex_);
+    fieldByState_.emplace_back();
+    auto& field = fieldByState_.back();
+    field.stateIdx = fieldByState_.size() - 1;
+    field.type = StaticData::fieldOrigin().basicType;
+    for (auto& b : field.bridges) b = -1;
+
+    return field;
 }

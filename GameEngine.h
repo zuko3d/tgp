@@ -7,6 +7,7 @@
 
 #include <mutex>
 #include <random>
+#include <unordered_map>
 
 int spadesNeeded(TerrainType src, TerrainType dst);
 
@@ -26,7 +27,7 @@ public:
     void advanceGs(GameState& gs) const;
     std::vector<Action> generateActions(const GameState& gs) const;
 
-    void checkFederation(int8_t pos, bool isBridge, GameState& gs) const;
+    void checkFederation(GameState& gs) const;
     void doFinalScoring(GameState& gs) const;
 
     void pushButton(int8_t buttonIdx, int param, GameState& gs) const;
@@ -56,7 +57,7 @@ public:
     bool gameEnded(const GameState& gs) const;
     // static std::vector<ResizableArray<uint16_t, 6>> generateFieldTopology(int mapSize);
 
-    std::vector<int8_t> someHexes(bool onlyInReach, bool onlyNative, const GameState& gs, int cubesDetained = 0, int freeSpades = 0) const;
+    const std::vector<int8_t>& someHexes(bool onlyInReach, bool onlyNative, const GameState& gs, int cubesDetained = 0, int freeSpades = 0) const;
 
     void log(const std::string& str) const;
 
@@ -70,8 +71,6 @@ private:
     PlayerState& getPs(GameState& gs) const;
     TerrainType getColor(const GameState& gs) const;
 
-    void populateField(GameState& gs) const;
-
     void chargeOpp(int8_t pos, GameState& gs) const;
 
     void buildBridge(int8_t pos, GameState& gs) const;
@@ -83,8 +82,7 @@ private:
     std::vector<int8_t> terraformableHexes(const GameState& gs) const;
 
     std::vector<IBot*> bots_;
-    mutable int fieldStateIdx = 0;
-    mutable std::mutex populateFieldMutex_;
+
     bool withLogs_ = false;
     bool withStats_ = false;
 };

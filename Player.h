@@ -26,6 +26,7 @@ struct PlayerState {
     FlatMap<Building, int8_t, 5> buildingsAvailable = {9, 4, 1, 3, 1};
     FlatMap<Building, int8_t, 7> neutralBuildingsAmount;
     IncomableResources additionalIncome;
+    int8_t fedsCount = 0;
     int8_t palaceIdx = -1;
     int8_t bridgesLeft = 3;
     int8_t humansLeft = 7;

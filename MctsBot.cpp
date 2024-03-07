@@ -1,5 +1,6 @@
 #include "MctsBot.h"
 
+#include "Timer.h"
 #include "Types.h"
 
 struct MctsNode {
@@ -60,7 +61,7 @@ double MctsBot::evalPs(const GameState& gs, int pIdx) const {
     const auto color = gs.staticGs.playerColors[pIdx];
     std::array<int, 4> tfs = {{0}};
     for (const auto pos: hexes) {
-        tfs[spadesNeeded(gs.field->type[pos], color)]++;
+        tfs[spadesNeeded(gs.field().type[pos], color)]++;
     }
     for (int i = 0; i < 4; i++) {
         ret += curWeights.reachableHexes[i] * tfs[i];
@@ -201,6 +202,7 @@ Action MctsBot::buildMcTree(const GameState& gs) const {
 
     int stopRound = gs.round + roundsDepth_;
     for (int step = 0; step < steps_; step++) {
+        Timer timer;
         MctsNode* bottom = goBottom(root, stopRound);
         bottomPts = bottom->pts;
 
@@ -210,6 +212,8 @@ Action MctsBot::buildMcTree(const GameState& gs) const {
 
             bottom = bottom->parent;
         }
+
+//         std::cout << timer.elapsedUSeconds() << std::endl;
     }
 
     return root.findBestChild()->actionToGetHere;

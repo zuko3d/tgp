@@ -6,6 +6,14 @@
 #include <stdint.h>
 #include <vector>
 
+enum class FieldActionType : uint8_t {
+    BuildNew,
+    BuildBridge,
+    AddAnnex,
+    ChangeBuildingType,
+    Terraform,
+};
+
 enum class HexType : uint8_t {
     Desert = 0,
     Plains = 1,

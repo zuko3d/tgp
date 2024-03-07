@@ -5,7 +5,11 @@
 
 #include <array>
 #include <memory>
+#include <mutex>
+#include <unordered_map>
 #include <vector>
+
+struct GameState;
 
 struct FieldOrigin {
     static constexpr size_t FIELD_SIZE = 91;
@@ -22,6 +26,8 @@ struct FieldOrigin {
 
 // Don't forget to make it Copy-on-write
 struct Field {
+    static const Field& newField();
+
     std::vector<int8_t> buildingByPlayer(Building b, int p, bool withNeutrals = false) const;
     bool hasAdjacentEnemies(int8_t pos, int owner) const;
     int adjacentEnemiesPower(int8_t pos, int owner) const;
@@ -35,7 +41,14 @@ struct Field {
 
     std::array<TerrainType, FieldOrigin::FIELD_SIZE> type;
     std::array<int8_t, FieldOrigin::TOTAL_BRIDGES> bridges; // owner
-    std::array<BuildingOnMap, FieldOrigin::FIELD_SIZE> building;
-    std::array<ResizableArray<int8_t, 22>, 2> ownedByPlayer;
+    std::array<BuildingOnMap, FieldOrigin::FIELD_SIZE> building = {};
+    std::array<ResizableArray<int8_t, 22>, 2> ownedByPlayer = {};
     int stateIdx = 0;
+    std::array<int8_t, 2> fedsCount = { 0, 0 };
+
+    static void populateField(GameState& gs, FieldActionType action, int pos, int param1 = 0, int param2 = 0);
+    static std::unordered_map<uint64_t, std::vector<int8_t>> someHexesCache_;
+    static std::unordered_map<uint64_t, uint64_t> fieldActionsCache_;
+    static std::vector<Field> fieldByState_;
+    static std::mutex populateFieldMutex_;
 };

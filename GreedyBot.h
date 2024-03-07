@@ -249,7 +249,7 @@ private:
         const auto color = gs.staticGs.playerColors[pIdx];
         std::array<int, 4> tfs = {{0}};
         for (const auto pos: hexes) {
-            tfs[spadesNeeded(gs.field->type[pos], color)]++;
+            tfs[spadesNeeded(gs.field().type[pos], color)]++;
         }
         for (int i = 0; i < 4; i++) {
             ret += curWeights.reachableHexes[i] * tfs[i];
