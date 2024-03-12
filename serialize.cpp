@@ -243,7 +243,7 @@ nlohmann::json toJson(const GameState& gs) {
     j["marketActions"] = toJson(gs.marketActions);
     j["phase"] = SC(gs.phase);
 
-    j["field"] = toJson(Field::fieldByState_[gs.fieldIdx]);
+    j["field"] = toJson(gs.field());
     j["staticGs"] = toJson(gs.staticGs);
 
     return j;

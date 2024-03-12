@@ -22,8 +22,6 @@ struct StaticGameState {
 
 struct GameState
 {
-    const Field& field() const { return Field::fieldByState_[fieldIdx]; }
-
     uint8_t activePlayer;
     uint8_t round = 0;
 
@@ -37,7 +35,11 @@ struct GameState
     std::array<Innovation, 6> innovations;
     ResizableArray<uint8_t, 4> palacesAvailable;
 
-    int fieldIdx;
+    int fieldStateIdx;
+    const Field& field() const {
+        return cache->fieldByState_[fieldStateIdx];
+    }
+
     FlatMap<GodColor, ResizableArray<uint8_t, 3>, 4> humansOnGods;
 
     std::array<BookButton, 3> bookActions;
@@ -46,4 +48,5 @@ struct GameState
     GamePhase phase = GamePhase::Upkeep;
 
     StaticGameState& staticGs;
+    std::shared_ptr<PrecalcCache> cache;
 };

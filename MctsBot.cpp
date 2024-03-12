@@ -28,9 +28,133 @@ struct MctsNode {
     double bestPerspectivePts = -123;
     bool generatedChildren = false;
     std::vector<MctsNode> children;
+    std::vector<MctsNode> bottomChildren;
     int stepIns = 0;
     bool nodeIsCompletelyEvaluated = false;
 };
+
+double MctsBot::evalAction(const GameState& gs, Action action) const {
+    const auto ap = gs.activePlayer;
+    const auto& ps = gs.players[gs.activePlayer];
+
+    const auto& res = ps.resources;
+    const auto& curWeights = allScoreWeights_[gs.round];
+
+    const auto evalResources = [&curWeights](const IncomableResources& res) {
+        return res.anyBook * curWeights.totalBooks +
+            res.anyGod * curWeights.godMove +
+            res.cube * curWeights.cube +
+            res.gold * curWeights.gold +
+            res.humans * curWeights.humans +
+            res.manaCharge * curWeights.manaCharge +
+            res.spades * curWeights.spades +
+            res.winPoints * curWeights.winPoints;
+    };
+    const auto evalButton = [&curWeights, evalResources, &ps](int buttonOriginIdx) {
+        const auto& button = StaticData::buttonOrigins()[buttonOriginIdx];
+        double ret = 0.0;
+        ret += evalResources(button.resources);
+
+        switch (button.special) {
+        case ButtonActionSpecial::BuildBridge: {
+            break;
+        }
+        case ButtonActionSpecial::FiraksButton: {
+            ret += curWeights.scorePerBuilding[SC(Building::Guild)] - curWeights.scorePerBuilding[SC(Building::Laboratory)];
+            break;
+        }
+        case ButtonActionSpecial::UpgradeMine: {
+            ret += curWeights.scorePerBuilding[SC(Building::Guild)] - curWeights.scorePerBuilding[SC(Building::Mine)];
+            break;
+        }
+        case ButtonActionSpecial::WpForGuilds2: {
+            ret += 2 * curWeights.winPoints * ps.countBuildings(Building::Guild);
+            break;
+        }
+        case ButtonActionSpecial::None: {
+            break;
+        }
+        };
+
+        return ret;
+    };
+
+    switch (action.type) {
+    case ActionType::UpgradeBuilding: {
+        const auto pos = action.param1;
+        Building newType;
+        double additionalScore = 0.0;
+        
+        if (gs.cache->fieldByState_[gs.fieldStateIdx].building[pos].type == Building::Guild) {
+            if (action.param2 >= 0) {
+                newType = Building::Palace;
+                additionalScore += curWeights.scorePerPalaceIdx[action.param2];
+            }
+            else {
+                newType = Building::Laboratory;
+                additionalScore = curWeights.scorePerTech[-1 - action.param2];
+            }
+        }
+        else if (gs.cache->fieldByState_[gs.fieldStateIdx].building[pos].type == Building::Mine) {
+            newType = Building::Guild;
+        }
+        else if (gs.cache->fieldByState_[gs.fieldStateIdx].building[pos].type == Building::Laboratory) {
+            newType = Building::Academy;
+            additionalScore = curWeights.scorePerTech[action.param2];
+        }
+
+        return curWeights.scorePerBuilding[SC(newType)] - curWeights.scorePerBuilding[SC(gs.field().building[pos].type)];
+    }
+    case ActionType::TerraformAndBuild: {
+        return curWeights.scorePerBuilding[SC(Building::Mine)];
+    }
+    case ActionType::UpgradeNav: {
+        return curWeights.navLevel[ps.navLevel + 1] - curWeights.navLevel[ps.navLevel];
+        break;
+    }
+    case ActionType::UpgradeTerraform: {
+        return curWeights.tfLevel[ps.navLevel + 1] - curWeights.tfLevel[ps.navLevel];
+        break;
+    }
+    case ActionType::GetInnovation: {
+        return curWeights.scorePerInnovation[action.param1];
+    }
+    case ActionType::PutManToGod: {
+        return curWeights.godMove * action.param2;
+    }
+    case ActionType::BookMarket: {
+        const auto& bookAction = gs.bookActions[action.param1];
+        return evalButton(bookAction.buttonOrigin) - curWeights.totalBooks * bookAction.bookPrice;
+    }
+
+    case ActionType::ActivateAbility: {
+        if (action.param1 < 0) {
+            return evalButton(ps.boosterButton.buttonOrigin);
+        } else {
+            return evalButton(ps.buttons[action.param1].buttonOrigin);
+        }
+        break;
+    }
+
+    case ActionType::Market: {
+        auto& marketAction = gs.marketActions[action.param1];
+        return evalButton(marketAction.buttonOrigin) - curWeights.manaCharge * 2 * marketAction.manaPrice;
+    }
+
+    case ActionType::Annex: {
+        return curWeights.totalPower;
+    }
+
+    case ActionType::Pass: {
+        return 0;
+    }
+    default:
+        assert(false);
+    }
+
+    assert(false);
+    return -1;
+}
 
 double MctsBot::evalPs(const GameState& gs, int pIdx) const {
     const auto ap = gs.activePlayer;
@@ -85,7 +209,7 @@ void MctsBot::genChildren(MctsNode& node) const {
     node.children.reserve(actions.size());
     for (const auto& action: actions) {
         GameState newState(node.gs);
-        advanceToNextNode(action, newState);
+        advanceToMyNextState(action, newState);
 
         assert((newState.activePlayer == node.gs.activePlayer) || ownGe_.gameEnded(newState));
 
@@ -96,11 +220,6 @@ void MctsBot::genChildren(MctsNode& node) const {
             .parent = &node,
             .depth = node.depth + 1,
             .pts = pts,
-    // double bestPerspectivePts = -123;
-    // bool generatedChildren = false;
-    // std::vector<MctsNode> children;
-    // int stepIns = 0;
-    // bool nodeIsCompletelyEvaluated = false;
         });
         if (ownGe_.gameEnded(newState)) {
             node.children.back().nodeIsCompletelyEvaluated = true;
@@ -112,7 +231,7 @@ void MctsBot::genChildren(MctsNode& node) const {
     node.generatedChildren = true;
 }
 
-void MctsBot::advanceToNextNode(const Action& action, GameState& gs) const {
+void MctsBot::advanceToMyNextState(const Action& action, GameState& gs) const {
     const auto myPlayer = gs.activePlayer;
 
     ownGe_.doAction(action, gs);
@@ -122,13 +241,48 @@ void MctsBot::advanceToNextNode(const Action& action, GameState& gs) const {
     }
 }
 
+void MctsBot::descentToFloor(GameState& gs, int stopRound) const {
+    while((gs.round < stopRound) && !ownGe_.gameEnded(gs)) {
+        const auto actions = ownGe_.generateActions(gs);
+        assert(!actions.empty());
+        Action bestAction;
+        double bestPts = -1e9;
+        for (const auto action : actions) {
+            double pts = evalAction(gs, action);
+
+            if (bestPts < pts) {
+                bestPts = pts;
+                bestAction = action;
+            }
+        }
+
+        advanceToMyNextState(bestAction, gs);
+    }
+}
+
 MctsNode* MctsBot::goBottom(MctsNode& node, int stopRound) const {
     MctsNode* curNode = &node;
 
     while (curNode != nullptr) {
         curNode->stepIns++;
-        if ((curNode->depth >= maxDepth_) || (curNode->gs.round >= stopRound) || ownGe_.gameEnded(curNode->gs) || curNode->nodeIsCompletelyEvaluated) {
+        if ((curNode->gs.round >= stopRound) || ownGe_.gameEnded(curNode->gs) || curNode->nodeIsCompletelyEvaluated) {
             break;
+        }
+
+        if (curNode->depth >= maxDepth_) {
+            auto newGs = curNode->gs;
+            // std::cout << node.gs.cache->fieldByState_.size() << " -> ";
+            descentToFloor(newGs, stopRound);
+            // std::cout << node.gs.cache->fieldByState_.size() << std::endl;
+            curNode->bottomChildren.push_back(MctsNode{
+                .gs = newGs,
+                .actionToGetHere = {},
+                .parent = curNode,
+                .depth = curNode->depth + 1,
+                .pts = evalPs(newGs, curNode->gs.activePlayer)
+            });
+            curNode->bottomChildren.back().bestPerspectivePts = curNode->bottomChildren.back().pts;
+            return &curNode->bottomChildren.back();
         }
 
         if (!curNode->generatedChildren) {
@@ -203,6 +357,8 @@ Action MctsBot::buildMcTree(const GameState& gs) const {
     int stopRound = gs.round + roundsDepth_;
     for (int step = 0; step < steps_; step++) {
         Timer timer;
+
+        // std::cout << "step: " << step << ", fs: " << gs.cache->fieldByState_.size() << std::endl;
         MctsNode* bottom = goBottom(root, stopRound);
         bottomPts = bottom->pts;
 

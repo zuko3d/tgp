@@ -18,6 +18,9 @@ struct ScoreWeights {
     double totalGods = 0;
     double winPoints = 0;
 
+    double spades = 0;
+    double manaCharge = 0;
+
     double goldIncome = 0;
     double cubeIncome = 0;
     double humansIncome = 0;
@@ -27,9 +30,14 @@ struct ScoreWeights {
     double manaIncome = 0;
 
     double targetGod = 0;
+    double godMove = 0;
 
     double totalPower = 0;
     double scorePerBuilding[7] = {0};
+    double scorePerPalaceIdx[17] = { 0 };
+    double scorePerTech[12] = { 0 };
+    double scorePerInnovation[18] = { 0 };
+    double scorePerButtonSpecial[4] = { 0 };
 
     double navLevel[4] = {0};
     double tfLevel[3] = {0};
@@ -47,11 +55,11 @@ public:
     { }
 
     Race chooseRace(const GameState& gs, const std::vector<Race>& races) {
-        return races[rng() % races.size()];
+        return races[0];
     }
 
     TerrainType chooseTerrainType(const GameState& gs, const std::vector<TerrainType>& colors) {
-        return colors[rng() % colors.size()];
+        return colors[0];
     }
     int chooseRoundBooster(const GameState& gs) {
         int bestAction = 0;
@@ -196,23 +204,74 @@ public:
 
     int8_t choosePlaceToSpade(const GameState& gs, int amount, const std::vector<int8_t>& possiblePos) {
         if (possiblePos.empty()) return -1;
-        
-        return possiblePos[rng() % possiblePos.size()];
+
+        int bestAction = 0;
+        double bestPts = -1e9;
+        for (const auto& pos : possiblePos) {
+            auto newGs = gs;
+            ownGe_.terraform(pos, amount, newGs);
+            const auto pts = playOut(newGs, gs.activePlayer);
+
+            if (bestPts < pts) {
+                bestPts = pts;
+                bestAction = pos;
+            }
+        }
+        return bestAction;
     }
 
     int8_t choosePlaceForBridge(const GameState& gs, const std::vector<int8_t>& possiblePos) {
         if (possiblePos.empty()) return -1;
-        return possiblePos[rng() % possiblePos.size()];
+
+        int bestAction = 0;
+        double bestPts = -1e9;
+        for (const auto& pos : possiblePos) {
+            auto newGs = gs;
+            ownGe_.buildBridge(pos, newGs);
+            const auto pts = playOut(newGs, gs.activePlayer);
+
+            if (bestPts < pts) {
+                bestPts = pts;
+                bestAction = pos;
+            }
+        }
+        return bestAction;
     }
 
     int8_t choosePlaceToBuildForFree(const GameState& gs,  Building building, bool isNeutral, const std::vector<int8_t>& possiblePos) {
         if (possiblePos.empty()) return -1;
-        return possiblePos[rng() % possiblePos.size()];
+        int8_t bestAction = 0;
+        double bestPts = -1e9;
+        for (const auto pos : possiblePos) {
+            auto newGs = gs;
+            ownGe_.buildForFree(pos, building, isNeutral, newGs);
+            const auto pts = playOut(newGs, gs.activePlayer);
+
+            if (bestPts < pts) {
+                bestPts = pts;
+                bestAction = pos;
+            }
+        }
+
+        return bestAction;
     }
 
     int8_t chooseBuildingToConvertForFree(const GameState& gs, Building building, const std::vector<int8_t>& possiblePos) {
         if (possiblePos.empty()) return -1;
-        return possiblePos[rng() % possiblePos.size()];
+        int8_t bestAction = 0;
+        double bestPts = -1e9;
+        for (const auto pos : possiblePos) {
+            auto newGs = gs;
+            ownGe_.upgradeBuilding(pos, building, newGs);
+            const auto pts = playOut(newGs, gs.activePlayer);
+
+            if (bestPts < pts) {
+                bestPts = pts;
+                bestAction = pos;
+            }
+        }
+
+        return bestAction;
     }
 
 private:
@@ -266,9 +325,7 @@ private:
         return ret;
     }
 
-    std::default_random_engine rng{43};
     AllScoreWeights allScoreWeights_;
 
     GameEngine ownGe_;
-    bool greedy_ = false;
 };

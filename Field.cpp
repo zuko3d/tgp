@@ -5,11 +5,6 @@
 #include "Utils.h"
 #include <queue>
 
-std::unordered_map<uint64_t, std::vector<int8_t>> Field::someHexesCache_;
-std::unordered_map<uint64_t, uint64_t> Field::fieldActionsCache_;
-std::vector<Field> Field::fieldByState_;
-std::mutex Field::populateFieldMutex_;
-
 std::vector<int8_t> Field::buildableBridges(int owner) const {
     std::vector<int8_t> ret;
     std::array<bool, FieldOrigin::TOTAL_BRIDGES> r {{false}};
@@ -168,7 +163,7 @@ std::vector<int8_t> Field::reachable(int owner, int range, TerrainType color) co
 }
 
 void Field::populateField(GameState& gs, FieldActionType action, int pos, int param1, int param2) {
-    uint64_t actionHash = gs.fieldIdx;
+    uint64_t actionHash = stateIdx;
     actionHash *= 2;
     actionHash += gs.activePlayer;
     actionHash *= 8;
@@ -180,23 +175,26 @@ void Field::populateField(GameState& gs, FieldActionType action, int pos, int pa
     actionHash *= 2;
     actionHash += param2;
 
-    if (fieldActionsCache_.contains(actionHash)) {
-        gs.fieldIdx = fieldActionsCache_.at(actionHash);
-        return;
+    
+    if (gs.cache->fieldActionsCache_.contains(actionHash)) {
+        // gs.fieldStateIdx = gs.cache->fieldActionsCache_.at(actionHash);
+        // return;
     }
 
-    std::lock_guard<std::mutex> lock(populateFieldMutex_);
+    std::lock_guard<std::mutex> lock(gs.cache->populateFieldMutex_);
 
-    fieldActionsCache_.emplace(actionHash, fieldByState_.size());
+    //gs.cache->fieldActionsCache_.emplace(actionHash, gs.cache->fieldByState_.size());
 
-    fieldByState_.push_back(gs.field());
-    auto& newField = fieldByState_.back();
-    newField.stateIdx = fieldByState_.size() - 1;
+    gs.cache->fieldByState_.push_back(gs.cache->fieldByState_ [gs.fieldStateIdx]);
+    auto& newField = gs.cache->fieldByState_.back();
+    newField.stateIdx = gs.cache->fieldByState_.size() - 1;
+    gs.fieldStateIdx = newField.stateIdx;
 
     switch (action)
     {
     case FieldActionType::BuildNew:
         assert(newField.building[pos].owner == -1);
+        assert(pos >= 0);
         newField.type[pos] = gs.staticGs.playerColors[gs.activePlayer];
         newField.building[pos].owner = gs.activePlayer;
         newField.building[pos].type = (Building)param1;
@@ -308,13 +306,15 @@ void Field::populateField(GameState& gs, FieldActionType action, int pos, int pa
     }
 }
 
-const Field& Field::newField() {
-    std::lock_guard<std::mutex> lock(populateFieldMutex_);
-    fieldByState_.emplace_back();
-    auto& field = fieldByState_.back();
-    field.stateIdx = fieldByState_.size() - 1;
+Field& Field::newField(PrecalcCache& cache)
+{
+    std::lock_guard<std::mutex> lock(cache.populateFieldMutex_);
+    cache.fieldByState_.emplace_back();
+
+    auto& field = cache.fieldByState_.back();
+    field.stateIdx = cache.fieldByState_.size() - 1;
     field.type = StaticData::fieldOrigin().basicType;
     for (auto& b : field.bridges) b = -1;
 
-    return field;
+    return cache.fieldByState_.back();
 }

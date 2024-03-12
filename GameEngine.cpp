@@ -119,7 +119,7 @@ void GameEngine::awardBooster(int boosterIdx, GameState& gs) const {
 }
 
 void GameEngine::chargeOpp(int8_t pos, GameState& gs) const {
-    int power = gs.field().adjacentEnemiesPower(pos, gs.activePlayer);
+    int power = gs.cache->fieldByState_[gs.fieldStateIdx].adjacentEnemiesPower(pos, gs.activePlayer);
     if (power > 0) {
         const auto& oppPs = gs.players[1 - gs.activePlayer];
         if (power == 1) {
@@ -141,9 +141,9 @@ void GameEngine::chargeOpp(int8_t pos, GameState& gs) const {
 void GameEngine::upgradeBuilding(int8_t pos, Building building, GameState& gs, int param) const {
     auto& ps = getPs(gs);
     const auto& bot = bots_[gs.activePlayer];
-    Field::populateField(gs, FieldActionType::ChangeBuildingType, pos, SC(building), 0);
+    gs.cache->fieldByState_[gs.fieldStateIdx].populateField(gs, FieldActionType::ChangeBuildingType, pos, SC(building), 0);
     ps.buildingsAvailable[building]--;
-    ps.buildingsAvailable[gs.field().building[pos].type]++;
+    ps.buildingsAvailable[gs.cache->fieldByState_[gs.fieldStateIdx].building[pos].type]++;
     awardWp(ps.wpPerEvent[StaticData::buildingOrigins()[building].buildEvent], gs);
 
     if (building == Building::Palace) {
@@ -212,7 +212,7 @@ void GameEngine::upgradeBuilding(int8_t pos, Building building, GameState& gs, i
     spendResources(StaticData::buildingOrigins()[building].price, gs);
     constexpr int additionalCharges[] = { 1, 1, 0, 0, 0 };
     if (building == Building::Guild) {
-        if (!gs.field().hasAdjacentEnemies(pos, gs.activePlayer)) {
+        if (!gs.cache->fieldByState_[gs.fieldStateIdx].hasAdjacentEnemies(pos, gs.activePlayer)) {
             spendResources( Resources{ .gold = 3 }, gs);
         }
         if (ps.buildingsAvailable[Building::Mine] != 5) {
@@ -353,9 +353,9 @@ std::vector<Action> GameEngine::generateActions(const GameState& gs) const {
 
     // UpgradeBuilding,
     if (ps.buildingsAvailable[Building::Guild] > 0 && ps.resources >= StaticData::buildingOrigins()[Building::Guild].price) {
-        for (const auto pos: gs.field().buildingByPlayer(Building::Mine, gs.activePlayer)) {
+        for (const auto pos: gs.cache->fieldByState_[gs.fieldStateIdx].buildingByPlayer(Building::Mine, gs.activePlayer)) {
             int extraPrice = 0;
-            if (!gs.field().hasAdjacentEnemies(pos, gs.activePlayer)) {
+            if (!gs.cache->fieldByState_[gs.fieldStateIdx].hasAdjacentEnemies(pos, gs.activePlayer)) {
                 extraPrice = 3;
             }
             if (ps.resources.gold >= 3 + extraPrice) {
@@ -368,7 +368,7 @@ std::vector<Action> GameEngine::generateActions(const GameState& gs) const {
         }
     }
     if (ps.buildingsAvailable[Building::Palace] > 0 && (ps.resources >= StaticData::buildingOrigins()[Building::Palace].price)) {
-        for (const auto pos: gs.field().buildingByPlayer(Building::Guild, gs.activePlayer)) {
+        for (const auto pos: gs.cache->fieldByState_[gs.fieldStateIdx].buildingByPlayer(Building::Guild, gs.activePlayer)) {
             for (const auto& palaceIdx: gs.palacesAvailable) {
                 ret.emplace_back(Action{
                     .type = ActionType::UpgradeBuilding,
@@ -381,7 +381,7 @@ std::vector<Action> GameEngine::generateActions(const GameState& gs) const {
     if (ps.buildingsAvailable[Building::Laboratory] > 0 && (ps.resources >= StaticData::buildingOrigins()[Building::Laboratory].price)) {
         for (int i = 0; i < 12; i++) {
             if (!ps.techTiles[(TechTile) i]) {
-                for (const auto pos: gs.field().buildingByPlayer(Building::Guild, gs.activePlayer)) {
+                for (const auto pos: gs.cache->fieldByState_[gs.fieldStateIdx].buildingByPlayer(Building::Guild, gs.activePlayer)) {
                     ret.emplace_back(Action{
                         .type = ActionType::UpgradeBuilding,
                         .param1 = pos,
@@ -394,7 +394,7 @@ std::vector<Action> GameEngine::generateActions(const GameState& gs) const {
     if (ps.buildingsAvailable[Building::Academy] > 0 && (ps.resources >= StaticData::buildingOrigins()[Building::Academy].price)) {
         for (int i = 0; i < 12; i++) {
             if (!ps.techTiles[(TechTile) i]) {
-                for (const auto pos: gs.field().buildingByPlayer(Building::Laboratory, gs.activePlayer)) {
+                for (const auto pos: gs.cache->fieldByState_[gs.fieldStateIdx].buildingByPlayer(Building::Laboratory, gs.activePlayer)) {
                     ret.emplace_back(Action{
                         .type = ActionType::UpgradeBuilding,
                         .param1 = pos,
@@ -409,9 +409,9 @@ std::vector<Action> GameEngine::generateActions(const GameState& gs) const {
 
     int8_t manaDiscount = (race == Race::Illusionists) ? 1 : 0;
     if (ps.bridgesLeft > 0 && !gs.marketActions[0].isUsed && ps.mana[2] >= 3 - manaDiscount) {
-        for (const auto idxFrom: gs.field().ownedByPlayer.at(gs.activePlayer)) {
+        for (const auto idxFrom: gs.cache->fieldByState_[gs.fieldStateIdx].ownedByPlayer.at(gs.activePlayer)) {
             for (const auto bridge: StaticData::fieldOrigin().bridgeIds.at(idxFrom)) {
-                if (gs.field().bridges.at(bridge) == -1) {
+                if (gs.cache->fieldByState_[gs.fieldStateIdx].bridges.at(bridge) == -1) {
                     ret.emplace_back(Action{
                         .type = ActionType::Market,
                         .param1 = 0,
@@ -443,7 +443,7 @@ std::vector<Action> GameEngine::generateActions(const GameState& gs) const {
         if (!action.isUsed && totalBooks >= action.bookPrice) {
             const auto& origin = StaticData::buttonOrigins()[action.buttonOrigin];
             if (origin.special == ButtonActionSpecial::UpgradeMine) {
-                for (const auto minePos: gs.field().buildingByPlayer(Building::Mine, gs.activePlayer)) {
+                for (const auto minePos: gs.cache->fieldByState_[gs.fieldStateIdx].buildingByPlayer(Building::Mine, gs.activePlayer)) {
                     ret.emplace_back(Action{
                         .type = ActionType::BookMarket,
                         .param1 = (int) idx,
@@ -470,9 +470,9 @@ std::vector<Action> GameEngine::generateActions(const GameState& gs) const {
             });
         } else if (origin.special == ButtonActionSpecial::BuildBridge) {
             if (ps.bridgesLeft > 0) {
-                for (const auto idxFrom: gs.field().ownedByPlayer.at(gs.activePlayer)) {
+                for (const auto idxFrom: gs.cache->fieldByState_[gs.fieldStateIdx].ownedByPlayer.at(gs.activePlayer)) {
                     for (const auto bridge: StaticData::fieldOrigin().bridgeIds.at(idxFrom)) {
-                        if (gs.field().bridges.at(bridge) == -1) {
+                        if (gs.cache->fieldByState_[gs.fieldStateIdx].bridges.at(bridge) == -1) {
                             ret.emplace_back(Action{
                                 .type = ActionType::ActivateAbility,
                                 .param1 = -1,
@@ -504,7 +504,7 @@ std::vector<Action> GameEngine::generateActions(const GameState& gs) const {
                 }
                 case ButtonActionSpecial::FiraksButton: {
                     if (ps.buildingsAvailable[Building::Guild] > 0) {
-                        for (const auto labPos: gs.field().buildingByPlayer(Building::Laboratory, gs.activePlayer)) {
+                        for (const auto labPos: gs.cache->fieldByState_[gs.fieldStateIdx].buildingByPlayer(Building::Laboratory, gs.activePlayer)) {
                             ret.emplace_back(Action{
                                 .type = ActionType::ActivateAbility,
                                 .param1 = (int) idx,
@@ -518,7 +518,7 @@ std::vector<Action> GameEngine::generateActions(const GameState& gs) const {
                     assert(false); // Invalid button
                 }
                 case ButtonActionSpecial::UpgradeMine: {
-                    for (const auto minePos: gs.field().buildingByPlayer(Building::Mine, gs.activePlayer)) {
+                    for (const auto minePos: gs.cache->fieldByState_[gs.fieldStateIdx].buildingByPlayer(Building::Mine, gs.activePlayer)) {
                         ret.emplace_back(Action{
                             .type = ActionType::ActivateAbility,
                             .param1 = (int) idx,
@@ -572,7 +572,7 @@ std::vector<Action> GameEngine::generateActions(const GameState& gs) const {
     if (ps.buildingsAvailable[Building::Mine] > 0 && ps.resources >= StaticData::buildingOrigins()[Building::Mine].price) {
         const auto poses = someHexes(true, false, gs, 1, 0);
         for (const auto& pos: poses) {
-            if (gs.field().building[pos].type == Building::None) {
+            if (gs.cache->fieldByState_[gs.fieldStateIdx].building[pos].type == Building::None) {
                 ret.emplace_back(Action{
                     .type = ActionType::TerraformAndBuild,
                     .param1 = pos,
@@ -596,8 +596,8 @@ std::vector<Action> GameEngine::generateActions(const GameState& gs) const {
 
     // Annex,
     if (ps.annexLeft > 0) {
-        for (const auto& bIdx: gs.field().ownedByPlayer[gs.activePlayer]) {
-            if (!gs.field().building[bIdx].hasAnnex) {
+        for (const auto& bIdx: gs.cache->fieldByState_[gs.fieldStateIdx].ownedByPlayer[gs.activePlayer]) {
+            if (!gs.cache->fieldByState_[gs.fieldStateIdx].building[bIdx].hasAnnex) {
                 ret.emplace_back(Action{
                     .type = ActionType::Annex,
                     .param1 = bIdx
@@ -638,7 +638,7 @@ void GameEngine::buildBridge(GameState& gs) const {
     const auto& bot = bots_.at(gs.activePlayer);
 
     if (getPs(gs).bridgesLeft > 0) {
-        const auto poses = gs.field().buildableBridges(gs.activePlayer);
+        const auto poses = gs.cache->fieldByState_[gs.fieldStateIdx].buildableBridges(gs.activePlayer);
         const auto pos = bot->choosePlaceForBridge(gs, poses);
         if (pos >= 0) {
             buildBridge(pos, gs);
@@ -647,7 +647,7 @@ void GameEngine::buildBridge(GameState& gs) const {
 }
 
 void GameEngine::buildBridge(int8_t pos, GameState& gs) const {
-    Field::populateField(gs, FieldActionType::BuildBridge, pos);
+    gs.cache->fieldByState_[gs.fieldStateIdx].populateField(gs, FieldActionType::BuildBridge, pos);
     assert(getPs(gs).bridgesLeft > 0);
     getPs(gs).bridgesLeft--;
 
@@ -674,8 +674,8 @@ void GameEngine::pushButton(int8_t buttonIdx, int param, GameState& gs) const {
             if (param < 0) {
                 std::vector<int8_t> possiblePos;
                 possiblePos.reserve(10);
-                for (const auto& pos : gs.field().ownedByPlayer[gs.activePlayer]) {
-                    if (gs.field().building[pos].type == Building::Laboratory) {
+                for (const auto& pos : gs.cache->fieldByState_[gs.fieldStateIdx].ownedByPlayer[gs.activePlayer]) {
+                    if (gs.cache->fieldByState_[gs.fieldStateIdx].building[pos].type == Building::Laboratory) {
                         possiblePos.push_back(pos);
                     }
                 }
@@ -688,8 +688,8 @@ void GameEngine::pushButton(int8_t buttonIdx, int param, GameState& gs) const {
             if (param < 0) {
                 std::vector<int8_t> possiblePos;
                 possiblePos.reserve(10);
-                for (const auto& pos : gs.field().ownedByPlayer[gs.activePlayer]) {
-                    if (gs.field().building[pos].type == Building::Mine) {
+                for (const auto& pos : gs.cache->fieldByState_[gs.fieldStateIdx].ownedByPlayer[gs.activePlayer]) {
+                    if (gs.cache->fieldByState_[gs.fieldStateIdx].building[pos].type == Building::Mine) {
                         possiblePos.push_back(pos);
                     }
                 }
@@ -810,7 +810,7 @@ void GameEngine::awardInnovation(Innovation inno, GameState& gs) const {
             break;
         }
         case Innovation::Nbuildings : {
-            const auto b = gs.field().ownedByPlayer[gs.activePlayer].size();
+            const auto b = gs.cache->fieldByState_[gs.fieldStateIdx].ownedByPlayer[gs.activePlayer].size();
             if (b >= 11) {
                 awardWp(18, gs);
             } else if (b >= 9) {
@@ -920,13 +920,13 @@ void GameEngine::doTurnGuided(GameState& gs) const {
 
 void GameEngine::buildForFree(int8_t pos, Building building, bool isNeutral, GameState& gs) const {
     assert(pos >= 0 && pos < FieldOrigin::FIELD_SIZE);
-    assert(gs.field().building[pos].type == Building::None);
-    Field::populateField(gs, FieldActionType::BuildNew, pos, SC(building), isNeutral);
+    assert(gs.cache->fieldByState_[gs.fieldStateIdx].building[pos].type == Building::None);
+    gs.cache->fieldByState_[gs.fieldStateIdx].populateField(gs, FieldActionType::BuildNew, pos, SC(building), isNeutral);
 
     auto& ps = getPs(gs);
 
-    if (gs.field().type[pos] != getColor(gs)) {
-        int amount = spadesNeeded(gs.field().type[pos], getColor(gs));
+    if (gs.cache->fieldByState_[gs.fieldStateIdx].type[pos] != getColor(gs)) {
+        int amount = spadesNeeded(gs.cache->fieldByState_[gs.fieldStateIdx].type[pos], getColor(gs));
         constexpr int cubePerTf[] = { 3, 2, 1 };
         spendResources(Resources { .cube = (int8_t) (cubePerTf[ps.tfLevel] * amount) }, gs);
         terraform(pos, amount, gs);
@@ -954,9 +954,9 @@ void GameEngine::buildForFree(int8_t pos, Building building, bool isNeutral, Gam
 void GameEngine::buildMine(int8_t pos, GameState& gs) const {
     auto& ps = getPs(gs);
 
-    assert(gs.field().building[pos].type == Building::None);
+    assert(gs.cache->fieldByState_[gs.fieldStateIdx].building[pos].type == Building::None);
     assert(ps.buildingsAvailable[Building::Mine] > 0);
-    Field::populateField(gs, FieldActionType::BuildNew, pos, SC(Building::Mine), 0);
+    gs.cache->fieldByState_[gs.fieldStateIdx].populateField(gs, FieldActionType::BuildNew, pos, SC(Building::Mine), 0);
 
     if (ps.buildingsAvailable[Building::Mine] != 5) ps.additionalIncome.cube++;
     ps.buildingsAvailable[Building::Mine]--;
@@ -976,7 +976,7 @@ void GameEngine::buildMine(int8_t pos, GameState& gs) const {
 }
 
 void GameEngine::terraformAndBuildMine(int8_t pos, bool build, GameState& gs) const {
-    const auto amnt = spadesNeeded(gs.field().type[pos], getColor(gs));
+    const auto amnt = spadesNeeded(gs.cache->fieldByState_[gs.fieldStateIdx].type[pos], getColor(gs));
     if (amnt > 0) {
         constexpr int8_t cubePerTf[] = { 3, 2, 1 };
         spendResources(Resources{ .cube = (int8_t) (amnt * cubePerTf[getPs(gs).tfLevel]) }, gs);
@@ -1002,15 +1002,15 @@ void GameEngine::doAction(Action action, GameState& gs) const {
     switch (action.type) {
         case ActionType::UpgradeBuilding: {
             const auto pos = action.param1;
-            if (gs.field().building[pos].type == Building::Guild) {
+            if (gs.cache->fieldByState_[gs.fieldStateIdx].building[pos].type == Building::Guild) {
                 if (action.param2 >= 0) {
                     upgradeBuilding(pos, Building::Palace, gs, action.param2);
                 } else {
                     upgradeBuilding(pos, Building::Laboratory, gs, -1 - action.param2);
                 }
-            } else if (gs.field().building[pos].type == Building::Mine) {
+            } else if (gs.cache->fieldByState_[gs.fieldStateIdx].building[pos].type == Building::Mine) {
                 upgradeBuilding(pos, Building::Guild, gs, action.param2);
-            } else if (gs.field().building[pos].type == Building::Laboratory) {
+            } else if (gs.cache->fieldByState_[gs.fieldStateIdx].building[pos].type == Building::Laboratory) {
                 upgradeBuilding(pos, Building::Academy, gs, action.param2);
             }
             break;
@@ -1078,7 +1078,7 @@ void GameEngine::doAction(Action action, GameState& gs) const {
         }
 
         case ActionType::Annex: {
-            Field::populateField(gs, FieldActionType::AddAnnex, action.param1);
+            gs.cache->fieldByState_[gs.fieldStateIdx].populateField(gs, FieldActionType::AddAnnex, action.param1);
             assert(ps.annexLeft > 0);
             ps.annexLeft--;
             break;
@@ -1230,12 +1230,19 @@ void GameEngine::advanceGs(GameState& gs) const {
 
 void GameEngine::playGame(GameState& gs) const {
     while (!gameEnded(gs)) {
+
+        const auto field = gs.field();
+        // std::cout << "cleared " << gs.cache->fieldByState_.size() << std::endl;
+        gs.cache->reset();
+        gs.fieldStateIdx = 0;
+        gs.cache->fieldByState_.push_back(field);
+
         advanceGs(gs);
     }
 }
 
 int GameEngine::countGroups(GameState& gs) const {
-    return maximum(gs.field().bfs(gs.activePlayer, 0));
+    return maximum(gs.cache->fieldByState_[gs.fieldStateIdx].bfs(gs.activePlayer, 0));
 }
 
 void GameEngine::log(const std::string& str) const {
@@ -1243,7 +1250,7 @@ void GameEngine::log(const std::string& str) const {
 }
 
 void GameEngine::checkFederation(GameState& gs) const {
-    while (gs.field().fedsCount[gs.activePlayer] > getPs(gs).fedsCount) {
+    while (gs.cache->fieldByState_[gs.fieldStateIdx].fedsCount[gs.activePlayer] > getPs(gs).fedsCount) {
         getPs(gs).fedsCount++;
         const auto tile = bots_[gs.activePlayer]->chooseFedTile(gs);
         awardFedTile(tile, gs);
@@ -1440,7 +1447,7 @@ void GameEngine::terraform(int8_t pos, int amount, GameState& gs) const {
     awardWp(amount * ps.wpPerEvent[EventType::Terraform], gs);
 
     const int8_t dstColor = (int8_t) getColor(gs);
-    const int8_t srcColor = (int8_t) gs.field().type.at(pos);
+    const int8_t srcColor = (int8_t) gs.cache->fieldByState_[gs.fieldStateIdx].type.at(pos);
     assert(srcColor != dstColor);
 
     int8_t direction = dstColor - srcColor;
@@ -1448,7 +1455,7 @@ void GameEngine::terraform(int8_t pos, int amount, GameState& gs) const {
 
     if (getRace(gs) == Race::Goblins) awardResources(IncomableResources{ .gold = (int8_t) (2 * amount) }, gs);
 
-    Field::populateField(gs, FieldActionType::Terraform, pos, ((srcColor + direction * amount + 7) % 7));
+    gs.cache->fieldByState_[gs.fieldStateIdx].populateField(gs, FieldActionType::Terraform, pos, ((srcColor + direction * amount + 7) % 7));
 }
 
 void GameEngine::useSpades(int amount, GameState& gs) const {
@@ -1463,7 +1470,7 @@ void GameEngine::useSpades(int amount, GameState& gs) const {
     if (pos < 0) {
         return;
     }
-    const auto needed = spadesNeeded(gs.field().type.at(pos), pColor);
+    const auto needed = spadesNeeded(gs.cache->fieldByState_[gs.fieldStateIdx].type.at(pos), pColor);
 
     if (spareSpades < needed) {
         terraform(pos, spareSpades, gs);
@@ -1485,13 +1492,13 @@ void GameEngine::useSpades(int amount, GameState& gs) const {
         if (pos < 0) {
             break;
         }
-        const auto needed = spadesNeeded(gs.field().type.at(pos), pColor);
+        const auto needed = spadesNeeded(gs.cache->fieldByState_[gs.fieldStateIdx].type.at(pos), pColor);
         const auto used = std::min(spareSpades, needed);
         terraform(pos, used, gs);
         spareSpades -= used;
     }
 
-    if (gs.phase == GamePhase::Actions && (ps.buildingsAvailable[Building::Mine] > 0) && (gs.field().type.at(pos) == pColor) && ps.resources.cube >= 1 && ps.resources.gold >= 2) {
+    if (gs.phase == GamePhase::Actions && (ps.buildingsAvailable[Building::Mine] > 0) && (gs.cache->fieldByState_[gs.fieldStateIdx].type.at(pos) == pColor) && ps.resources.cube >= 1 && ps.resources.gold >= 2) {
         if (bot->wannaBuildMine(gs, pos)) {
             buildMine(pos, gs);
         }
@@ -1602,7 +1609,7 @@ std::vector<int8_t> GameEngine::terraformableHexes(const GameState& gs) const {
     r.resize(std::distance(
         r.begin(),
         std::remove_if(r.begin(), r.end(), [t = getColor(gs), &gs](int8_t pos) {
-            return gs.field().type[pos] == t;
+            return gs.cache->fieldByState_[gs.fieldStateIdx].type[pos] == t;
         })
     ));
     
@@ -1612,7 +1619,7 @@ std::vector<int8_t> GameEngine::terraformableHexes(const GameState& gs) const {
 const std::vector<int8_t>& GameEngine::someHexes(bool onlyInReach, bool onlyNative, const GameState& gs, int cubesDetained, int freeSpades) const {
     const auto& ps = gs.players[gs.activePlayer];
 
-    uint64_t hash = gs.field().stateIdx;
+    uint64_t hash = gs.cache->fieldByState_[gs.fieldStateIdx].stateIdx;
     hash *= 2;
     hash += onlyInReach;
     hash *= 2;
@@ -1631,18 +1638,18 @@ const std::vector<int8_t>& GameEngine::someHexes(bool onlyInReach, bool onlyNati
     hash *= 4;
     hash += tfLeft;
 
-    if (Field::someHexesCache_.contains(hash)) {
-        return Field::someHexesCache_.at(hash);
+    if (gs.cache->someHexesCache_.contains(hash)) {
+        return gs.cache->someHexesCache_.at(hash);
     }
 
     if (onlyInReach) {
         if (onlyNative) {
-            Field::someHexesCache_.emplace(hash, gs.field().reachable(gs.activePlayer, ps.navLevel, getColor(gs)));
-            return Field::someHexesCache_.at(hash);
+            gs.cache->someHexesCache_.emplace(hash, gs.cache->fieldByState_[gs.fieldStateIdx].reachable(gs.activePlayer, ps.navLevel, getColor(gs)));
+            return gs.cache->someHexesCache_.at(hash);
         } else {
             if (tfLeft >= 3) {
-                Field::someHexesCache_.emplace(hash, gs.field().reachable(gs.activePlayer, ps.navLevel));
-                return Field::someHexesCache_.at(hash);
+                gs.cache->someHexesCache_.emplace(hash, gs.cache->fieldByState_[gs.fieldStateIdx].reachable(gs.activePlayer, ps.navLevel));
+                return gs.cache->someHexesCache_.at(hash);
             } else {
                 FlatMap<TerrainType, bool, 7> tfable;
                 const auto myColor = getColor(gs);
@@ -1653,36 +1660,39 @@ const std::vector<int8_t>& GameEngine::someHexes(bool onlyInReach, bool onlyNati
                         tfable[(TerrainType) i] = false;
                     }
                 }
-                auto poses = gs.field().reachable(gs.activePlayer, ps.navLevel);
+                auto poses = gs.cache->fieldByState_[gs.fieldStateIdx].reachable(gs.activePlayer, ps.navLevel);
                 poses.resize(std::distance(
                     poses.begin(),
                     std::remove_if(poses.begin(), poses.end(), [&] (int8_t p) {
-                        return !tfable[gs.field().type[p]];
+                        return !tfable[gs.cache->fieldByState_[gs.fieldStateIdx].type[p]];
                     })
                 ));
 
-                Field::someHexesCache_.emplace(hash, poses);
-                return Field::someHexesCache_.at(hash);
+                gs.cache->someHexesCache_.emplace(hash, poses);
+                return gs.cache->someHexesCache_.at(hash);
             }
         }
     } else {
         if (onlyNative) {
             std::vector<int8_t> ret;
             ret.reserve(20);
-            for (const auto [pos, color]: enumerate(gs.field().type)) {
-                if (color == getColor(gs) && gs.field().building[pos].owner == -1) {
+            for (const auto [pos, color]: enumerate(gs.cache->fieldByState_[gs.fieldStateIdx].type)) {
+                if (color == getColor(gs) && gs.cache->fieldByState_[gs.fieldStateIdx].building[pos].owner == -1) {
                     ret.emplace_back(pos);
                 }
             }
 
-            Field::someHexesCache_.emplace(hash, ret);
-            return Field::someHexesCache_.at(hash);
+            gs.cache->someHexesCache_.emplace(hash, ret);
+            return gs.cache->someHexesCache_.at(hash);
         } else {
             // Why should you want that?
             assert(false);
             return {};
         }
     }
+}
+
+void GameEngine::reset() {
 }
 
 // --------------------------------------------------------------------------------------------------------------------------------
@@ -1705,7 +1715,10 @@ void GameEngine::initializeRandomly(GameState& gs, std::default_random_engine& g
     
     gs.fedTilesAvailable = {3, 3, 3, 3, 3, 3, 3};
 
-    gs.fieldIdx = Field::newField().stateIdx;
+    gs.cache = std::make_shared<PrecalcCache>();
+    gs.cache->fieldByState_.reserve(50000);
+    gs.cache->someHexesCache_.reserve(50000);
+    gs.fieldStateIdx = Field::newField(*gs.cache).stateIdx;
     
     std::vector<int> indices;
 

@@ -10,6 +10,7 @@
 #include <vector>
 
 struct GameState;
+struct PrecalcCache;
 
 struct FieldOrigin {
     static constexpr size_t FIELD_SIZE = 91;
@@ -25,8 +26,9 @@ struct FieldOrigin {
 };
 
 // Don't forget to make it Copy-on-write
-struct Field {
-    static const Field& newField();
+class Field {
+public:
+    static Field& newField(PrecalcCache& cache);
 
     std::vector<int8_t> buildingByPlayer(Building b, int p, bool withNeutrals = false) const;
     bool hasAdjacentEnemies(int8_t pos, int owner) const;
@@ -46,9 +48,19 @@ struct Field {
     int stateIdx = 0;
     std::array<int8_t, 2> fedsCount = { 0, 0 };
 
-    static void populateField(GameState& gs, FieldActionType action, int pos, int param1 = 0, int param2 = 0);
-    static std::unordered_map<uint64_t, std::vector<int8_t>> someHexesCache_;
-    static std::unordered_map<uint64_t, uint64_t> fieldActionsCache_;
-    static std::vector<Field> fieldByState_;
-    static std::mutex populateFieldMutex_;
+    void populateField(GameState& gs, FieldActionType action, int pos, int param1 = 0, int param2 = 0);
+};
+
+struct PrecalcCache {
+    std::unordered_map<uint64_t, std::vector<int8_t>> someHexesCache_;
+    std::unordered_map<uint64_t, uint64_t> fieldActionsCache_;
+    std::vector<Field> fieldByState_;
+    std::mutex populateFieldMutex_;
+
+    void reset() {
+        std::lock_guard lock(populateFieldMutex_);
+        someHexesCache_.clear();
+        fieldActionsCache_.clear();
+        fieldByState_.clear();
+    }
 };

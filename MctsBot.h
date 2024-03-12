@@ -14,9 +14,10 @@ struct MctsNode;
 
 class MctsBot: public IBot {
 public:
-    MctsBot(IBot* botPtr, AllScoreWeights allScoreWeights, int steps, int roundsDepth)
+    MctsBot(IBot* botPtr, AllScoreWeights allScoreWeights, int steps, int roundsDepth, int maxDepth)
         : steps_(steps)
         , roundsDepth_(roundsDepth)
+        , maxDepth_(maxDepth)
         , allScoreWeights_(allScoreWeights)
         , greedyBot_(botPtr)
         , ownGe_({ greedyBot_.get(), greedyBot_.get() })
@@ -182,12 +183,37 @@ public:
     int8_t choosePlaceToSpade(const GameState& gs, int amount, const std::vector<int8_t>& possiblePos) {
         if (possiblePos.empty()) return -1;
         
-        return possiblePos[0];
+        int bestAction = 0;
+        double bestPts = -1e9;
+        for (const auto& pos: possiblePos) {
+            auto newGs = gs;
+            ownGe_.terraform(pos, amount, newGs);
+            const auto pts = playOut(newGs, gs.activePlayer);
+
+            if (bestPts < pts) {
+                bestPts = pts;
+                bestAction = pos;
+            }
+        }
+        return bestAction;
     }
 
     int8_t choosePlaceForBridge(const GameState& gs, const std::vector<int8_t>& possiblePos) {
         if (possiblePos.empty()) return -1;
-        return possiblePos[0];
+        
+        int bestAction = 0;
+        double bestPts = -1e9;
+        for (const auto& pos : possiblePos) {
+            auto newGs = gs;
+            ownGe_.buildBridge(pos, newGs);
+            const auto pts = playOut(newGs, gs.activePlayer);
+
+            if (bestPts < pts) {
+                bestPts = pts;
+                bestAction = pos;
+            }
+        }
+        return bestAction;
     }
 
     int8_t choosePlaceToBuildForFree(const GameState& gs,  Building building, bool isNeutral, const std::vector<int8_t>& possiblePos) {
@@ -228,18 +254,24 @@ public:
         return bestAction;
     }
 
+    void triggerFinal(const GameState& gs) {
+        ownGe_.reset();
+    }
+
 private:
     double evalPs(const GameState& gs, int pIdx) const;
+    double evalAction(const GameState& gs, Action action) const;
 
     void genChildren(MctsNode& node) const;
     MctsNode* goBottom(MctsNode& node, int stopRound) const;
     Action buildMcTree(const GameState& gs) const;
-    void advanceToNextNode(const Action& action, GameState& gs) const;
+    void advanceToMyNextState(const Action& action, GameState& gs) const;
+    void descentToFloor(GameState& gs, int stopRound) const;
 
 
     int steps_ = 10000;
     int roundsDepth_ = 1;
-    int maxDepth_ = 10;
+    int maxDepth_ = 3;
 
     AllScoreWeights allScoreWeights_;
     std::unique_ptr<IBot> greedyBot_;

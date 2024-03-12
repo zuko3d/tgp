@@ -205,19 +205,11 @@ int main() {
         },
     };
 
-    Field::fieldByState_.reserve(100000);
-    Field::fieldActionsCache_.reserve(100000);
-    Field::someHexesCache_.reserve(100000);
-
-    auto bot2 = MctsBot(new GreedyBot(allScoreWeights), allScoreWeights, 300, 1);
-    auto bot3 = MctsBot(new GreedyBot(allScoreWeights), allScoreWeights, 300, 2);
+    auto bot2 = MctsBot(new GreedyBot(allScoreWeights), allScoreWeights, 300, 1, 3);
+    auto bot3 = MctsBot(new GreedyBot(allScoreWeights), allScoreWeights, 300, 2, 3);
 
     // Tournament::playSingleGame({ &bot2, &bot3 }, 0);
     Tournament::playAllInAll({ &bot2, &bot3}, 10);
-
-    std::cout << "Field::fieldByState_.size(): " << Field::fieldByState_.size() << std::endl;
-    std::cout << "Field::fieldActionsCache_.size(): " << Field::fieldActionsCache_.size() << std::endl;
-    std::cout << "Field::someHexesCache_.size(): " << Field::someHexesCache_.size() << std::endl;
 
     // Tournament::playSingleGame({ &bot1, &bot2}, 42);
     return 0;

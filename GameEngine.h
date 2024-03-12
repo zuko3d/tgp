@@ -14,6 +14,7 @@ int spadesNeeded(TerrainType src, TerrainType dst);
 class GameEngine {
 public:
     GameEngine(std::vector<IBot*> bots, bool withLogs = false, bool withStats = false);
+    void reset();
     
     void initializeRandomly(GameState& gs, std::default_random_engine& g) const;
 
@@ -63,6 +64,9 @@ public:
 
     int moveGod(int amount, GodColor godColor, GameState& gs) const;
     void upgradeBuilding(int8_t pos, Building building, GameState& gs, int palaceIdx = -1) const;
+    void terraform(int8_t pos, int amount, GameState& gs) const;
+    void buildBridge(int8_t pos, GameState& gs) const;
+    void buildMine(int8_t pos, GameState& gs) const;
 
 private:
     int countGroups(GameState& gs) const;
@@ -72,10 +76,6 @@ private:
     TerrainType getColor(const GameState& gs) const;
 
     void chargeOpp(int8_t pos, GameState& gs) const;
-
-    void buildBridge(int8_t pos, GameState& gs) const;
-    void terraform(int8_t pos, int amount, GameState& gs) const;
-    void buildMine(int8_t pos, GameState& gs) const;
 
     InnoPrice getInnoFullPrice(int pos, const GameState& gs) const;
 
