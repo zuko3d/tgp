@@ -91,12 +91,11 @@ public:
             };
         }
 
+        assert(!actions.empty());
         auto bestAction = actions.front();
         double bestPts = -1e9;
-        for (const auto& action : actions) {
-            auto newGs = gs;
-            ownGe_.doAction(action, newGs);
-            const auto pts = playOut(newGs, gs.activePlayer);
+        for (const auto action : actions) {
+            double pts = evalAction(gs, action);
 
             if (bestPts < pts) {
                 bestPts = pts;
@@ -277,6 +276,128 @@ public:
 private:
     double playOut(GameState& gs, int pIdx) {
         return evalPs(gs, pIdx);
+    }
+
+    double evalAction(const GameState& gs, Action action) const {
+        const auto& ps = gs.players[gs.activePlayer];
+
+        const auto& res = ps.resources;
+        const auto& curWeights = allScoreWeights_[gs.round];
+
+        const auto evalResources = [&curWeights](const IncomableResources& res) {
+            return res.anyBook * curWeights.totalBooks +
+                res.anyGod * curWeights.godMove +
+                res.cube * curWeights.cube +
+                res.gold * curWeights.gold +
+                res.humans * curWeights.humans +
+                res.manaCharge * curWeights.manaCharge +
+                res.spades * curWeights.spades +
+                res.winPoints * curWeights.winPoints;
+        };
+        const auto evalButton = [&curWeights, evalResources, &ps](int buttonOriginIdx) {
+            const auto& button = StaticData::buttonOrigins()[buttonOriginIdx];
+            double ret = 0.0;
+            ret += evalResources(button.resources);
+
+            switch (button.special) {
+            case ButtonActionSpecial::BuildBridge: {
+                break;
+            }
+            case ButtonActionSpecial::FiraksButton: {
+                ret += curWeights.scorePerBuilding[SC(Building::Guild)] - curWeights.scorePerBuilding[SC(Building::Laboratory)];
+                break;
+            }
+            case ButtonActionSpecial::UpgradeMine: {
+                ret += curWeights.scorePerBuilding[SC(Building::Guild)] - curWeights.scorePerBuilding[SC(Building::Mine)];
+                break;
+            }
+            case ButtonActionSpecial::WpForGuilds2: {
+                ret += 2 * curWeights.winPoints * ps.countBuildings(Building::Guild);
+                break;
+            }
+            case ButtonActionSpecial::None: {
+                break;
+            }
+            };
+
+            return ret;
+        };
+
+        switch (action.type) {
+        case ActionType::UpgradeBuilding: {
+            const auto pos = action.param1;
+            Building newType;
+            double additionalScore = 0.0;
+            
+            if (gs.cache->fieldByState_[gs.fieldStateIdx].building[pos].type == Building::Guild) {
+                if (action.param2 >= 0) {
+                    newType = Building::Palace;
+                    additionalScore += curWeights.scorePerPalaceIdx[action.param2];
+                }
+                else {
+                    newType = Building::Laboratory;
+                    additionalScore = curWeights.scorePerTech[-1 - action.param2];
+                }
+            }
+            else if (gs.cache->fieldByState_[gs.fieldStateIdx].building[pos].type == Building::Mine) {
+                newType = Building::Guild;
+            }
+            else if (gs.cache->fieldByState_[gs.fieldStateIdx].building[pos].type == Building::Laboratory) {
+                newType = Building::Academy;
+                additionalScore = curWeights.scorePerTech[action.param2];
+            }
+
+            return curWeights.scorePerBuilding[SC(newType)] - curWeights.scorePerBuilding[SC(gs.field().building[pos].type)];
+        }
+        case ActionType::TerraformAndBuild: {
+            return curWeights.scorePerBuilding[SC(Building::Mine)];
+        }
+        case ActionType::UpgradeNav: {
+            return curWeights.navLevel[ps.navLevel + 1] - curWeights.navLevel[ps.navLevel];
+            break;
+        }
+        case ActionType::UpgradeTerraform: {
+            return curWeights.tfLevel[ps.navLevel + 1] - curWeights.tfLevel[ps.navLevel];
+            break;
+        }
+        case ActionType::GetInnovation: {
+            return curWeights.scorePerInnovation[action.param1];
+        }
+        case ActionType::PutManToGod: {
+            return curWeights.godMove * action.param2;
+        }
+        case ActionType::BookMarket: {
+            const auto& bookAction = gs.bookActions[action.param1];
+            return evalButton(bookAction.buttonOrigin) - curWeights.totalBooks * bookAction.bookPrice;
+        }
+
+        case ActionType::ActivateAbility: {
+            if (action.param1 < 0) {
+                return evalButton(ps.boosterButton.buttonOrigin);
+            } else {
+                return evalButton(ps.buttons[action.param1].buttonOrigin);
+            }
+            break;
+        }
+
+        case ActionType::Market: {
+            auto& marketAction = gs.marketActions[action.param1];
+            return evalButton(marketAction.buttonOrigin) - curWeights.manaCharge * 2 * marketAction.manaPrice;
+        }
+
+        case ActionType::Annex: {
+            return curWeights.totalPower;
+        }
+
+        case ActionType::Pass: {
+            return 0;
+        }
+        default:
+            assert(false);
+        }
+
+        assert(false);
+        return -1;
     }
 
     double evalPs(const GameState& gs, int pIdx) {

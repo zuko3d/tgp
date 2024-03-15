@@ -39,6 +39,7 @@ std::vector<GameResult> Tournament::playAllInAll(const std::vector<IBot*>& bots,
 		Timer timer;
 #pragma omp parallel for schedule(dynamic)
 		for (int seed = 0; seed < repeat; seed++) {
+			// std::cout << "seed: " << seed << std::endl;
 			// std::cout << ".";
 			// std::cout.flush();
 			for (int p1 = p0 + 1; p1 < bots.size(); p1++) {

@@ -19,22 +19,23 @@ struct MctsNode {
         return bestChild;
     }
 
-    GameState gs;
+    int stepIns = 0;
     Action actionToGetHere = Action{};
+    double bestPerspectivePts = -123;
+    GameState gs;
+
     MctsNode* parent = nullptr;
     int depth = 0;
 
     double pts = -123;
-    double bestPerspectivePts = -123;
+    
     bool generatedChildren = false;
     std::vector<MctsNode> children;
     std::vector<MctsNode> bottomChildren;
-    int stepIns = 0;
     bool nodeIsCompletelyEvaluated = false;
 };
 
 double MctsBot::evalAction(const GameState& gs, Action action) const {
-    const auto ap = gs.activePlayer;
     const auto& ps = gs.players[gs.activePlayer];
 
     const auto& res = ps.resources;
@@ -215,8 +216,8 @@ void MctsBot::genChildren(MctsNode& node) const {
 
         double pts = evalPs(newState, node.gs.activePlayer);
         node.children.emplace_back(MctsNode{
-            .gs = newState,
             .actionToGetHere = action,
+            .gs = newState,
             .parent = &node,
             .depth = node.depth + 1,
             .pts = pts,
@@ -270,13 +271,15 @@ MctsNode* MctsBot::goBottom(MctsNode& node, int stopRound) const {
         }
 
         if (curNode->depth >= maxDepth_) {
+            if (!curNode->bottomChildren.empty()) {
+                return &curNode->bottomChildren.back();
+            }
             auto newGs = curNode->gs;
             // std::cout << node.gs.cache->fieldByState_.size() << " -> ";
             descentToFloor(newGs, stopRound);
             // std::cout << node.gs.cache->fieldByState_.size() << std::endl;
             curNode->bottomChildren.push_back(MctsNode{
                 .gs = newGs,
-                .actionToGetHere = {},
                 .parent = curNode,
                 .depth = curNode->depth + 1,
                 .pts = evalPs(newGs, curNode->gs.activePlayer)
@@ -341,6 +344,9 @@ MctsNode* MctsBot::goBottom(MctsNode& node, int stopRound) const {
 }
 
 bool allChildrenAreCalculated(const MctsNode& node) {
+    if (!node.generatedChildren) {
+        return false;
+    }
     for (const auto& child: node.children) {
         if (!child.nodeIsCompletelyEvaluated) {
             return false;

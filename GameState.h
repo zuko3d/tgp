@@ -39,6 +39,9 @@ struct GameState
     const Field& field() const {
         return cache->fieldByState_[fieldStateIdx];
     }
+    Field& field() {
+        return cache->fieldByState_[fieldStateIdx];
+    }
 
     FlatMap<GodColor, ResizableArray<uint8_t, 3>, 4> humansOnGods;
 

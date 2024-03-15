@@ -13,8 +13,6 @@
 #include <iostream>
 
 int main() {
-    // auto bot1 = WebUiBot(std::default_random_engine{1});
-
     AllScoreWeights allScoreWeights {
         ScoreWeights{ // round 0
             .gold = 1,
@@ -205,12 +203,12 @@ int main() {
         },
     };
 
-    auto bot2 = MctsBot(new GreedyBot(allScoreWeights), allScoreWeights, 300, 1, 3);
-    auto bot3 = MctsBot(new GreedyBot(allScoreWeights), allScoreWeights, 300, 2, 3);
+    // auto bot2 = MctsBot(new GreedyBot(allScoreWeights), allScoreWeights, 100, 3, 3);
+    // auto bot3 = MctsBot(new GreedyBot(allScoreWeights), allScoreWeights, 500, 3, 3);
+    // Tournament::playAllInAll({ &bot2, &bot3}, 60);
 
-    // Tournament::playSingleGame({ &bot2, &bot3 }, 0);
-    Tournament::playAllInAll({ &bot2, &bot3}, 10);
-
-    // Tournament::playSingleGame({ &bot1, &bot2}, 42);
+    auto webBot = WebUiBot(std::default_random_engine{1});
+    auto cBot = MctsBot(new GreedyBot(allScoreWeights), allScoreWeights, 1000, 3, 4);
+    Tournament::playSingleGame({ &webBot, &cBot }, 42);
     return 0;
 }

@@ -1102,45 +1102,50 @@
                 var b = document.createElement("button");
                 idx++;
 
+                var enabled = true;
                 if (fa == "ManaToHuman") {
                     if ((ps.mana[2] < 5) && (ps.humansLeft > 0)) {
-                        continue;
+                        enabled = false;
                     }
                 } else if (fa == "BurnMana") {
                     if (ps.mana[1] < 2) {
-                        continue;
+                        enabled = false;
                     }
                 } else if (fa == "ManaToCube") {
                     if (ps.mana[2] < 3) {
-                        continue;
+                        enabled = false;
                     }
                 } else if (fa == "ManaToGold") {
                     if (ps.mana[2] < 1) {
-                        continue;
+                        enabled = false;
                     }
                 } else if (fa == "ManaToBook") {
                     if (ps.mana[2] < 5) {
-                        continue;
+                        enabled = false;
                     }
                 } else if (fa == "HumanToCube") {
                     if (ps.resources.humans < 1) {
-                        continue;
+                        enabled = false;
                     }
                 } else if (fa == "CubeToGold") {
                     if (ps.resources.cube < 1) {
-                        continue;
+                        enabled = false;
                     }
                 } else if (fa == "BookToGold") {
                     if (ps.resources.books[0] + ps.resources.books[1] + ps.resources.books[2] + ps.resources.books[3] < 1) {
-                        continue;
+                        enabled = false;
                     }
                 }
                 b.textContent = fa;
                 b.data = idx;
-                b.onclick = function() {
-                    clearHighlight();
-                    socket.send('{ "freeAction": ' + this.data + ' }');
-                };
+                if (enabled) {
+                    b.onclick = function() {
+                        clearHighlight();
+                        socket.send('{ "freeAction": ' + this.data + ' }');
+                    };
+                } else {
+                    b.style.filter = 'sepia(1)';
+                }
                 parent.appendChild(b);
             }
 

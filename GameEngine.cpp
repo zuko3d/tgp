@@ -141,9 +141,9 @@ void GameEngine::chargeOpp(int8_t pos, GameState& gs) const {
 void GameEngine::upgradeBuilding(int8_t pos, Building building, GameState& gs, int param) const {
     auto& ps = getPs(gs);
     const auto& bot = bots_[gs.activePlayer];
-    gs.cache->fieldByState_[gs.fieldStateIdx].populateField(gs, FieldActionType::ChangeBuildingType, pos, SC(building), 0);
     ps.buildingsAvailable[building]--;
-    ps.buildingsAvailable[gs.cache->fieldByState_[gs.fieldStateIdx].building[pos].type]++;
+    ps.buildingsAvailable[gs.field().building[pos].type]++;
+    gs.field().populateField(gs, FieldActionType::ChangeBuildingType, pos, SC(building), 0);
     awardWp(ps.wpPerEvent[StaticData::buildingOrigins()[building].buildEvent], gs);
 
     if (building == Building::Palace) {
@@ -647,7 +647,7 @@ void GameEngine::buildBridge(GameState& gs) const {
 }
 
 void GameEngine::buildBridge(int8_t pos, GameState& gs) const {
-    gs.cache->fieldByState_[gs.fieldStateIdx].populateField(gs, FieldActionType::BuildBridge, pos);
+    gs.field().populateField(gs, FieldActionType::BuildBridge, pos);
     assert(getPs(gs).bridgesLeft > 0);
     getPs(gs).bridgesLeft--;
 
@@ -920,17 +920,16 @@ void GameEngine::doTurnGuided(GameState& gs) const {
 
 void GameEngine::buildForFree(int8_t pos, Building building, bool isNeutral, GameState& gs) const {
     assert(pos >= 0 && pos < FieldOrigin::FIELD_SIZE);
-    assert(gs.cache->fieldByState_[gs.fieldStateIdx].building[pos].type == Building::None);
-    gs.cache->fieldByState_[gs.fieldStateIdx].populateField(gs, FieldActionType::BuildNew, pos, SC(building), isNeutral);
-
+    assert(gs.field().building[pos].type == Building::None);
     auto& ps = getPs(gs);
 
-    if (gs.cache->fieldByState_[gs.fieldStateIdx].type[pos] != getColor(gs)) {
+    if (gs.field().type[pos] != getColor(gs)) {
         int amount = spadesNeeded(gs.cache->fieldByState_[gs.fieldStateIdx].type[pos], getColor(gs));
         constexpr int cubePerTf[] = { 3, 2, 1 };
         spendResources(Resources { .cube = (int8_t) (cubePerTf[ps.tfLevel] * amount) }, gs);
         terraform(pos, amount, gs);
     }
+    gs.field().populateField(gs, FieldActionType::BuildNew, pos, SC(building), isNeutral);
 
     if (!isNeutral) {
         ps.additionalIncome += StaticData::buildingOrigins()[building].income;
@@ -954,9 +953,9 @@ void GameEngine::buildForFree(int8_t pos, Building building, bool isNeutral, Gam
 void GameEngine::buildMine(int8_t pos, GameState& gs) const {
     auto& ps = getPs(gs);
 
-    assert(gs.cache->fieldByState_[gs.fieldStateIdx].building[pos].type == Building::None);
+    assert(gs.field().building[pos].type == Building::None);
     assert(ps.buildingsAvailable[Building::Mine] > 0);
-    gs.cache->fieldByState_[gs.fieldStateIdx].populateField(gs, FieldActionType::BuildNew, pos, SC(Building::Mine), 0);
+    gs.field().populateField(gs, FieldActionType::BuildNew, pos, SC(Building::Mine), 0);
 
     if (ps.buildingsAvailable[Building::Mine] != 5) ps.additionalIncome.cube++;
     ps.buildingsAvailable[Building::Mine]--;
@@ -1078,7 +1077,7 @@ void GameEngine::doAction(Action action, GameState& gs) const {
         }
 
         case ActionType::Annex: {
-            gs.cache->fieldByState_[gs.fieldStateIdx].populateField(gs, FieldActionType::AddAnnex, action.param1);
+            gs.field().populateField(gs, FieldActionType::AddAnnex, action.param1);
             assert(ps.annexLeft > 0);
             ps.annexLeft--;
             break;
@@ -1208,7 +1207,6 @@ void GameEngine::dealWithUpkeep(GameState& gs) const {
                 ps.wpPerEvent[lastRoundBonus.event] += lastRoundBonus.bonusWp;
             }
             awardResources(ps.additionalIncome, gs);
-            awardResources(ps.additionalIncome, gs);
             if (ps.currentRoundBoosterOriginIdx >= 0) {
                 awardResources(StaticData::roundBoosters()[ps.currentRoundBoosterOriginIdx].resources, gs);
             }
@@ -1230,7 +1228,6 @@ void GameEngine::advanceGs(GameState& gs) const {
 
 void GameEngine::playGame(GameState& gs) const {
     while (!gameEnded(gs)) {
-
         const auto field = gs.field();
         // std::cout << "cleared " << gs.cache->fieldByState_.size() << std::endl;
         gs.cache->reset();
@@ -1455,7 +1452,7 @@ void GameEngine::terraform(int8_t pos, int amount, GameState& gs) const {
 
     if (getRace(gs) == Race::Goblins) awardResources(IncomableResources{ .gold = (int8_t) (2 * amount) }, gs);
 
-    gs.cache->fieldByState_[gs.fieldStateIdx].populateField(gs, FieldActionType::Terraform, pos, ((srcColor + direction * amount + 7) % 7));
+    gs.field().populateField(gs, FieldActionType::Terraform, pos, ((srcColor + direction * amount + 7) % 7));
 }
 
 void GameEngine::useSpades(int amount, GameState& gs) const {
@@ -1612,18 +1609,18 @@ std::vector<int8_t> GameEngine::terraformableHexes(const GameState& gs) const {
             return gs.cache->fieldByState_[gs.fieldStateIdx].type[pos] == t;
         })
     ));
-    
+   
     return r;
 }
 
 const std::vector<int8_t>& GameEngine::someHexes(bool onlyInReach, bool onlyNative, const GameState& gs, int cubesDetained, int freeSpades) const {
     const auto& ps = gs.players[gs.activePlayer];
 
-    uint64_t hash = gs.cache->fieldByState_[gs.fieldStateIdx].stateIdx;
+    uint64_t hash = gs.fieldStateIdx;
     hash *= 2;
-    hash += onlyInReach;
+    hash += onlyInReach ? 1 : 0;
     hash *= 2;
-    hash += onlyNative;
+    hash += onlyNative ? 1 : 0;
     hash *= 2;
     hash += gs.activePlayer;
     hash *= 5;
@@ -1644,11 +1641,11 @@ const std::vector<int8_t>& GameEngine::someHexes(bool onlyInReach, bool onlyNati
 
     if (onlyInReach) {
         if (onlyNative) {
-            gs.cache->someHexesCache_.emplace(hash, gs.cache->fieldByState_[gs.fieldStateIdx].reachable(gs.activePlayer, ps.navLevel, getColor(gs)));
+            gs.cache->someHexesCache_.emplace(hash, gs.field().reachable(gs.activePlayer, ps.navLevel, getColor(gs)));
             return gs.cache->someHexesCache_.at(hash);
         } else {
             if (tfLeft >= 3) {
-                gs.cache->someHexesCache_.emplace(hash, gs.cache->fieldByState_[gs.fieldStateIdx].reachable(gs.activePlayer, ps.navLevel));
+                gs.cache->someHexesCache_.emplace(hash, gs.field().reachable(gs.activePlayer, ps.navLevel));
                 return gs.cache->someHexesCache_.at(hash);
             } else {
                 FlatMap<TerrainType, bool, 7> tfable;

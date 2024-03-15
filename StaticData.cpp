@@ -198,7 +198,7 @@ std::array<BookButton, 6> StaticData::generateBookActions() {
         BookButton { .bookPrice = 1, .buttonOrigin = 13, .picOrigin = 0 },
         BookButton { .bookPrice = 1, .buttonOrigin = 4, .picOrigin = 1 },
         BookButton { .bookPrice = 2, .buttonOrigin = 15, .picOrigin = 2 },
-        BookButton { .bookPrice = 2, .buttonOrigin = 6, .picOrigin = 3 },
+        BookButton { .bookPrice = 3, .buttonOrigin = 6, .picOrigin = 3 },
         BookButton { .bookPrice = 2, .buttonOrigin = 14, .picOrigin = 4 },
         BookButton { .bookPrice = 3, .buttonOrigin = 16, .picOrigin = 5 },
     };
