@@ -15,9 +15,15 @@
 #include <string>
 #include <vector>
 
-int toJson(int8_t v);
+struct ScoreWeights;
+
+// int toJson(int8_t v);
+
+double toJson(double v);
 
 nlohmann::json toJson(const RoundBoosterOnBoard& op);
+
+nlohmann::json toJson(const ScoreWeights& op);
 
 nlohmann::json toJson(const RoundScoreBonus& op);
 

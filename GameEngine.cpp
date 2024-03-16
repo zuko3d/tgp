@@ -1,5 +1,6 @@
 #include "GameEngine.h"
 
+#include "serialize.h"
 #include "StaticData.h"
 #include "Utils.h"
 
@@ -128,6 +129,8 @@ void GameEngine::chargeOpp(int8_t pos, GameState& gs) const {
             gs.activePlayer = 1 - gs.activePlayer;
         } else {
             auto oppBot = bots_[1 - gs.activePlayer];
+            int chargable = oppPs.mana[0] * 2 + oppPs.mana[1];
+            power = std::min(power, chargable);
             if (oppBot->wannaCharge(gs, power)) {
                 gs.activePlayer = 1 - gs.activePlayer;
                 charge(power, gs);
@@ -946,8 +949,10 @@ void GameEngine::buildForFree(int8_t pos, Building building, bool isNeutral, Gam
 
     awardWp(ps.wpPerEvent[StaticData::buildingOrigins()[building].buildEvent], gs);
 
-    chargeOpp(pos, gs);
-    checkFederation(gs);
+    if (!(gs.round == 0 && gs.phase == GamePhase::Upkeep)) {
+        chargeOpp(pos, gs);
+        checkFederation(gs);
+    }
 }
 
 void GameEngine::buildMine(int8_t pos, GameState& gs) const {
@@ -1042,7 +1047,7 @@ void GameEngine::doAction(Action action, GameState& gs) const {
         case ActionType::BookMarket: {
             auto& bookAction = gs.bookActions[action.param1];
             spendResources(IncomableResources { .anyBook = bookAction.bookPrice }, gs);
-            assert(bookAction.isUsed != true);
+            assert(bookAction.isUsed == 0);
             bookAction.isUsed = true;
             if (bookAction.buttonOrigin >= 0) {
                 pushButton(bookAction.buttonOrigin, action.param2, gs);
@@ -1052,12 +1057,12 @@ void GameEngine::doAction(Action action, GameState& gs) const {
 
         case ActionType::ActivateAbility: {
             if (action.param1 < 0) {
-                assert(ps.boosterButton.isUsed != true);
+                assert(ps.boosterButton.isUsed == 0);
                 ps.boosterButton.isUsed = true;
                 pushButton(ps.boosterButton.buttonOrigin, action.param2, gs);
             } else {
                 auto& aAction = ps.buttons[action.param1];
-                assert(aAction.isUsed != true);
+                assert(aAction.isUsed == 0);
                 aAction.isUsed = true;
                 pushButton(aAction.buttonOrigin, action.param2, gs);
             }
@@ -1068,7 +1073,7 @@ void GameEngine::doAction(Action action, GameState& gs) const {
             auto& marketAction = gs.marketActions[action.param1];
             int8_t manaDiscount = (race == Race::Illusionists) ? 1 : 0;
             spendResources(IncomableResources { .manaCharge = (int8_t) (marketAction.manaPrice - manaDiscount) }, gs);
-            assert(marketAction.isUsed != true);
+            assert(marketAction.isUsed == 0);
             marketAction.isUsed = true;
             if (marketAction.buttonOrigin >= 0) {
                 pushButton(marketAction.buttonOrigin, action.param2, gs);
@@ -1080,6 +1085,7 @@ void GameEngine::doAction(Action action, GameState& gs) const {
             gs.field().populateField(gs, FieldActionType::AddAnnex, action.param1);
             assert(ps.annexLeft > 0);
             ps.annexLeft--;
+            checkFederation(gs);
             break;
         }
 
@@ -1149,33 +1155,35 @@ void GameEngine::doAfterTurnActions(GameState& gs) const {
         }
 
         if (gs.phase == GamePhase::EndOfTurn) {
-            const auto& curBonus = StaticData::roundScoreBonuses()[gs.staticGs.bonusByRound[gs.round]];
-            for (gs.activePlayer = 0; gs.activePlayer < 2; gs.activePlayer++) {
-                auto& ps = gs.players[gs.activePlayer];
-                const int8_t blessedBonus = (gs.staticGs.playerRaces[gs.activePlayer] == Race::Blessed) ? 3 : 0;
-                for (int i = 0; i < (ps.resources.gods[curBonus.god] + blessedBonus) / curBonus.godAmount; i++) {
-                    awardResources(curBonus.resourceBonus, gs);
+            if (gs.round < 5) {
+                const auto& curBonus = StaticData::roundScoreBonuses()[gs.staticGs.bonusByRound[gs.round]];
+                for (gs.activePlayer = 0; gs.activePlayer < 2; gs.activePlayer++) {
+                    auto& ps = gs.players[gs.activePlayer];
+                    const int8_t blessedBonus = (gs.staticGs.playerRaces[gs.activePlayer] == Race::Blessed) ? 3 : 0;
+                    for (int i = 0; i < (ps.resources.gods[curBonus.god] + blessedBonus) / curBonus.godAmount; i++) {
+                        awardResources(curBonus.resourceBonus, gs);
+                    }
+
+                    for (auto& b: ps.buttons) {
+                        b.isUsed = false;
+                    }
+
+                    ps.wpPerEvent[curBonus.event] -= curBonus.bonusWp;
+                    ps.passed = false;
                 }
 
-                for (auto& b: ps.buttons) {
-                    b.isUsed = false;
+                for (auto& ma: gs.marketActions) {
+                    ma.isUsed = false;
+                }
+                for (auto& ba: gs.bookActions) {
+                    ba.isUsed = false;
                 }
 
-                ps.wpPerEvent[curBonus.event] -= curBonus.bonusWp;
-                ps.passed = false;
+                for (auto& rb: gs.boosters) {
+                    rb.gold++;
+                }
             }
-
-            for (auto& ma: gs.marketActions) {
-                ma.isUsed = false;
-            }
-            for (auto& ba: gs.bookActions) {
-                ba.isUsed = false;
-            }
-
-            for (auto& rb: gs.boosters) {
-                rb.gold++;
-            }
-
+            
             gs.round++;
             gs.phase = GamePhase::Upkeep;
 
@@ -1247,7 +1255,7 @@ void GameEngine::log(const std::string& str) const {
 }
 
 void GameEngine::checkFederation(GameState& gs) const {
-    while (gs.cache->fieldByState_[gs.fieldStateIdx].fedsCount[gs.activePlayer] > getPs(gs).fedsCount) {
+    while (gs.field().fedsCount[gs.activePlayer] > getPs(gs).fedsCount) {
         getPs(gs).fedsCount++;
         const auto tile = bots_[gs.activePlayer]->chooseFedTile(gs);
         awardFedTile(tile, gs);
@@ -1463,7 +1471,14 @@ void GameEngine::useSpades(int amount, GameState& gs) const {
     int spareSpades = amount;
     // if (getRace(gs) == Race::Goblins) awardResources(IncomableResources { .gold = spareSpades * 2 }, gs);
 
-    const auto pos = bot->choosePlaceToSpade(gs, spareSpades, terraformableHexes(gs));
+    // [[maybe_unused]] std::size_t str_hash = std::hash<std::string>{}(toJson(gs).dump());
+    // if (str_hash == 3574695110) {
+    //     str_hash = str_hash;
+    // }
+
+    const auto tfAble = terraformableHexes(gs);
+    const auto pos = bot->choosePlaceToSpade(gs, spareSpades, tfAble);
+
     if (pos < 0) {
         return;
     }
@@ -1715,6 +1730,7 @@ void GameEngine::initializeRandomly(GameState& gs, std::default_random_engine& g
     gs.cache = std::make_shared<PrecalcCache>();
     gs.cache->fieldByState_.reserve(50000);
     gs.cache->someHexesCache_.reserve(50000);
+    gs.cache->fieldActionsCache_.reserve(50000);
     gs.fieldStateIdx = Field::newField(*gs.cache).stateIdx;
     
     std::vector<int> indices;

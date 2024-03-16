@@ -1,9 +1,46 @@
 #include "serialize.h"
 
+#include "GreedyBot.h"
 #include "StaticData.h"
 
-int toJson(int8_t v) {
+// int toJson(int8_t v) {
+//     return v;
+// }
+
+double toJson(double v) {
     return v;
+}
+
+nlohmann::json toJson(const ScoreWeights& op) {
+    nlohmann::json j;
+
+    j["gold"] = op.gold;
+    j["cube"] = op.cube;
+    j["humans"] = op.humans;
+    j["totalBooks"] = op.totalBooks;
+    j["totalGods"] = op.totalGods;
+    j["winPoints"] = op.winPoints;
+    j["spades"] = op.spades;
+    j["manaCharge"] = op.manaCharge;
+    j["goldIncome"] = op.goldIncome;
+    j["cubeIncome"] = op.cubeIncome;
+    j["humansIncome"] = op.humansIncome;
+    j["godsIncome"] = op.godsIncome;
+    j["booksIncome"] = op.booksIncome;
+    j["winPointsIncome"] = op.winPointsIncome;
+    j["manaIncome"] = op.manaIncome;
+    j["targetGod"] = op.targetGod;
+    j["godMove"] = op.godMove;
+    j["totalPower"] = op.totalPower;
+    j["scorePerBuilding"] = toJson(op.scorePerBuilding);
+    j["scorePerPalaceIdx"] = toJson(op.scorePerPalaceIdx);
+    j["scorePerTech"] = toJson(op.scorePerTech);
+    j["scorePerInnovation"] = toJson(op.scorePerInnovation);
+    j["navLevel"] = toJson(op.navLevel);
+    j["tfLevel"] = toJson(op.tfLevel);
+    j["reachableHexes"] = toJson(op.reachableHexes);
+   
+   return j;
 }
 
 nlohmann::json toJson(const Action& op) {

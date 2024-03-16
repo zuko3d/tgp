@@ -182,6 +182,19 @@ double MctsBot::evalPs(const GameState& gs, int pIdx) const {
     ret += ps.additionalIncome.anyGod * curWeights.godsIncome;
     ret += ps.additionalIncome.manaCharge * curWeights.manaIncome;
     
+    for (int i = 0; i < 7; i++) {
+        ret += ps.countBuildings((Building) i) * curWeights.scorePerBuilding[i];
+    }
+    if (ps.palaceIdx >= 0) ret += curWeights.scorePerPalaceIdx[ps.palaceIdx];
+    for (const auto [tile, present]: ps.techTiles) {
+        if (present) {
+            ret += curWeights.scorePerTech[SC(tile)];
+        }
+    }
+    for (const auto inno: ps.innovations) {
+        ret += curWeights.scorePerInnovation[SC(inno)];
+    }
+
     const auto hexes = ownGe_.someHexes(true, false, gs, 0, 0);
     const auto color = gs.staticGs.playerColors[pIdx];
     std::array<int, 4> tfs = {{0}};

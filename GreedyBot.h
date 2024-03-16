@@ -33,16 +33,15 @@ struct ScoreWeights {
     double godMove = 0;
 
     double totalPower = 0;
-    double scorePerBuilding[7] = {0};
-    double scorePerPalaceIdx[17] = { 0 };
-    double scorePerTech[12] = { 0 };
-    double scorePerInnovation[18] = { 0 };
-    double scorePerButtonSpecial[4] = { 0 };
+    std::array<double, 7> scorePerBuilding = {0};
+    std::array<double, 17> scorePerPalaceIdx = { 0 };
+    std::array<double, 12> scorePerTech = { 0 };
+    std::array<double, 18> scorePerInnovation = { 0 };
 
-    double navLevel[4] = {0};
-    double tfLevel[3] = {0};
+    std::array<double, 4> navLevel = {0};
+    std::array<double, 3> tfLevel = {0};
 
-    double reachableHexes[4] = {0}; // per terraforms, 0 = native
+    std::array<double, 4> reachableHexes = {0}; // per terraforms, 0 = native
 };
 
 using AllScoreWeights = std::array<ScoreWeights, 7>; // per round, at round's start
@@ -347,7 +346,7 @@ private:
                 additionalScore = curWeights.scorePerTech[action.param2];
             }
 
-            return curWeights.scorePerBuilding[SC(newType)] - curWeights.scorePerBuilding[SC(gs.field().building[pos].type)];
+            return curWeights.scorePerBuilding[SC(newType)] - curWeights.scorePerBuilding[SC(gs.field().building[pos].type)] + additionalScore;
         }
         case ActionType::TerraformAndBuild: {
             return curWeights.scorePerBuilding[SC(Building::Mine)];
@@ -424,6 +423,19 @@ private:
         ret += ps.additionalIncome.anyBook * curWeights.booksIncome;
         ret += ps.additionalIncome.anyGod * curWeights.godsIncome;
         ret += ps.additionalIncome.manaCharge * curWeights.manaIncome;
+
+        for (int i = 0; i < 7; i++) {
+            ret += ps.countBuildings((Building) i) * curWeights.scorePerBuilding[i];
+        }
+        if (ps.palaceIdx >= 0) ret += curWeights.scorePerPalaceIdx[ps.palaceIdx];
+        for (const auto [tile, present]: ps.techTiles) {
+            if (present) {
+                ret += curWeights.scorePerTech[SC(tile)];
+            }
+        }
+        for (const auto inno: ps.innovations) {
+            ret += curWeights.scorePerInnovation[SC(inno)];
+        }
         
         const auto hexes = ownGe_.someHexes(true, false, gs, 0, 0);
         const auto color = gs.staticGs.playerColors[pIdx];

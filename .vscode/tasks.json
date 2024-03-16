@@ -7,7 +7,6 @@
             "command": "cl.exe",
             "args": [
                 "/O2",
-                "/Zi",
                 "/EHsc",
                 "/std:c++latest",
                 "/GS-",
@@ -38,7 +37,6 @@
                 "/std:c++latest",
                 "/I",
                 "${fileDirname}",
-                "/GS-",
                 "/arch:AVX512",
                 "/Fe:",
                 "${fileDirname}\\${fileBasenameNoExtension}.exe"

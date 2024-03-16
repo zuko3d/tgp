@@ -177,15 +177,15 @@ void Field::populateField(GameState& gs, FieldActionType action, int pos, int pa
 
     
     if (gs.cache->fieldActionsCache_.contains(actionHash)) {
-        // gs.fieldStateIdx = gs.cache->fieldActionsCache_.at(actionHash);
-        // return;
+        gs.fieldStateIdx = gs.cache->fieldActionsCache_.at(actionHash);
+        return;
     }
 
     std::lock_guard<std::mutex> lock(gs.cache->populateFieldMutex_);
 
-    //gs.cache->fieldActionsCache_.emplace(actionHash, gs.cache->fieldByState_.size());
-
-    gs.cache->fieldByState_.push_back(gs.cache->fieldByState_ [gs.fieldStateIdx]);
+    gs.cache->fieldActionsCache_.emplace(actionHash, gs.cache->fieldByState_.size());
+    gs.cache->fieldByState_.push_back(gs.field());
+    
     auto& newField = gs.cache->fieldByState_.back();
     newField.stateIdx = gs.cache->fieldByState_.size() - 1;
     gs.fieldStateIdx = newField.stateIdx;

@@ -21,7 +21,7 @@ struct PlayerState {
     FlatMap<EventType, uint8_t, 13> wpPerEvent;
     FlatMap<TechTile, bool, 12> techTiles;
     ResizableArray<FederationTile, 6> feds;
-    ResizableArray<Button, 6> buttons;
+    ResizableArray<Button, 8> buttons;
     ResizableArray<Innovation, 3> innovations;
     FlatMap<Building, int8_t, 5> buildingsAvailable = {9, 4, 1, 3, 1};
     FlatMap<Building, int8_t, 7> neutralBuildingsAmount;

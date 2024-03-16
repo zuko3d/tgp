@@ -6,10 +6,10 @@
 
 struct GameResult
 {
-    // static std::vector<double> avgWinPoints(const std::vector<GameResult> &gr);
+    static std::vector<double> avgWinPoints(const std::vector<GameResult> &gr);
     // static std::vector<double> winrates(const std::vector<GameResult> &gr);
     // static std::vector<double> percentileWinPoints(const std::vector<GameResult> &gr, double pct);
-    // static std::vector<double> trueSkill(const std::vector<GameResult> &gr);
+    static std::vector<double> trueSkill(const std::vector<GameResult> &gr);
 
     // static std::vector<PlayerIngameStats> transposeAndFilter(const std::vector<GameResult>& results, int wpThreshold = 0);
 
