@@ -19,6 +19,8 @@ struct ScoreWeights;
 
 // int toJson(int8_t v);
 
+ScoreWeights fromJsonStr(const std::string& str);
+
 double toJson(double v);
 
 nlohmann::json toJson(const RoundBoosterOnBoard& op);
@@ -85,6 +87,13 @@ inline nlohmann::json toJson(const std::array<T, N>& arr) {
     }
 
     return j;
+}
+
+template <typename J, typename T, size_t N>
+inline void fromJson(const J& j, std::array<T, N>& dst) {
+    for (const auto [idx, v] : enumerate(j)) {
+        dst.at(idx) = v;
+    }
 }
 
 template <typename T>

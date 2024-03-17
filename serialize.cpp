@@ -11,6 +11,39 @@ double toJson(double v) {
     return v;
 }
 
+ScoreWeights fromJsonStr(const std::string& str) {
+    nlohmann::json j = nlohmann::json::parse(str);
+
+    ScoreWeights ret;
+    ret.gold = j["gold"];
+    ret.cube = j["cube"];
+    ret.humans = j["humans"];
+    ret.totalBooks = j["totalBooks"];
+    ret.totalGods = j["totalGods"];
+    ret.winPoints = j["winPoints"];
+    ret.spades = j["spades"];
+    ret.manaCharge = j["manaCharge"];
+    ret.goldIncome = j["goldIncome"];
+    ret.cubeIncome = j["cubeIncome"];
+    ret.humansIncome = j["humansIncome"];
+    ret.godsIncome = j["godsIncome"];
+    ret.booksIncome = j["booksIncome"];
+    ret.winPointsIncome = j["winPointsIncome"];
+    ret.manaIncome = j["manaIncome"];
+    ret.targetGod = j["targetGod"];
+    ret.godMove = j["godMove"];
+    ret.totalPower = j["totalPower"];
+    fromJson(j["scorePerBuilding"], ret.scorePerBuilding);
+    fromJson(j["scorePerPalaceIdx"], ret.scorePerPalaceIdx);
+    fromJson(j["scorePerTech"], ret.scorePerTech);
+    fromJson(j["scorePerInnovation"], ret.scorePerInnovation);
+    fromJson(j["navLevel"], ret.navLevel);
+    fromJson(j["tfLevel"], ret.tfLevel);
+    fromJson(j["reachableHexes"], ret.reachableHexes);
+
+    return ret;
+}
+
 nlohmann::json toJson(const ScoreWeights& op) {
     nlohmann::json j;
 
@@ -40,7 +73,7 @@ nlohmann::json toJson(const ScoreWeights& op) {
     j["tfLevel"] = toJson(op.tfLevel);
     j["reachableHexes"] = toJson(op.reachableHexes);
    
-   return j;
+    return j;
 }
 
 nlohmann::json toJson(const Action& op) {

@@ -11,6 +11,13 @@
 #include <random>
 
 struct ScoreWeights {
+    void initRandomly(std::default_random_engine& rng) {
+        double* weightsPtr = (double*) this;
+        for (int pos = 0; pos < sizeof(ScoreWeights) / 8; pos++) {
+            weightsPtr[pos] = (rng() % 100) / 1000.0;
+        }
+    }
+
     double gold = 0;
     double cube = 0;
     double humans = 0;
@@ -356,7 +363,7 @@ private:
             break;
         }
         case ActionType::UpgradeTerraform: {
-            return curWeights.tfLevel[ps.navLevel + 1] - curWeights.tfLevel[ps.navLevel];
+            return curWeights.tfLevel[ps.tfLevel + 1] - curWeights.tfLevel[ps.tfLevel];
             break;
         }
         case ActionType::GetInnovation: {
