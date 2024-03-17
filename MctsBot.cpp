@@ -114,7 +114,7 @@ double MctsBot::evalAction(const GameState& gs, Action action) const {
         break;
     }
     case ActionType::UpgradeTerraform: {
-        return curWeights.tfLevel[ps.navLevel + 1] - curWeights.tfLevel[ps.navLevel];
+        return curWeights.tfLevel[ps.tfLevel + 1] - curWeights.tfLevel[ps.tfLevel];
         break;
     }
     case ActionType::GetInnovation: {
