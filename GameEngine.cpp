@@ -1825,6 +1825,14 @@ void GameEngine::initializeRandomly(GameState& gs, std::default_random_engine& g
 
         if (race == Race::Navigators) {
             gs.players[i].wpPerEvent[EventType::BuildNearRiver] += 2;
+        } else if (race == Race::Psychics) {
+            gs.players[i].buttons.push_back(Button{
+                .buttonOrigin = 13,
+            });
+        } else if (race == Race::Philosophers) {
+            gs.players[i].buttons.push_back(Button{
+                .buttonOrigin = 17,
+            });
         }
     }
 

@@ -72,6 +72,7 @@ std::vector<ButtonOrigin> StaticData::generateButtonOrigins() {
         ButtonOrigin { .resources = IncomableResources{ .gold = 6 }, .special = ButtonActionSpecial::None}, // 14
         ButtonOrigin { .resources = IncomableResources{}, .special = ButtonActionSpecial::WpForGuilds2}, // 15
         ButtonOrigin { .resources = IncomableResources{ .spades = 3 }, .special = ButtonActionSpecial::None}, // 16
+        ButtonOrigin { .resources = IncomableResources{ .anyBook = 1 }, .special = ButtonActionSpecial::None}, // 17
     };
 }
 
