@@ -1073,6 +1073,9 @@ void GameEngine::doAction(Action action, GameState& gs) const {
             auto& marketAction = gs.marketActions[action.param1];
             int8_t manaDiscount = (race == Race::Illusionists) ? 1 : 0;
             spendResources(IncomableResources { .manaCharge = (int8_t) (marketAction.manaPrice - manaDiscount) }, gs);
+            if (race == Race::Illusionists) {
+                awardResources(Resources{ .winPoints = 1}, gs);
+            }
             assert(marketAction.isUsed == 0);
             marketAction.isUsed = true;
             if (marketAction.buttonOrigin >= 0) {
