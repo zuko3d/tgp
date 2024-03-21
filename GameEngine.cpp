@@ -1634,6 +1634,9 @@ std::vector<int8_t> GameEngine::terraformableHexes(const GameState& gs) const {
 const std::vector<int8_t>& GameEngine::someHexes(bool onlyInReach, bool onlyNative, const GameState& gs, int cubesDetained, int freeSpades) const {
     const auto& ps = gs.players[gs.activePlayer];
 
+    int reachBonus = (ps.currentRoundBoosterOriginIdx >= 0 && 
+            StaticData::roundBoosters()[ps.currentRoundBoosterOriginIdx].navBooster) ? 1 : 0;
+
     uint64_t hash = gs.fieldStateIdx;
     hash *= 2;
     hash += onlyInReach ? 1 : 0;
@@ -1641,8 +1644,8 @@ const std::vector<int8_t>& GameEngine::someHexes(bool onlyInReach, bool onlyNati
     hash += onlyNative ? 1 : 0;
     hash *= 2;
     hash += gs.activePlayer;
-    hash *= 5;
-    hash += ps.navLevel;
+    hash *= 6;
+    hash += ps.navLevel + reachBonus;
     const auto cubesLeft = ps.resources.cube - cubesDetained;
     constexpr int8_t tfPrice[] = { 3, 2, 1 };
     int tfLeft = freeSpades;
@@ -1659,11 +1662,11 @@ const std::vector<int8_t>& GameEngine::someHexes(bool onlyInReach, bool onlyNati
 
     if (onlyInReach) {
         if (onlyNative) {
-            gs.cache->someHexesCache_.emplace(hash, gs.field().reachable(gs.activePlayer, ps.navLevel, getColor(gs)));
+            gs.cache->someHexesCache_.emplace(hash, gs.field().reachable(gs.activePlayer, ps.navLevel + reachBonus, getColor(gs)));
             return gs.cache->someHexesCache_.at(hash);
         } else {
             if (tfLeft >= 3) {
-                gs.cache->someHexesCache_.emplace(hash, gs.field().reachable(gs.activePlayer, ps.navLevel));
+                gs.cache->someHexesCache_.emplace(hash, gs.field().reachable(gs.activePlayer, ps.navLevel + reachBonus));
                 return gs.cache->someHexesCache_.at(hash);
             } else {
                 FlatMap<TerrainType, bool, 7> tfable;
@@ -1675,7 +1678,7 @@ const std::vector<int8_t>& GameEngine::someHexes(bool onlyInReach, bool onlyNati
                         tfable[(TerrainType) i] = false;
                     }
                 }
-                auto poses = gs.cache->fieldByState_[gs.fieldStateIdx].reachable(gs.activePlayer, ps.navLevel);
+                auto poses = gs.cache->fieldByState_[gs.fieldStateIdx].reachable(gs.activePlayer, ps.navLevel + reachBonus);
                 poses.resize(std::distance(
                     poses.begin(),
                     std::remove_if(poses.begin(), poses.end(), [&] (int8_t p) {
@@ -1849,14 +1852,13 @@ void GameEngine::initializeRandomly(GameState& gs, std::default_random_engine& g
         gs.staticGs.playerColors[i] = color;
         std::remove(colors.begin(), colors.end(), color);
         colors.pop_back();
-        // gs.activePlayer = i;
-        // awardResources(landTypeBonuses[SC(color)].resources, gs);
-        // if (color == TerrainType::Lake) {
-        //     gs.players[i].navLevel = 1;
-        // }
-        // if (color == TerrainType::Mountain) {
-        //     gs.players[i].additionalIncome.gold += 2;
-        // }
+
+        if (color == TerrainType::Lake) {
+            gs.players[i].navLevel = 1;
+        }
+        if (color == TerrainType::Mountain) {
+            gs.players[i].additionalIncome.gold += 2;
+        }
     }
     
     gs.activePlayer = 0;
@@ -1908,12 +1910,6 @@ void GameEngine::initializeRandomly(GameState& gs, std::default_random_engine& g
         gs.activePlayer = i;
         const auto color = gs.staticGs.playerColors[i];
         awardResources(landTypeBonuses[SC(color)].resources, gs);
-        if (color == TerrainType::Lake) {
-            gs.players[i].navLevel = 1;
-        }
-        if (color == TerrainType::Mountain) {
-            gs.players[i].additionalIncome.gold += 2;
-        }
         gs.players[i].additionalIncome.cube += 1;
     }
 
