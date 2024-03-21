@@ -646,6 +646,12 @@
                 var dv = document.getElementById("p" + pIdx + "-race");
                 dv.style.backgroundImage = "url('pics/race_" + sgs.playerRaces[pIdx] + ".png')";
             }
+            {
+                const pcolor = gs.staticGs.playerColors[pIdx];
+                var dv = document.getElementById("ptablet-" + pIdx);
+                dv.style.backgroundImage = "url('pics/tablets/" + pcolor + ".jpeg')";
+            }
+            
         // std::array<TerrainType, 2> playerColors = { (TerrainType) -1, (TerrainType) -1};
             
         }
