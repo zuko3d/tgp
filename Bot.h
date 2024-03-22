@@ -2,11 +2,12 @@
 
 #include "Action.h"
 #include "GameState.h"
-// #include "GameEngine.h"
 #include "Types.h"
 
 class IBot {
 public:
+    virtual ~IBot() = default;
+
     virtual Race chooseRace(const GameState& gs, const std::vector<Race>& races) = 0;
     virtual TerrainType chooseTerrainType(const GameState& gs, const std::vector<TerrainType>& colors) = 0;
     virtual int chooseRoundBooster(const GameState& gs) = 0;

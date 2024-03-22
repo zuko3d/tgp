@@ -502,6 +502,7 @@
         function visualizePs(ps, gs, pIdx) {
             const res = ps.resources;
             const sgs = gs.staticGs;
+            const pcolor = sgs.playerColors[pIdx];
             // resources
             {
                 var dv = document.getElementById("p" + pIdx + "-score");
@@ -618,7 +619,7 @@
                 const topByLevel = [83, 62, 38, 14, 14];
                 var dv = document.getElementById("p" + pIdx + "-navLevel");
                 var dlevel = 0;
-                if (sgs.playerRaces[pIdx] == 8) { // Navigators
+                if (pcolor == 3) { // Lake
                     dlevel = 1;
                 }
                 dv.style.top = topByLevel[ps.navLevel - dlevel];
@@ -649,7 +650,6 @@
                 dv.style.backgroundImage = "url('pics/race_" + sgs.playerRaces[pIdx] + ".png')";
             }
             {
-                const pcolor = gs.staticGs.playerColors[pIdx];
                 var dv = document.getElementById("ptablet-" + pIdx);
                 dv.style.backgroundImage = "url('pics/tablets/" + pcolor + ".jpeg')";
             }

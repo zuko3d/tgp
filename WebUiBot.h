@@ -1,6 +1,6 @@
 #pragma once
 #include "Bot.h"
-#include "serialize.h"
+#include "Serialize.h"
 #include "StaticData.h"
 
 #include <websocketpp/config/asio_no_tls.hpp>
