@@ -30,6 +30,10 @@ int spadesNeeded(TerrainType src, TerrainType dst) {
     return r[SC(src)][SC(dst)];
 }
 
+void GameEngine::setLogger(std::function<void(const std::string&)> logger) {
+    logger_ = logger;
+}
+
 GameEngine::GameEngine(std::vector<IBot*> bots, bool withLogs, bool withStats)
     : bots_(std::move(bots))
     , withLogs_(withLogs)
@@ -1183,7 +1187,7 @@ void GameEngine::doAfterTurnActions(GameState& gs) const {
                     rb.gold++;
                 }
             }
-            
+
             gs.round++;
             gs.phase = GamePhase::Upkeep;
 

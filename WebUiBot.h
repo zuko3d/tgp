@@ -16,9 +16,7 @@ class WebUiBot: public IBot {
 public:
     using Server = websocketpp::server<websocketpp::config::asio>;
 
-    WebUiBot(std::default_random_engine g)
-        : rng(g)
-    {
+    WebUiBot() {
         using namespace std::placeholders;
         server_.set_access_channels(websocketpp::log::alevel::all);
         server_.clear_access_channels(websocketpp::log::alevel::frame_payload);
@@ -306,7 +304,6 @@ public:
     }
 
 private:
-    // void on_message(Server* s, websocketpp::connection_hdl hdl, Server::message_ptr msg) {
     void on_message(websocketpp::connection_hdl hdl, Server::message_ptr msg) {
         std::cout << "Received message: " << msg->get_payload() << std::endl;
 
@@ -338,7 +335,6 @@ private:
         return nlohmann::json::parse(*lastResponse_);
     }
 
-    std::default_random_engine rng;
     Server server_;
     std::optional<websocketpp::connection_hdl> hClient_;
     websocketpp::lib::shared_ptr<websocketpp::lib::thread> thread_;

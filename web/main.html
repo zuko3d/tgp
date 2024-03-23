@@ -1,5 +1,10 @@
 <html>
     <body>
+        <button type="button" id="btn-menu" style="position: absolute; left: 1808px; z-index: 3;">Menu</button>
+        <div id="main-menu" style="position: absolute; top: 18px; left: 481px; width: 1884px; height: 900px; opacity: 0.9; z-index: 13; background-image: url('pics/menu.png'); background-size: contain; background-repeat: no-repeat;">
+            <button type="button" id="btn-new-game" style="position: absolute; top: 300; left: 347px; z-index: 3;">New game</button>
+            <input type="number" id="game-seed" style="position: absolute; top: 327; left: 347px; z-index: 3;" value=42></input>
+        </div>
         <table>
             <tr><td><div id="input-box"></div></td></tr>
             <tr><td><div class="board-all">
@@ -329,6 +334,8 @@
         var bridgables = [];
         var posByTile = [];
         var socket = new WebSocket('ws://localhost:9002');
+        var gServerSocket = new WebSocket('ws://localhost:9102');
+        var showMenu = true;
         
         function createLineElement(x, y, length, angle) {
             var line = document.createElement("div");
@@ -1243,6 +1250,8 @@
 
         // Listen for messages
         socket.addEventListener('message', function (event) {
+            showMenu = false;
+
             obj = JSON.parse(event.data);
             msg = JSON.parse(obj.msg);
             console.log('Received message:', obj.msg);

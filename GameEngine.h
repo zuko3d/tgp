@@ -5,8 +5,11 @@
 #include "GameState.h"
 #include "Types.h"
 
+#include <functional>
+#include <optional>
 #include <mutex>
 #include <random>
+#include <string>
 #include <unordered_map>
 
 int spadesNeeded(TerrainType src, TerrainType dst);
@@ -68,6 +71,8 @@ public:
     void buildBridge(int8_t pos, GameState& gs) const;
     void buildMine(int8_t pos, GameState& gs) const;
 
+    void setLogger(std::function<void(const std::string&)> logger);
+
 private:
     int countGroups(GameState& gs) const;
 
@@ -85,4 +90,6 @@ private:
 
     bool withLogs_ = false;
     bool withStats_ = false;
+
+    std::function<void(const std::string&)> logger_;
 };

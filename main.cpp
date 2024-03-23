@@ -95,11 +95,11 @@ int main() {
     //         std::cout << "round " << i << ": " << toJson(curBestWeights.at(i)).dump() << std::endl;
     //     }
     // }
-    
+
     // return 0;
 
-    auto webBot = WebUiBot(std::default_random_engine{1});
+    auto webBot = WebUiBot();
     auto cBot = MctsBot(new GreedyBot(allScoreWeights), allScoreWeights, 10000, 6, 6);
-    Tournament::playSingleGame({ &webBot, &cBot }, 42);
+    Tournament::playSingleGame({ &webBot, &cBot }, 43);
     return 0;
 }
