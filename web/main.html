@@ -508,7 +508,8 @@
 
         function visualizePs(ps, gs, pIdx) {
             const res = ps.resources;
-
+            const sgs = gs.staticGs;
+            const pcolor = sgs.playerColors[pIdx];
             // resources
             {
                 var dv = document.getElementById("p" + pIdx + "-score");
@@ -624,7 +625,11 @@
             {
                 const topByLevel = [83, 62, 38, 14, 14];
                 var dv = document.getElementById("p" + pIdx + "-navLevel");
-                dv.style.top = topByLevel[ps.navLevel];
+                var dlevel = 0;
+                if (pcolor == 3) { // Lake
+                    dlevel = 1;
+                }
+                dv.style.top = topByLevel[ps.navLevel - dlevel];
             }
             {
                 const topByLevel = [80, 54, 32, 32];
@@ -647,12 +652,15 @@
             }
 
     // staticGs:
-
-            const sgs = gs.staticGs;
             {
                 var dv = document.getElementById("p" + pIdx + "-race");
                 dv.style.backgroundImage = "url('pics/race_" + sgs.playerRaces[pIdx] + ".png')";
             }
+            {
+                var dv = document.getElementById("ptablet-" + pIdx);
+                dv.style.backgroundImage = "url('pics/tablets/" + pcolor + ".jpeg')";
+            }
+            
         // std::array<TerrainType, 2> playerColors = { (TerrainType) -1, (TerrainType) -1};
             
         }
