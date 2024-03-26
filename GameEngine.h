@@ -63,15 +63,18 @@ public:
 
     const std::vector<int8_t>& someHexes(bool onlyInReach, bool onlyNative, const GameState& gs, int cubesDetained = 0, int freeSpades = 0) const;
 
-    void log(const std::string& str) const;
-
     int moveGod(int amount, GodColor godColor, GameState& gs) const;
     void upgradeBuilding(int8_t pos, Building building, GameState& gs, int palaceIdx = -1) const;
     void terraform(int8_t pos, int amount, GameState& gs) const;
     void buildBridge(int8_t pos, GameState& gs) const;
     void buildMine(int8_t pos, GameState& gs) const;
 
+    void log(const std::string& str) const;
+    void log(const GameState& gs, const std::string& str) const;
     void setLogger(std::function<void(const std::string&)> logger);
+       
+    void logCheckpoint() const;
+    void setLogCheckpointer(std::function<void()> logCheckpointer);
 
 private:
     int countGroups(GameState& gs) const;
@@ -92,4 +95,5 @@ private:
     bool withStats_ = false;
 
     std::function<void(const std::string&)> logger_;
+    std::function<void()> logCheckpointer_;
 };

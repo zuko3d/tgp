@@ -10,6 +10,7 @@
 #include "Utils.h"
 #include "Player.h"
 #include "GameState.h"
+#include "GameHistory.h"
 
 #include <array>
 #include <string>
@@ -22,6 +23,8 @@ struct ScoreWeights;
 ScoreWeights fromJsonStr(const std::string& str);
 
 double toJson(double v);
+
+nlohmann::json toJson(const std::string& v);
 
 nlohmann::json toJson(const RoundBoosterOnBoard& op);
 
@@ -68,6 +71,8 @@ nlohmann::json toJson(const Field& f);
 nlohmann::json toJson(const StaticGameState& sgs);
 
 nlohmann::json toJson(const GameState& gs);
+
+nlohmann::json toJson(const GameInfo& gi);
 
 template <typename KeyType, typename ValueType, size_t Size>
 inline nlohmann::json toJson(const FlatMap<KeyType, ValueType, Size>& mp) {

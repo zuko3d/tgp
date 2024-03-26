@@ -62,8 +62,7 @@ GameResult Tournament::playSingleGame(const std::vector<IBot*>& bots, uint32_t s
     Timer timer;
 
     GameEngine ge(bots);
-    StaticGameState sgs;
-    GameState gs { .staticGs = sgs };
+    GameState gs;
     std::default_random_engine g{seed};
     ge.initializeRandomly(gs, g);
     ge.playGame(gs);

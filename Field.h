@@ -55,10 +55,10 @@ struct PrecalcCache {
     std::unordered_map<uint64_t, std::vector<int8_t>> someHexesCache_;
     std::unordered_map<uint64_t, uint64_t> fieldActionsCache_;
     std::vector<Field> fieldByState_;
-    std::mutex populateFieldMutex_;
+    std::shared_ptr<std::mutex> populateFieldMutex_ = std::shared_ptr<std::mutex>(new std::mutex);
 
     void reset() {
-        std::lock_guard lock(populateFieldMutex_);
+        std::lock_guard lock(*populateFieldMutex_);
         someHexesCache_.clear();
         fieldActionsCache_.clear();
         fieldByState_.clear();

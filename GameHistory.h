@@ -8,7 +8,7 @@
 struct GameInfo
 {
     GameState gs;
-    Field field;
+    // Field field;
 
     std::vector<std::string> logs;
 };

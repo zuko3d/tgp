@@ -34,4 +34,6 @@ public:
     virtual int8_t chooseBuildingToConvertForFree(const GameState& gs, Building building, const std::vector<int8_t>& possiblePos) = 0;
 
     virtual void triggerFinal(const GameState& gs) { };
+    virtual void stop() { };
+    virtual void reset() { };
 };

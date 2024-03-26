@@ -34,6 +34,10 @@ void GameEngine::setLogger(std::function<void(const std::string&)> logger) {
     logger_ = logger;
 }
 
+void GameEngine::setLogCheckpointer(std::function<void()> logCheckpointer) {
+    logCheckpointer_ = logCheckpointer;
+}
+
 GameEngine::GameEngine(std::vector<IBot*> bots, bool withLogs, bool withStats)
     : bots_(std::move(bots))
     , withLogs_(withLogs)
@@ -203,9 +207,9 @@ void GameEngine::upgradeBuilding(int8_t pos, Building building, GameState& gs, i
                 // assert(false);
                 break;
             case PalaceSpecial::Spades2Books2Bridges2 :
+                buildBridge(gs);
+                buildBridge(gs);
                 awardResources(IncomableResources{ .anyBook = 2, .spades = 2, }, gs);
-                buildBridge(gs);
-                buildBridge(gs);
                 break;
             case PalaceSpecial::Wp10 :
                 awardWp(10, gs);
@@ -316,10 +320,10 @@ void GameEngine::awardTechTile(TechTile tile, GameState& gs) const {
             assert(false);
     }
 
-    awardResources(gs.staticGs.bookAndGodPerTech[tile], gs);
+    awardResources(gs.staticGs->bookAndGodPerTech[tile], gs);
     if (getRace(gs) == Race::Philosophers) {
         FlatMap<BookColor, int8_t, 4> books;
-        for (const auto [color, val] : gs.staticGs.bookAndGodPerTech[tile].gods) {
+        for (const auto [color, val] : gs.staticGs->bookAndGodPerTech[tile].gods) {
             if (val > 0) {
                 books[color] = 1;
                 break;
@@ -351,8 +355,8 @@ InnoPrice GameEngine::getInnoFullPrice(int pos, const GameState& gs) const {
 std::vector<Action> GameEngine::generateActions(const GameState& gs) const {
     std::vector<Action> ret;
     const auto& ps = gs.players[gs.activePlayer];
-    const auto color = gs.staticGs.playerColors[gs.activePlayer];
-    const auto race = gs.staticGs.playerRaces[gs.activePlayer];
+    const auto color = gs.staticGs->playerColors[gs.activePlayer];
+    const auto race = gs.staticGs->playerRaces[gs.activePlayer];
 
     if (ps.passed) {
         return ret;
@@ -1007,6 +1011,8 @@ void GameEngine::doAction(Action action, GameState& gs) const {
     const auto& bot = bots_.at(gs.activePlayer);
     const auto race = getRace(gs);
 
+    log(gs, action.toString());
+
     switch (action.type) {
         case ActionType::UpgradeBuilding: {
             const auto pos = action.param1;
@@ -1149,6 +1155,8 @@ void GameEngine::doAfterTurnActions(GameState& gs) const {
                 }
             }
             if (!allPassed) {
+                logCheckpoint();
+                
                 ++gs.activePlayer;
                 gs.activePlayer %= 2;
 
@@ -1162,11 +1170,13 @@ void GameEngine::doAfterTurnActions(GameState& gs) const {
         }
 
         if (gs.phase == GamePhase::EndOfTurn) {
+            logCheckpoint();
+
             if (gs.round < 5) {
-                const auto& curBonus = StaticData::roundScoreBonuses()[gs.staticGs.bonusByRound[gs.round]];
+                const auto& curBonus = StaticData::roundScoreBonuses()[gs.staticGs->bonusByRound[gs.round]];
                 for (gs.activePlayer = 0; gs.activePlayer < 2; gs.activePlayer++) {
                     auto& ps = gs.players[gs.activePlayer];
-                    const int8_t blessedBonus = (gs.staticGs.playerRaces[gs.activePlayer] == Race::Blessed) ? 3 : 0;
+                    const int8_t blessedBonus = (gs.staticGs->playerRaces[gs.activePlayer] == Race::Blessed) ? 3 : 0;
                     for (int i = 0; i < (ps.resources.gods[curBonus.god] + blessedBonus) / curBonus.godAmount; i++) {
                         awardResources(curBonus.resourceBonus, gs);
                     }
@@ -1195,6 +1205,8 @@ void GameEngine::doAfterTurnActions(GameState& gs) const {
             gs.phase = GamePhase::Upkeep;
 
             if (gameEnded(gs)) {
+                logCheckpoint();
+
                 for (gs.activePlayer = 0; gs.activePlayer < 2; gs.activePlayer++) {
                     doFinalScoring(gs);
                 }
@@ -1211,8 +1223,12 @@ void GameEngine::doAfterTurnActions(GameState& gs) const {
 
 void GameEngine::dealWithUpkeep(GameState& gs) const {
     if (gs.phase == GamePhase::Upkeep && !gameEnded(gs)) {
-        const auto& curBonus = StaticData::roundScoreBonuses()[gs.staticGs.bonusByRound[gs.round]];
-        const auto& lastRoundBonus = StaticData::roundScoreBonuses()[gs.staticGs.lastRoundBonus];
+        logCheckpoint();
+        log("====================================================================================================");
+        log("Round " + std::to_string(gs.round + 1) + " begins!");
+
+        const auto& curBonus = StaticData::roundScoreBonuses()[gs.staticGs->bonusByRound[gs.round]];
+        const auto& lastRoundBonus = StaticData::roundScoreBonuses()[gs.staticGs->lastRoundBonus];
 
         for (gs.activePlayer = 0; gs.activePlayer < 2; gs.activePlayer++) {
             auto& ps = gs.players[gs.activePlayer];
@@ -1230,6 +1246,8 @@ void GameEngine::dealWithUpkeep(GameState& gs) const {
         gs.phase = GamePhase::Actions;
         gs.activePlayer = gs.playersOrder.front();
         gs.playersOrder.clear();
+
+        logCheckpoint();
     }
 }
 
@@ -1257,8 +1275,22 @@ int GameEngine::countGroups(GameState& gs) const {
     return maximum(gs.cache->fieldByState_[gs.fieldStateIdx].bfs(gs.activePlayer, 0));
 }
 
+void GameEngine::log(const GameState& gs, const std::string& str) const {
+    if (withLogs_) {
+        logger_("Player " + std::to_string(gs.activePlayer) + ": " + str);
+    }
+}
+
 void GameEngine::log(const std::string& str) const {
-    if (withLogs_) std::cerr << str << std::endl;
+    if (withLogs_) {
+        logger_(str);
+    }
+}
+
+void GameEngine::logCheckpoint() const {
+    if (withLogs_) {
+        logCheckpointer_();
+    }
 }
 
 void GameEngine::checkFederation(GameState& gs) const {
@@ -1365,6 +1397,8 @@ int GameEngine::moveGod(int amount, GodColor godColor, GameState& gs) const {
 void GameEngine::spendResources(IncomableResources resources, GameState& gs) const {
     auto& ps = gs.players.at(gs.activePlayer);
 
+    log(gs, "spend resources: " + resources.toHtmlString());
+
     ps.resources.gold -= resources.gold;
     ps.resources.cube -= resources.cube;
     ps.resources.humans -= resources.humans;
@@ -1384,6 +1418,8 @@ void GameEngine::spendResources(IncomableResources resources, GameState& gs) con
 void GameEngine::spendResources(Resources resources, GameState& gs) const {
     auto& ps = gs.players.at(gs.activePlayer);
 
+    log(gs, "spend resources: " + resources.toHtmlString());
+
     ps.resources.gold -= resources.gold;
     ps.resources.cube -= resources.cube;
     ps.resources.humans -= resources.humans;
@@ -1397,6 +1433,8 @@ void GameEngine::spendResources(Resources resources, GameState& gs) const {
 void GameEngine::awardResources(IncomableResources resources, GameState& gs) const {
     auto& ps = gs.players.at(gs.activePlayer);
     const auto bot = bots_.at(gs.activePlayer);
+
+    log(gs, "gain resources: " + resources.toHtmlString());
 
     if (resources.anyGod != 0) {
         if (resources.anyGod > 0) {
@@ -1441,7 +1479,7 @@ void GameEngine::awardResources(IncomableResources resources, GameState& gs) con
 }
 
 Race GameEngine::getRace(const GameState& gs) const {
-    return gs.staticGs.playerRaces[gs.activePlayer];
+    return gs.staticGs->playerRaces[gs.activePlayer];
 }
 
 PlayerState& GameEngine::getPs(GameState& gs) const {
@@ -1450,7 +1488,7 @@ PlayerState& GameEngine::getPs(GameState& gs) const {
 }
 
 TerrainType GameEngine::getColor(const GameState& gs) const {
-    return gs.staticGs.playerColors[gs.activePlayer];
+    return gs.staticGs->playerColors[gs.activePlayer];
 }
 
 void GameEngine::terraform(int8_t pos, int amount, GameState& gs) const {
@@ -1472,7 +1510,7 @@ void GameEngine::terraform(int8_t pos, int amount, GameState& gs) const {
 
 void GameEngine::useSpades(int amount, GameState& gs) const {
     auto& ps = gs.players.at(gs.activePlayer);
-    const auto pColor = gs.staticGs.playerColors[gs.activePlayer];
+    const auto pColor = gs.staticGs->playerColors[gs.activePlayer];
     const auto bot = bots_.at(gs.activePlayer);
 
     int spareSpades = amount;
@@ -1526,6 +1564,8 @@ void GameEngine::useSpades(int amount, GameState& gs) const {
 
 void GameEngine::awardResources(Resources resources, GameState& gs) const {
     auto& ps = gs.players.at(gs.activePlayer);
+
+    log(gs, "gain resources: " + resources.toHtmlString());
 
     for (const auto [color, val]: resources.gods) {
         if (val > 0) {
@@ -1599,9 +1639,9 @@ void GameEngine::doFinalScoring(GameState& gs) const {
         int pos = 0;
         int tie = 0;
         const auto color = (GodColor) i;
-        if (ps.resources.gods[color] < gs.staticGs.neutralGods[color]) {
+        if (ps.resources.gods[color] < gs.staticGs->neutralGods[color]) {
             pos++;
-        } else if (ps.resources.gods[color] == gs.staticGs.neutralGods[color]) {
+        } else if (ps.resources.gods[color] == gs.staticGs->neutralGods[color]) {
             tie++;
         }
         if (ps.resources.gods[color] < oppPs.resources.gods[color]) {
@@ -1700,7 +1740,7 @@ const std::vector<int8_t>& GameEngine::someHexes(bool onlyInReach, bool onlyNati
             ret.reserve(20);
             for (const auto [pos, color]: enumerate(gs.cache->fieldByState_[gs.fieldStateIdx].type)) {
                 if (color == getColor(gs) && gs.cache->fieldByState_[gs.fieldStateIdx].building[pos].owner == -1) {
-                    ret.emplace_back(pos);
+                    ret.emplace_back((int8_t) pos);
                 }
             }
 
@@ -1745,30 +1785,30 @@ void GameEngine::initializeRandomly(GameState& gs, std::default_random_engine& g
     
     std::vector<int> indices;
 
-    gs.staticGs.neutralGods[GodColor::Yellow] = 2;
-    gs.staticGs.neutralGods[GodColor::Blue] = 2;
-    gs.staticGs.neutralGods[GodColor::Brown] = 2;
-    gs.staticGs.neutralGods[GodColor::White] = 2;
+    gs.staticGs->neutralGods[GodColor::Yellow] = 2;
+    gs.staticGs->neutralGods[GodColor::Blue] = 2;
+    gs.staticGs->neutralGods[GodColor::Brown] = 2;
+    gs.staticGs->neutralGods[GodColor::White] = 2;
     indices.resize(12);
     std::iota(indices.begin(), indices.end(), 0);
     rshuffle(indices, g);
     for (int i = 0; i < 6; ++i) {
-        gs.staticGs.bonusByRound.at(i) = indices.at(i);
+        gs.staticGs->bonusByRound.at(i) = indices.at(i);
     }
     int counter = 6;
-    while (StaticData::roundScoreBonuses()[gs.staticGs.bonusByRound.at(4)].event == EventType::Terraform) {
-        gs.staticGs.bonusByRound.at(4) = indices.at(counter);
+    while (StaticData::roundScoreBonuses()[gs.staticGs->bonusByRound.at(4)].event == EventType::Terraform) {
+        gs.staticGs->bonusByRound.at(4) = indices.at(counter);
         counter++;
     }
-    while (StaticData::roundScoreBonuses()[gs.staticGs.bonusByRound.at(5)].event == EventType::Terraform) {
-        gs.staticGs.bonusByRound.at(5) = indices.at(counter);
+    while (StaticData::roundScoreBonuses()[gs.staticGs->bonusByRound.at(5)].event == EventType::Terraform) {
+        gs.staticGs->bonusByRound.at(5) = indices.at(counter);
         counter++;
     }
     for (int i = 0; i < 5; ++i) {
-        gs.staticGs.neutralGods[StaticData::roundScoreBonuses()[gs.staticGs.bonusByRound.at(i)].god] += StaticData::roundScoreBonuses()[gs.staticGs.bonusByRound.at(i)].godAmount;
+        gs.staticGs->neutralGods[StaticData::roundScoreBonuses()[gs.staticGs->bonusByRound.at(i)].god] += StaticData::roundScoreBonuses()[gs.staticGs->bonusByRound.at(i)].godAmount;
     }
 
-    gs.staticGs.lastRoundBonus = 12 + g() % 4;
+    gs.staticGs->lastRoundBonus = 12 + g() % 4;
 
     const auto bookActions = StaticData::generateBookActions();
     indices.resize(bookActions.size());
@@ -1784,14 +1824,14 @@ void GameEngine::initializeRandomly(GameState& gs, std::default_random_engine& g
     std::iota(indices.begin(), indices.end(), 0);
     rshuffle(indices, g);
     for (int i = 0; i < 12; ++i) {
-        gs.staticGs.techTiles.at(i / 3).at(i % 3) = static_cast<TechTile>(indices.at(i));
+        gs.staticGs->techTiles.at(i / 3).at(i % 3) = static_cast<TechTile>(indices.at(i));
         GodColor godColor = (GodColor) (i / 3);
         FlatMap<GodColor, int8_t, 4> gods;
         gods[godColor] = 3 - (i % 3);
         FlatMap<BookColor, int8_t, 4> books;
         books[godColor] = i % 3;
 
-        gs.staticGs.bookAndGodPerTech[(TechTile) indices.at(i)] = Resources{ .gods = gods, .books = books };
+        gs.staticGs->bookAndGodPerTech[(TechTile) indices.at(i)] = Resources{ .gods = gods, .books = books };
     }
 
     indices.resize(18);
@@ -1816,7 +1856,7 @@ void GameEngine::initializeRandomly(GameState& gs, std::default_random_engine& g
     rshuffle(indices, g);
     for (int i = 0; i < 5; ++i) {
         gs.boosters.push_back(RoundBoosterOnBoard{ .originIdx = (int8_t) indices.at(i), .gold = 0});
-        // gs.staticGs.roundBoosters.at(i) = indices.at(i);
+        // gs.staticGs->roundBoosters.at(i) = indices.at(i);
     }
 
     const auto raceStartBonuses = StaticData::generateRaceStartBonus();
@@ -1826,7 +1866,7 @@ void GameEngine::initializeRandomly(GameState& gs, std::default_random_engine& g
     };
     for (int i = 0; i < 2; i++) {
         const Race race = bots_[i]->chooseRace(gs, races);
-        gs.staticGs.playerRaces[i] = race;
+        gs.staticGs->playerRaces[i] = race;
         std::remove(races.begin(), races.end(), race);
         races.pop_back();
         gs.activePlayer = i;
@@ -1853,7 +1893,7 @@ void GameEngine::initializeRandomly(GameState& gs, std::default_random_engine& g
     };
     for (int i = 0; i < 2; i++) {
         const TerrainType color = bots_[i]->chooseTerrainType(gs, colors);
-        gs.staticGs.playerColors[i] = color;
+        gs.staticGs->playerColors[i] = color;
         std::remove(colors.begin(), colors.end(), color);
         colors.pop_back();
 
@@ -1866,7 +1906,7 @@ void GameEngine::initializeRandomly(GameState& gs, std::default_random_engine& g
     }
     
     gs.activePlayer = 0;
-    if (gs.staticGs.playerRaces[0] != Race::Monks) {
+    if (gs.staticGs->playerRaces[0] != Race::Monks) {
         const auto poses = someHexes(false, true, gs);
         auto minePos = bots_[0]->choosePlaceToBuildForFree(gs, Building::Mine, false, poses);
         if (minePos >= 0) {
@@ -1875,7 +1915,7 @@ void GameEngine::initializeRandomly(GameState& gs, std::default_random_engine& g
     }
 
     gs.activePlayer = 1;
-    if (gs.staticGs.playerRaces[1] != Race::Monks) {
+    if (gs.staticGs->playerRaces[1] != Race::Monks) {
         auto poses = someHexes(false, true, gs);
         auto minePos = bots_[1]->choosePlaceToBuildForFree(gs, Building::Mine, false, poses);
         buildForFree(minePos, Building::Mine, false, gs);
@@ -1885,7 +1925,7 @@ void GameEngine::initializeRandomly(GameState& gs, std::default_random_engine& g
     }
 
     gs.activePlayer = 0;
-    if (gs.staticGs.playerRaces[0] != Race::Monks) {
+    if (gs.staticGs->playerRaces[0] != Race::Monks) {
         const auto poses = someHexes(false, true, gs);
         auto minePos = bots_[0]->choosePlaceToBuildForFree(gs, Building::Mine, false, poses);
         buildForFree(minePos, Building::Mine, false, gs);
@@ -1894,16 +1934,16 @@ void GameEngine::initializeRandomly(GameState& gs, std::default_random_engine& g
     for (int i = 0; i < 2; ++i) {
         gs.activePlayer = i;
 
-        if (gs.staticGs.playerRaces.at(i) == Race::Monks) {
+        if (gs.staticGs->playerRaces.at(i) == Race::Monks) {
             const auto poses = someHexes(false, true, gs);
             const auto academyPos = bots_[i]->choosePlaceToBuildForFree(gs, Building::Academy, false, poses);
             buildForFree(academyPos, Building::Academy, false, gs);
         }
 
-        if (gs.staticGs.playerRaces.at(i) == Race::Inventors || gs.staticGs.playerRaces.at(i) == Race::Monks) {
+        if (gs.staticGs->playerRaces.at(i) == Race::Inventors || gs.staticGs->playerRaces.at(i) == Race::Monks) {
             awardTechTile(bots_[i]->chooseTechTile(gs), gs);
         }
-        if (gs.staticGs.playerRaces.at(i) == Race::Omar) {
+        if (gs.staticGs->playerRaces.at(i) == Race::Omar) {
             const auto poses = someHexes(false, true, gs);
             const auto towerPos = bots_[i]->choosePlaceToBuildForFree(gs, Building::Tower, true, poses);
             buildForFree(towerPos, Building::Tower, true, gs);
@@ -1912,7 +1952,7 @@ void GameEngine::initializeRandomly(GameState& gs, std::default_random_engine& g
 
     for (int i = 0; i < 2; i++) {
         gs.activePlayer = i;
-        const auto color = gs.staticGs.playerColors[i];
+        const auto color = gs.staticGs->playerColors[i];
         awardResources(landTypeBonuses[SC(color)].resources, gs);
         gs.players[i].additionalIncome.cube += 1;
     }

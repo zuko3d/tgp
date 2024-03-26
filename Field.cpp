@@ -16,7 +16,7 @@ std::vector<int8_t> Field::buildableBridges(int owner) const {
     }
 
     for (const auto& [idx, val]: enumerate(r)) {
-        if (val) ret.emplace_back(idx);
+        if (val) ret.emplace_back((int8_t) idx);
     }
 
     return ret;
@@ -151,11 +151,11 @@ std::vector<int8_t> Field::reachable(int owner, int range, TerrainType color) co
     std::vector<int8_t> ret;
     if (color == TerrainType::None) {
         for (const auto& [idx, val]: enumerate(r)) {
-            if (val) ret.emplace_back(idx);
+            if (val) ret.emplace_back((int8_t) idx);
         }
     } else {
         for (const auto& [idx, val]: enumerate(r)) {
-            if (val && (type[idx] == color)) ret.emplace_back(idx);
+            if (val && (type[idx] == color)) ret.emplace_back((int8_t) idx);
         }
     }
     
@@ -181,7 +181,7 @@ void Field::populateField(GameState& gs, FieldActionType action, int pos, int pa
         return;
     }
 
-    std::lock_guard<std::mutex> lock(gs.cache->populateFieldMutex_);
+    std::lock_guard lock(*gs.cache->populateFieldMutex_);
 
     gs.cache->fieldActionsCache_.emplace(actionHash, gs.cache->fieldByState_.size());
     gs.cache->fieldByState_.push_back(gs.field());
@@ -195,7 +195,7 @@ void Field::populateField(GameState& gs, FieldActionType action, int pos, int pa
     case FieldActionType::BuildNew:
         assert(newField.building[pos].owner == -1);
         assert(pos >= 0);
-        newField.type[pos] = gs.staticGs.playerColors[gs.activePlayer];
+        newField.type[pos] = gs.staticGs->playerColors[gs.activePlayer];
         newField.building[pos].owner = gs.activePlayer;
         newField.building[pos].type = (Building)param1;
         newField.building[pos].neutral = param2;
@@ -303,7 +303,7 @@ void Field::populateField(GameState& gs, FieldActionType action, int pos, int pa
 
 Field& Field::newField(PrecalcCache& cache)
 {
-    std::lock_guard<std::mutex> lock(cache.populateFieldMutex_);
+    std::lock_guard lock(*cache.populateFieldMutex_);
     cache.fieldByState_.emplace_back();
 
     auto& field = cache.fieldByState_.back();

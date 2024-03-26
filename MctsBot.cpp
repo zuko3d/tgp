@@ -196,7 +196,7 @@ double MctsBot::evalPs(const GameState& gs, int pIdx) const {
     }
 
     const auto hexes = ownGe_.someHexes(true, false, gs, 0, 0);
-    const auto color = gs.staticGs.playerColors[pIdx];
+    const auto color = gs.staticGs->playerColors[pIdx];
     std::array<int, 4> tfs = {{0}};
     for (const auto pos: hexes) {
         tfs[spadesNeeded(gs.field().type[pos], color)]++;
@@ -209,7 +209,7 @@ double MctsBot::evalPs(const GameState& gs, int pIdx) const {
     ret += curWeights.tfLevel[ps.tfLevel];
 
     if (gs.round < 5) {
-        ret += curWeights.targetGod * res.gods[StaticData::roundScoreBonuses()[gs.staticGs.bonusByRound[gs.round]].god];
+        ret += curWeights.targetGod * res.gods[StaticData::roundScoreBonuses()[gs.staticGs->bonusByRound[gs.round]].god];
     }
 
     hackedGs->activePlayer = ap;

@@ -1,9 +1,10 @@
 <html>
     <body>
+        <table id="logs-table" border="1" style="position: absolute; top: 970px; left: 10px;"></table>
         <button type="button" id="btn-menu" style="position: absolute; left: 1808px; z-index: 3;">Menu</button>
         <div id="main-menu" style="position: absolute; top: 18px; left: 481px; width: 1884px; height: 900px; opacity: 0.9; z-index: 13; background-image: url('pics/menu.png'); background-size: contain; background-repeat: no-repeat;">
-            <button type="button" id="btn-new-game" style="position: absolute; top: 300; left: 347px; z-index: 3;">New game</button>
-            <input type="number" id="game-seed" style="position: absolute; top: 327; left: 347px; z-index: 3;" value=42></input>
+            <button type="button" id="btn-new-game" style="font-size: 50px; position: absolute; top: 300; left: 347px; z-index: 3;">New game</button>
+            <input type="number" id="game-seed" style="font-size: 50px; width: 255; position: absolute; top: 380; left: 347px; z-index: 3;" value=42></input>
         </div>
         <table>
             <tr><td><div id="input-box"></div></td></tr>
@@ -191,6 +192,14 @@
               border: 4px solid red;
             }
 
+            .highlight-history {
+              border: 4px dashed rgb(9, 74, 216);
+              /* background-color: rgb(161, 248, 180); */
+            }
+            .highlight-history:hover {
+              border: 4px solid red;
+            }
+
             .debug-border {
               border: 2px solid red;
             }
@@ -335,7 +344,42 @@
         var posByTile = [];
         var socket = new WebSocket('ws://localhost:9002');
         var gServerSocket = new WebSocket('ws://localhost:9102');
-        var showMenu = true;
+
+        function toggleMainMenu(forceHide = false) {
+            var dv = document.getElementById("main-menu");
+            var showMenu = !dv.hidden;
+            if (forceHide) {
+                showMenu = false;
+            } else {
+                showMenu = !showMenu;
+            }
+
+            if (showMenu) {
+                dv.hidden = false;
+            } else {
+                dv.hidden = true;
+            }
+        }
+
+
+        function scriptMenu() {
+            {
+                var dv = document.getElementById("btn-menu");
+                dv.onclick = function() {
+                    toggleMainMenu();
+                };
+            }
+            {
+                var dv = document.getElementById("btn-new-game");
+                var dvSeed = document.getElementById("game-seed");
+                
+                dv.onclick = function() {
+                    gServerSocket.send('{"action": "new-game", "seed": ' + dvSeed.value + '}');
+                };
+            }
+        }
+
+        scriptMenu();
         
         function createLineElement(x, y, length, angle) {
             var line = document.createElement("div");
@@ -1256,9 +1300,44 @@
             console.log('Connected to websocket server');
         });
 
+        gServerSocket.addEventListener('message', function (event) {
+            const obj = JSON.parse(event.data);
+            if (obj.action == "logs") {
+                var table = document.getElementById("logs-table");
+                table.innerHTML = "";
+
+                for (var i = obj.data.length - 1; i >= 0; i--) {
+                    const item = obj.data[i];
+                    var trState = table.insertRow();
+                    var td = trState.insertCell();
+                    var dvEye = addImg("pics/eye.png", td, 50, 'highlight-history');
+                    dvEye.data = item.gs;
+                    dvEye.onclick = function() {
+                        clearHighlight();
+                        visualizeGs(this.data);
+                    };
+
+                    var dvArrow = addImg("pics/arrow.jpg", td, 50, 'highlight-history');
+                    dvArrow.data = i;
+                    dvArrow.onclick = function() {
+                        gServerSocket.send('{"action": "rewind", "state": ' + this.data + '}');
+                    };
+
+                    var td2 = trState.insertCell();
+                    var tableLogs = document.createElement("table");
+                    td2.appendChild(tableLogs);
+                    item.logs.reduceRight(function(_, logline) {
+                        var tr = tableLogs.insertRow();
+                        var td = tr.insertCell();
+                        td.innerHTML = logline;
+                    }, null);
+                };
+            }
+        });
+
         // Listen for messages
         socket.addEventListener('message', function (event) {
-            showMenu = false;
+            toggleMainMenu(true);
 
             obj = JSON.parse(event.data);
             msg = JSON.parse(obj.msg);

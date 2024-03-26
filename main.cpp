@@ -2,6 +2,7 @@
 #include "RandomBot.h"
 #include "WebUiBot.h"
 
+#include "GameServer.h"
 #include "GreedyBot.h"
 #include "ScoringBot.h"
 #include "MctsBot.h"
@@ -98,8 +99,11 @@ int main() {
 
     // return 0;
 
-    auto webBot = WebUiBot(std::default_random_engine{1});
+    auto webBot = WebUiBot();
     auto cBot = MctsBot(new GreedyBot(allScoreWeights), allScoreWeights, 1000, 2, 4);
-    Tournament::playSingleGame({ &webBot, &cBot }, 42);
+    GameServer gameServer({&webBot, &cBot});
+
+    while(true);
+
     return 0;
 }

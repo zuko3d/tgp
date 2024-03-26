@@ -29,7 +29,7 @@ public:
         // server_.run();
         thread_.reset(new websocketpp::lib::thread(&Server::run, &server_));
         std::cout << "WebUiBot listening on 9002" << std::endl;
-        while (!hClient_.has_value()) {
+        while (!hClient_.has_value() && !stopped_) {
             std::cout << "Waiting for web-client..." << std::endl;
             std::this_thread::sleep_for(std::chrono::seconds(1));
         }
@@ -37,6 +37,7 @@ public:
 
     ~WebUiBot() {
         std::cout << "WebUiBot closing" << std::endl;
+        stop();
         server_.stop();
         thread_->join();
     }
@@ -48,6 +49,13 @@ public:
         j["action"] = "triggerFinal";
 
         const auto ret = rpc(gs, j.dump());
+    };
+
+    void stop() {
+        stopped_ = true;
+    };
+    void reset() {
+        stopped_ = false;
     };
 
     Race chooseRace(const GameState& gs, const std::vector<Race>& races) {
@@ -328,8 +336,12 @@ private:
         lastResponse_ = std::nullopt;
         lastRequest_ = j.dump();
         server_.send(*hClient_, *lastRequest_, websocketpp::frame::opcode::text);
-        while (!lastResponse_.has_value()) {
+        while (!lastResponse_.has_value() && !stopped_) {
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        }
+
+        if (stopped_) {
+            throw std::exception("halt");
         }
         lastRequest_ = std::nullopt;
         return nlohmann::json::parse(*lastResponse_);
@@ -340,4 +352,6 @@ private:
     websocketpp::lib::shared_ptr<websocketpp::lib::thread> thread_;
     std::optional<std::string> lastResponse_;
     std::optional<std::string> lastRequest_;
+
+    bool stopped_ = false;
 };

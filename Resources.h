@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <sstream>
 
 #include "FlatMap.h"
 #include "Utils.h"
@@ -52,6 +53,35 @@ struct IncomableResources
             ++ptr2;
         }
     }
+
+    std::string toHtmlString() const {
+        std::ostringstream ret;
+        for (int i = 0; i < gold; i++) {
+            ret << "<img src=\"pics/gold_1.png\" style=\"height: 26;\">";
+        }
+        for (int i = 0; i < cube; i++) {
+            ret << "<img src=\"pics/cube.png\" style=\"height: 26;\">";
+        }
+        for (int i = 0; i < humans; i++) {
+            ret << "<img src=\"pics/human.png\" style=\"height: 26;\">";
+        }
+        for (int i = 0; i < anyGod; i++) {
+            ret << "<img src=\"pics/anygod.png\" style=\"height: 26;\">";
+        }
+        for (int i = 0; i < anyBook; i++) {
+            ret << "<img src=\"pics/anybook.png\" style=\"height: 26;\">";
+        }
+        for (int i = 0; i < manaCharge; i++) {
+            ret << "<img src=\"pics/mana.png\" style=\"height: 26;\">";
+        }
+        for (int i = 0; i < spades; i++) {
+            ret << "<img src=\"pics/spade.png\" style=\"height: 26;\">";
+        }
+        for (int i = 0; i < winPoints; i++) {
+            ret << "<img src=\"pics/wp.png\" style=\"height: 26;\">";
+        }
+        return ret.str();
+    }
 };
 
 struct Resources
@@ -102,6 +132,35 @@ struct Resources
         }
 
         return sum(booksLeft.values()) >= op.anyBooks;
+    }
+
+    std::string toHtmlString() const {
+        std::ostringstream ret;
+        for (int i = 0; i < gold; i++) {
+            ret << "<img src=\"pics/gold_1.png\" style=\"height: 26;\">";
+        }
+        for (int i = 0; i < cube; i++) {
+            ret << "<img src=\"pics/cube.png\" style=\"height: 26;\">";
+        }
+        for (int i = 0; i < humans; i++) {
+            ret << "<img src=\"pics/human.png\" style=\"height: 26;\">";
+        }
+
+        for (const auto [book, amount] : books) {
+            for (int i = 0; i < amount; i++) {
+                ret << "<img src=\"pics/book_" << SC(book) << ".png\" style=\"height: 26;\">";
+            }
+        }
+        for (const auto [god, amount] : gods) {
+            for (int i = 0; i < amount; i++) {
+                ret << "<img src=\"pics/god_" << SC(god) << ".png\" style=\"height: 26;\">";
+            }
+        }
+
+        for (int i = 0; i < winPoints; i++) {
+            ret << "<img src=\"pics/wp.png\" style=\"height: 26;\">";
+        }
+        return ret.str();
     }
 };
 

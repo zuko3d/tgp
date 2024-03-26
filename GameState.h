@@ -22,6 +22,12 @@ struct StaticGameState {
 
 struct GameState
 {
+    GameState clone() {
+        GameState ret = *this;
+        ret.cache = std::shared_ptr<PrecalcCache>(new PrecalcCache(*cache));
+        return ret;
+    }
+
     uint8_t activePlayer;
     uint8_t round = 0;
 
@@ -50,6 +56,6 @@ struct GameState
 
     GamePhase phase = GamePhase::Upkeep;
 
-    StaticGameState& staticGs;
+    std::shared_ptr<StaticGameState> staticGs = std::shared_ptr<StaticGameState>(new StaticGameState());
     std::shared_ptr<PrecalcCache> cache;
 };

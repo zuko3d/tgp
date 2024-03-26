@@ -1,6 +1,9 @@
 #pragma once
 
+#include <sstream>
 #include <vector>
+#include <string>
+#include <assert.h>
 
 enum class ActionType {
     UpgradeBuilding, // 0
@@ -38,6 +41,54 @@ struct Action
 {
     ActionType type = ActionType::Pass;
     int param1, param2;
+
+    std::string toString() const { 
+        std::ostringstream ret;
+
+        switch (type) {
+            case ActionType::UpgradeBuilding:
+                ret << "UpgradeBuilding";
+                break;
+            case ActionType::Market:
+                ret << "Market";
+                break;
+            case ActionType::BookMarket:
+                ret << "BookMarket";
+                break;
+            case ActionType::ActivateAbility:
+                ret << "ActivateAbility";
+                break;
+            case ActionType::PutManToGod:
+                ret << "PutManToGod";
+                break;
+            case ActionType::GetInnovation:
+                ret << "GetInnovation";
+                break;
+            case ActionType::TerraformAndBuild:
+                ret << "TerraformAndBuild";
+                break;
+            case ActionType::UpgradeNav:
+                ret << "UpgradeNav";
+                break;
+            case ActionType::UpgradeTerraform:
+                ret << "UpgradeTerraform";
+                break;
+            case ActionType::Bridge:
+                ret << "Bridge";
+                break;
+            case ActionType::Annex:
+                ret << "Annex";
+                break;
+            case ActionType::Pass:
+                ret << "Pass";
+                break;
+            default:
+                assert(false);
+                return "Unknown";
+        }
+
+        return ret.str();
+    }
 };
 
 struct FullAction {

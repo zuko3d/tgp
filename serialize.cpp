@@ -7,6 +7,10 @@
 //     return v;
 // }
 
+nlohmann::json toJson(const std::string& v) {
+    return v;
+}
+
 double toJson(double v) {
     return v;
 }
@@ -314,7 +318,16 @@ nlohmann::json toJson(const GameState& gs) {
     j["phase"] = SC(gs.phase);
 
     j["field"] = toJson(gs.field());
-    j["staticGs"] = toJson(gs.staticGs);
+    j["staticGs"] = toJson(*gs.staticGs);
+
+    return j;
+}
+
+nlohmann::json toJson(const GameInfo& gi) {
+    nlohmann::json j;
+
+    j["gs"] = toJson(gi.gs);
+    j["logs"] = toJson(gi.logs);
 
     return j;
 }
