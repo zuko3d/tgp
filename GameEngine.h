@@ -64,7 +64,7 @@ public:
     const std::vector<int8_t>& someHexes(bool onlyInReach, bool onlyNative, const GameState& gs, int cubesDetained = 0, int freeSpades = 0) const;
 
     int moveGod(int amount, GodColor godColor, GameState& gs) const;
-    void upgradeBuilding(int8_t pos, Building building, GameState& gs, int palaceIdx = -1) const;
+    void upgradeBuilding(int8_t pos, Building building, GameState& gs, int palaceIdx = -1, bool forFree = false) const;
     void terraform(int8_t pos, int amount, GameState& gs) const;
     void buildBridge(int8_t pos, GameState& gs) const;
     void buildMine(int8_t pos, GameState& gs) const;

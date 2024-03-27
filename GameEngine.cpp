@@ -149,13 +149,14 @@ void GameEngine::chargeOpp(int8_t pos, GameState& gs) const {
     }
 }
 
-void GameEngine::upgradeBuilding(int8_t pos, Building building, GameState& gs, int param) const {
+void GameEngine::upgradeBuilding(int8_t pos, Building building, GameState& gs, int param, bool forFree) const {
     auto& ps = getPs(gs);
     const auto& bot = bots_[gs.activePlayer];
     ps.buildingsAvailable[building]--;
     ps.buildingsAvailable[gs.field().building[pos].type]++;
     gs.field().populateField(gs, FieldActionType::ChangeBuildingType, pos, SC(building), 0);
     awardWp(ps.wpPerEvent[StaticData::buildingOrigins()[building].buildEvent], gs);
+    if (!forFree) spendResources(StaticData::buildingOrigins()[building].price, gs);
 
     if (building == Building::Palace) {
         assert(param >= 0);
@@ -220,11 +221,10 @@ void GameEngine::upgradeBuilding(int8_t pos, Building building, GameState& gs, i
         }
     }
 
-    spendResources(StaticData::buildingOrigins()[building].price, gs);
     constexpr int additionalCharges[] = { 1, 1, 0, 0, 0 };
     if (building == Building::Guild) {
         if (!gs.cache->fieldByState_[gs.fieldStateIdx].hasAdjacentEnemies(pos, gs.activePlayer)) {
-            spendResources( Resources{ .gold = 3 }, gs);
+            if (!forFree) spendResources( Resources{ .gold = 3 }, gs);
         }
         if (ps.buildingsAvailable[Building::Mine] != 5) {
             ps.additionalIncome -= StaticData::buildingOrigins()[Building::Mine].income;
@@ -692,7 +692,7 @@ void GameEngine::pushButton(int8_t buttonIdx, int param, GameState& gs) const {
                 }
                 param = bot->chooseBuildingToConvertForFree(gs, Building::Guild, possiblePos);
             }
-            upgradeBuilding(param, Building::Guild, gs);
+            upgradeBuilding(param, Building::Guild, gs, -1, true);
             break;
         }
         case ButtonActionSpecial::UpgradeMine: {
@@ -706,7 +706,7 @@ void GameEngine::pushButton(int8_t buttonIdx, int param, GameState& gs) const {
                 }
                 param = bot->chooseBuildingToConvertForFree(gs, Building::Guild, possiblePos);
             }
-            upgradeBuilding(param, Building::Guild, gs);
+            upgradeBuilding(param, Building::Guild, gs, -1, true);
             break;
         }
         case ButtonActionSpecial::WpForGuilds2: {
