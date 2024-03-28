@@ -560,6 +560,9 @@
                 dv.innerHTML = res.winPoints;
             }
 
+            for (var dv of document.querySelectorAll('*[id^="god-human-img-p' + pIdx + '"]')) {
+                dv.classList = ['player-' + pIdx];
+            }
             for (let i = 0; i < 4; i++) {
                 var dv = document.getElementById("god-human-img-p" + pIdx + "-r" + res.gods[i] + "-g"  + i);
                 dv.classList.add('has-human');
@@ -594,10 +597,9 @@
                 }
 
                 for (const tile of ps.feds) {
-                    if (!tile.flipped) {
-                        addImg("pics/fed_" + tile.origin + ".png", dv, 60);
-                    } else {
-                        addImg("pics/fed_back.png", dv, 60);
+                    var fed = addImg("pics/fed_" + tile.origin + ".png", dv, 60);
+                    if (tile.flipped) {
+                        fed.classList.add("crossed");
                     }
                 }
                 dv.appendChild(document.createElement("br"));
@@ -635,9 +637,11 @@
                 }
             }
             {
+                var dv = document.getElementById("p" + pIdx + "-palace");
                 if (ps.palaceIdx >= 0) {
-                    var dv = document.getElementById("p" + pIdx + "-palace");
                     dv.style.backgroundImage = "url('pics/palace/" + ps.palaceIdx + ".png')";
+                } else {
+                    dv.style.backgroundImage = "";
                 }
             }
             {
@@ -645,6 +649,11 @@
                 for (var tileIdx of ps.innovations) {
                     var dv = document.getElementById("p" + pIdx + "-inno" + innoIdx);
                     dv.style.backgroundImage = "url('pics/inno/" + tileIdx + ".png')";
+                    innoIdx++;
+                }
+                while (innoIdx < 3) {
+                    var dv = document.getElementById("p" + pIdx + "-inno" + innoIdx);
+                    dv.style.backgroundImage = "";
                     innoIdx++;
                 }
             }
@@ -736,8 +745,9 @@
             {
                 idx = 0
                 for (building of gs.field.building) {
-                    if (building.owner != -1) {
-                        var dv = document.querySelector("#building_" + idx);
+                    var dv = document.querySelector("#building_" + idx);
+                    dv.classList = ['nonmoving-rect']
+                    if (building.owner != -1) {                        
                         // dv.style.backgroundPosition = 'center';
                         dv.classList.add('has-building-' + building.type);
                         if (!building.neutral) {
@@ -819,6 +829,9 @@
 
             {
                 var god = 0;
+                for (var dv of document.querySelectorAll('*[id^="god-bottom-img-g"]')) {
+                    dv.classList = ['nonmoving-rect'];
+                }
                 for (const hums of gs.humansOnGods) {
                     var pos = 0;
                     for (const owner of hums) {
@@ -1314,6 +1327,10 @@
                     dvEye.data = item.gs;
                     dvEye.onclick = function() {
                         clearHighlight();
+                        var bridges = document.querySelectorAll('*[id^="bridge-"]');
+                        for (bridge of bridges) {
+                            bridge.remove();
+                        }
                         visualizeGs(this.data);
                     };
 
@@ -1321,6 +1338,7 @@
                     dvArrow.data = i;
                     dvArrow.onclick = function() {
                         gServerSocket.send('{"action": "rewind", "state": ' + this.data + '}');
+                        location.reload();
                     };
 
                     var td2 = trState.insertCell();

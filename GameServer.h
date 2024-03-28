@@ -11,6 +11,7 @@
 #include <json.hpp>
 
 #include <functional>
+#include <mutex>
 #include <thread>
 #include <memory>
 
@@ -61,27 +62,41 @@ private:
         stopOngoingGame();
         gameThread_.reset(new std::thread(&GameServer::playNewGameJob, this, seed, bots));
     }
+
+    void setupGeCallbacks(GameState& gs) {
+        ge_->setLogger([this] (const std::string& str) {
+            std::lock_guard lock(sendLogsMutex_);
+            curLogs_.emplace_back(str);
+        });
+        ge_->setLogCheckpointer([this, &gs] () {
+            {
+                std::lock_guard lock(sendLogsMutex_);
+                states_.emplace_back(GameInfo{
+                    .gs = gs.clone(),
+                    .logs = std::move(curLogs_)
+                });
+            
+                curLogs_.clear();
+            }
+            sendLogs();
+        });
+    }
+
     void playNewGameJob(uint32_t seed, const std::vector<IBot*>& bots) {
         for (auto bot: bots) {
             bot->reset();
         }
-        states_.clear();
+        {
+            std::lock_guard lock(sendLogsMutex_);
+            states_.clear();
+        }
 
         ge_.reset(new GameEngine(bots, true, true));
-        ge_->setLogger([this] (const std::string& str) {
-            curLogs_.emplace_back(str);
-        });
+        
         GameState gs;
         std::default_random_engine rng{seed};
 
-        ge_->setLogCheckpointer([this, &gs] () {
-            states_.emplace_back(GameInfo{
-                .gs = gs.clone(),
-                .logs = std::move(curLogs_)
-            });
-            curLogs_.clear();
-            sendLogs();
-        });
+        setupGeCallbacks(gs);
 
         try {
             ge_->initializeRandomly(gs, rng);
@@ -102,20 +117,16 @@ private:
             bot->reset();
         }
         assert(state < states_.size());
-        states_.resize(state + 1);
+        {
+            std::lock_guard lock(sendLogsMutex_);
+            states_.resize(state + 1);
+        }
 
         ge_.reset(new GameEngine(bots_, true, true));
         
         GameState gs = states_.back().gs.clone();
 
-        ge_->setLogCheckpointer([this, &gs] () {
-            states_.emplace_back(GameInfo{
-                .gs = gs.clone(),
-                .logs = std::move(curLogs_)
-            });
-            curLogs_.clear();
-            sendLogs();
-        });
+        setupGeCallbacks(gs);
 
         try {
             gameLoop(gs);
@@ -138,6 +149,8 @@ private:
     }
 
     void sendLogs() {
+        std::lock_guard lock(sendLogsMutex_);
+
         nlohmann::json j;
         j["action"] = "logs";
         j["data"] = toJson(states_);
@@ -153,6 +166,8 @@ private:
         if (resp.contains("action")) {
             if (resp["action"] == "new-game") {
                 playNewGame(resp["seed"].get<int>(), bots_);
+            } else if (resp["action"] == "rewind") {
+                rewindState(resp["state"].get<int>());
             } else {
                 std::cerr << "Unknown action! Msg: " << *lastResponse_ << std::endl;
             }
@@ -200,4 +215,6 @@ private:
     bool resetGame_ = false;
 
     std::vector<std::string> curLogs_;
+
+    std::mutex sendLogsMutex_;
 };
