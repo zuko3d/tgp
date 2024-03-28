@@ -132,8 +132,8 @@ std::array<RoundScoreBonus, 16> StaticData::generateRoundScoreBonuses()
         
         RoundScoreBonus{.event = EventType::BuildMine, .bonusWp = 2},
         RoundScoreBonus{.event = EventType::BuildLab, .bonusWp = 4},
-        RoundScoreBonus{.event = EventType::BuildGuild, .bonusWp = 3},
         RoundScoreBonus{.event = EventType::BuildOnEdge, .bonusWp = 3},
+        RoundScoreBonus{.event = EventType::BuildGuild, .bonusWp = 3},
     };
 }
 
