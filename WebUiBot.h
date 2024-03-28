@@ -9,6 +9,7 @@
 #include <json.hpp>
 
 #include <functional>
+#include <stdexcept>
 #include <optional>
 #include <random>
 
@@ -341,7 +342,7 @@ private:
         }
 
         if (stopped_) {
-            throw std::exception("halt");
+            throw std::runtime_error("halt");
         }
         lastRequest_ = std::nullopt;
         return nlohmann::json::parse(*lastResponse_);
