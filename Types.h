@@ -1,10 +1,73 @@
 #pragma once
 
+#include "FlatMap.h"
 #include "Resources.h"
 
 #include <array>
 #include <stdint.h>
+#include <string>
 #include <vector>
+
+enum class WpSource {
+    ManaCharge,
+    RoundScoreBonus,
+    Innovation,
+    City,
+    Faction,
+    Tech,
+    RoundBooster,
+    Palace,
+    BookAction,
+    MedicineL9,
+    SailingTerraform,
+    AreaScore,
+    ScienceTrack,
+    ResourcesLeft,
+    Other,
+    None,
+};
+
+inline std::string toString(WpSource source) {
+    switch (source) {
+        case WpSource::ManaCharge:
+            return "ManaCharge";
+        case WpSource::RoundScoreBonus:
+            return "RoundScoreBonus";
+        case WpSource::Innovation:
+            return "Innovation";
+        case WpSource::City:
+            return "City";
+        case WpSource::Faction:
+            return "Faction";
+        case WpSource::Tech:
+            return "Tech";
+        case WpSource::RoundBooster:
+            return "RoundBooster";
+        case WpSource::Palace:
+            return "Palace";
+        case WpSource::BookAction:
+            return "BookAction";
+        case WpSource::MedicineL9:
+            return "MedicineL9";
+        case WpSource::SailingTerraform:
+            return "SailingTerraform";
+        case WpSource::AreaScore:
+            return "AreaScore";
+        case WpSource::ScienceTrack:
+            return "ScienceTrack";
+        case WpSource::ResourcesLeft:
+            return "ResourcesLeft";
+        case WpSource::Other:
+            return "Other";
+        case WpSource::None:
+            assert(false);
+            return "None";
+    }
+    assert(false);
+    return {};
+}
+
+using WpByRound = std::array<FlatMap<WpSource, int, 16>, 7>;
 
 enum class FieldActionType : uint8_t {
     BuildNew,
@@ -75,8 +138,43 @@ enum class EventType : uint8_t {
     FormFederation,
     Terraform,
     UpgradeNavOrTerra,
+    Income,
     None,
 };
+inline std::string toString(EventType event) {
+    switch (event) {
+        case EventType::BuildOnEdge:
+            return "BuildOnEdge";
+        case EventType::BuildNearRiver:
+            return "BuildNearRiver";
+        case EventType::BuildMine:
+            return "BuildMine";
+        case EventType::BuildGuild:
+            return "BuildGuild";
+        case EventType::BuildLab:
+            return "BuildLab";
+        case EventType::BuildHuge:
+            return "BuildHuge";
+        case EventType::PutManToGod:
+            return "PutManToGod";
+        case EventType::MoveGod:
+            return "MoveGod";
+        case EventType::GetInvention:
+            return "GetInvention";
+        case EventType::FormFederation:
+            return "FormFederation";
+        case EventType::Terraform:
+            return "Terraform";
+        case EventType::UpgradeNavOrTerra:
+            return "UpgradeNavOrTerra";
+        case EventType::Income:
+            return "Income";
+        case EventType::None:
+            return "None";
+    }
+    assert(false);
+    return {};
+}
 
 struct RoundScoreBonus {
     EventType event = EventType::None;

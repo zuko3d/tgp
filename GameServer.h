@@ -68,12 +68,16 @@ private:
             std::lock_guard lock(sendLogsMutex_);
             curLogs_.emplace_back(str);
         });
+        ge_->setWpStatser([this, &gs] (WpSource source, int amount) {
+            curScores_[gs.activePlayer].at(gs.round)[source] += amount;
+        });
         ge_->setLogCheckpointer([this, &gs] () {
             {
                 std::lock_guard lock(sendLogsMutex_);
                 states_.emplace_back(GameInfo{
                     .gs = gs.clone(),
-                    .logs = std::move(curLogs_)
+                    .logs = std::move(curLogs_),
+                    .scores = curScores_[gs.activePlayer]
                 });
             
                 curLogs_.clear();
@@ -130,6 +134,11 @@ private:
 
         try {
             gameLoop(gs);
+
+            // Just wait while user is watching on the final results
+            while (true) {
+                std::this_thread::sleep_for(std::chrono::seconds(10));
+            }
         } catch (const std::exception& e) {
             if (std::string{e.what()} == "halt") {
                 std::cerr << "Halt!" << std::endl;
@@ -215,6 +224,7 @@ private:
     bool resetGame_ = false;
 
     std::vector<std::string> curLogs_;
+    std::array<WpByRound, 2> curScores_;
 
     std::mutex sendLogsMutex_;
 };

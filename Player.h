@@ -4,6 +4,8 @@
 #include "ResizableArray.h"
 #include "Types.h"
 
+#include <optional>
+
 struct PlayerState {
     int8_t countBuildings(Building building) const {
         constexpr int8_t startingBuildingsAvailable[] = {9, 4, 1, 3, 1};
@@ -18,7 +20,8 @@ struct PlayerState {
     Resources resources = Resources{.gold = 15, .cube = 3, .humans = 0, .gods = {0, 0, 0, 0}, .books = {0, 0, 0, 0}, .winPoints = 20};
     std::array<uint8_t, 3> mana = {5, 7, 0};
 
-    FlatMap<EventType, uint8_t, 13> wpPerEvent;
+    std::optional<FlatMap<EventType, FlatMap<WpSource, int, 16>, 14>> wpStatsTriggers_;
+    FlatMap<EventType, uint8_t, 14> wpPerEvent;
     FlatMap<TechTile, bool, 12> techTiles;
     ResizableArray<FederationTile, 6> feds;
     ResizableArray<Button, 8> buttons;

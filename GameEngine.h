@@ -37,11 +37,12 @@ public:
     void pushButton(int8_t buttonIdx, int param, GameState& gs) const;
     void buildBridge(GameState& gs) const;
 
-    void awardWp(int amount, GameState& gs) const;
+    void awardWp(int amount, WpSource source, GameState& gs) const;
+    void awardWp(EventType event, GameState& gs) const;
     void spendResources(IncomableResources resources, GameState& gs) const;
     void spendResources(Resources resources, GameState& gs) const;
-    void awardResources(IncomableResources resources, GameState& gs) const;
-    void awardResources(Resources resources, GameState& gs) const;
+    void awardResources(IncomableResources resources, GameState& gs, WpSource source = WpSource::None) const;
+    void awardResources(Resources resources, GameState& gs, WpSource source = WpSource::None) const;
     
     void awardInnovation(Innovation inno, GameState& gs) const;
     void awardTechTile(TechTile tile, GameState& gs) const;
@@ -75,6 +76,7 @@ public:
        
     void logCheckpoint() const;
     void setLogCheckpointer(std::function<void()> logCheckpointer);
+    void setWpStatser(std::function<void(WpSource, int)> wpStatser);
 
 private:
     int countGroups(GameState& gs) const;
@@ -93,7 +95,8 @@ private:
 
     bool withLogs_ = false;
     bool withStats_ = false;
-
+    
     std::function<void(const std::string&)> logger_;
     std::function<void()> logCheckpointer_;
+    std::function<void(WpSource, int)> wpStatser_;
 };
