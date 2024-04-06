@@ -159,7 +159,8 @@ void GameEngine::upgradeBuilding(int8_t pos, Building building, GameState& gs, i
     auto& ps = getPs(gs);
     const auto& bot = bots_[gs.activePlayer];
     ps.buildingsAvailable[building]--;
-    ps.buildingsAvailable[gs.field().building[pos].type]++;
+    const auto oldBuildingType = gs.field().building[pos].type;
+    ps.buildingsAvailable[oldBuildingType]++;
     gs.field().populateField(gs, FieldActionType::ChangeBuildingType, pos, SC(building), 0);
     awardWp(StaticData::buildingOrigins()[building].buildEvent, gs);
     if (!forFree) spendResources(StaticData::buildingOrigins()[building].price, gs);
@@ -231,10 +232,10 @@ void GameEngine::upgradeBuilding(int8_t pos, Building building, GameState& gs, i
 
     constexpr int additionalCharges[] = { 1, 1, 0, 0, 0 };
     if (building == Building::Guild) {
-        if (!gs.cache->fieldByState_[gs.fieldStateIdx].hasAdjacentEnemies(pos, gs.activePlayer)) {
+        if (!gs.field().hasAdjacentEnemies(pos, gs.activePlayer)) {
             if (!forFree) spendResources( Resources{ .gold = 3 }, gs);
         }
-        if (ps.buildingsAvailable[Building::Mine] != 5) {
+        if (oldBuildingType == Building::Mine && ps.buildingsAvailable[Building::Mine] != 5) {
             ps.additionalIncome -= StaticData::buildingOrigins()[Building::Mine].income;
         }
         if (getColor(gs) == TerrainType::Mountain && ps.buildingsAvailable[Building::Guild] == 3) {
@@ -681,7 +682,7 @@ void GameEngine::pushButton(int8_t buttonIdx, int param, GameState& gs) const {
     const auto& bot = bots_.at(gs.activePlayer);
 
     const auto& button = StaticData::buttonOrigins()[buttonIdx];
-    awardResources(button.resources, gs);
+    awardResources(button.resources, gs, WpSource::Palace);
 
     switch (button.special) {
         case ButtonActionSpecial::BuildBridge: {
@@ -696,8 +697,8 @@ void GameEngine::pushButton(int8_t buttonIdx, int param, GameState& gs) const {
             if (param < 0) {
                 std::vector<int8_t> possiblePos;
                 possiblePos.reserve(10);
-                for (const auto& pos : gs.cache->fieldByState_[gs.fieldStateIdx].ownedByPlayer[gs.activePlayer]) {
-                    if (gs.cache->fieldByState_[gs.fieldStateIdx].building[pos].type == Building::Laboratory) {
+                for (const auto& pos : gs.field().ownedByPlayer[gs.activePlayer]) {
+                    if (gs.field().building[pos].type == Building::Laboratory) {
                         possiblePos.push_back(pos);
                     }
                 }

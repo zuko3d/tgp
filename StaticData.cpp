@@ -62,7 +62,7 @@ std::vector<ButtonOrigin> StaticData::generateButtonOrigins() {
         ButtonOrigin { .resources = IncomableResources{ .anyGod = 2 }, .special = ButtonActionSpecial::None}, // 4
         ButtonOrigin { .resources = IncomableResources{ .gold = 3, .anyBook = 1 }, .special = ButtonActionSpecial::None}, // 5
         ButtonOrigin { .resources = IncomableResources{}, .special = ButtonActionSpecial::UpgradeMine}, // 6
-        ButtonOrigin { .resources = IncomableResources{}, .special = ButtonActionSpecial::FiraksButton}, // 7
+        ButtonOrigin { .resources = IncomableResources{ .cube = 1, .winPoints = 3 }, .special = ButtonActionSpecial::FiraksButton}, // 7
         ButtonOrigin { .resources = IncomableResources{ .spades = 2 }, .special = ButtonActionSpecial::None}, // 8
         ButtonOrigin { .resources = IncomableResources{ .cube = 2 }, .special = ButtonActionSpecial::None}, // 9
         ButtonOrigin { .resources = IncomableResources{ .humans = 1, .winPoints = 3 }, .special = ButtonActionSpecial::None}, // 10
