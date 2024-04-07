@@ -748,7 +748,7 @@ void GameEngine::awardInnovation(Innovation inno, GameState& gs) const {
             break;
         }
         case Innovation::Bridges: {
-            awardWp(3 * (3 - ps.bridgesLeft), WpSource::Innovation, gs);
+            awardWp(6 * (3 - ps.bridgesLeft), WpSource::Innovation, gs);
             break;
         }
         case Innovation::Feds5wp: {
