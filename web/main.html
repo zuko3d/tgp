@@ -1176,7 +1176,7 @@
 
                 var enabled = true;
                 if (fa == "ManaToHuman") {
-                    if ((ps.mana[2] < 5) && (ps.humansLeft > 0)) {
+                    if ((ps.mana[2] < 5) || (ps.humansLeft == 0)) {
                         enabled = false;
                     }
                 } else if (fa == "BurnMana") {
