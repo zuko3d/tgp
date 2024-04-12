@@ -77,7 +77,7 @@ private:
                 states_.emplace_back(GameInfo{
                     .gs = gs.clone(),
                     .logs = std::move(curLogs_),
-                    .scores = curScores_[gs.activePlayer]
+                    .scores = curScores_[gs.activePlayer % 2]
                 });
             
                 curLogs_.clear();
