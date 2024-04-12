@@ -850,6 +850,7 @@ void GameEngine::awardInnovation(Innovation inno, GameState& gs) const {
 void GameEngine::upgradeNav(GameState& gs, bool forFree) const {
     auto& ps = gs.players[gs.activePlayer];
     assert(ps.navLevel < 3 || forFree);
+    awardWp(EventType::UpgradeNavOrTerra, gs);
     if (ps.navLevel < 3) {
         ps.navLevel++;
 
@@ -878,6 +879,7 @@ void GameEngine::upgradeNav(GameState& gs, bool forFree) const {
 void GameEngine::upgradeTerraform(GameState& gs, bool forFree) const {
     auto& ps = gs.players[gs.activePlayer];
     assert(ps.tfLevel < 2 || forFree);
+    awardWp(EventType::UpgradeNavOrTerra, gs);
     if (ps.tfLevel < 2) {
         ps.tfLevel++;
         if (!forFree) {
@@ -1217,7 +1219,7 @@ void GameEngine::doAfterTurnActions(GameState& gs) const {
 
 void GameEngine::dealWithUpkeep(GameState& gs) const {
     if (gs.phase == GamePhase::Upkeep && !gameEnded(gs)) {
-        logCheckpoint();
+        // logCheckpoint();
         log("====================================================================================================");
         log("Round " + std::to_string(gs.round + 1) + " begins!");
 
