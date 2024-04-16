@@ -183,9 +183,23 @@ public:
     int8_t choosePlaceToSpade(const GameState& gs, int amount, const std::vector<int8_t>& possiblePos) {
         if (possiblePos.empty()) return -1;
         
+        int minSpades = 4;
+        std::vector<int8_t> poses;
+        const auto myColor = gs.staticGs->playerColors[gs.activePlayer];
+        for (const auto& pos : possiblePos) {
+            const auto needed = spadesNeeded(myColor, gs.field().type[pos]);
+            if (needed < minSpades) {
+                minSpades = needed;
+                poses.clear();
+            }
+            if (needed == minSpades) {
+                poses.push_back(pos);
+            }
+        }
+
         int bestAction = 0;
         double bestPts = -1e9;
-        for (const auto& pos: possiblePos) {
+        for (const auto& pos: poses) {
             auto newGs = gs;
             ownGe_.terraform(pos, amount, newGs);
             const auto pts = playOut(newGs, gs.activePlayer);

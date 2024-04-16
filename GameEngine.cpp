@@ -9,27 +9,6 @@
 #include <map>
 #include <queue>
 
-constexpr int spadesNeeded__(TerrainType src, TerrainType dst) {
-    int dist = (SC(dst) + 7 - SC(src)) % 7;
-    dist = std::min(dist, 7 - dist);
-    return dist;
-}
-
-constexpr std::array<std::array<int, 7>, 7> spadesNeeded_() {
-    std::array<std::array<int, 7>, 7> ret;
-    for (int i = 0; i < 7; i++) {
-        for (int j = 0; j < 7; j++) {
-            ret[i][j] = spadesNeeded__((TerrainType) i, (TerrainType) j);
-        }
-    }
-    return ret;
-}
-
-int spadesNeeded(TerrainType src, TerrainType dst) {
-    constexpr auto r = spadesNeeded_();
-    return r[SC(src)][SC(dst)];
-}
-
 void GameEngine::setLogger(std::function<void(const std::string&)> logger) {
     logger_ = logger;
 }
@@ -748,7 +727,7 @@ void GameEngine::awardInnovation(Innovation inno, GameState& gs) const {
             break;
         }
         case Innovation::Bridges: {
-            awardWp(3 * (3 - ps.bridgesLeft), WpSource::Innovation, gs);
+            awardWp(6 * (3 - ps.bridgesLeft), WpSource::Innovation, gs);
             break;
         }
         case Innovation::Feds5wp: {
@@ -871,6 +850,7 @@ void GameEngine::awardInnovation(Innovation inno, GameState& gs) const {
 void GameEngine::upgradeNav(GameState& gs, bool forFree) const {
     auto& ps = gs.players[gs.activePlayer];
     assert(ps.navLevel < 3 || forFree);
+    awardWp(EventType::UpgradeNavOrTerra, gs);
     if (ps.navLevel < 3) {
         ps.navLevel++;
 
@@ -899,6 +879,7 @@ void GameEngine::upgradeNav(GameState& gs, bool forFree) const {
 void GameEngine::upgradeTerraform(GameState& gs, bool forFree) const {
     auto& ps = gs.players[gs.activePlayer];
     assert(ps.tfLevel < 2 || forFree);
+    awardWp(EventType::UpgradeNavOrTerra, gs);
     if (ps.tfLevel < 2) {
         ps.tfLevel++;
         if (!forFree) {

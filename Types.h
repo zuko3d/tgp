@@ -338,3 +338,24 @@ enum class GamePhase {
     Actions,
     EndOfTurn,
 };
+
+inline constexpr int spadesNeeded__(TerrainType src, TerrainType dst) {
+    int dist = (SC(dst) + 7 - SC(src)) % 7;
+    dist = std::min(dist, 7 - dist);
+    return dist;
+}
+
+inline constexpr std::array<std::array<int, 7>, 7> spadesNeeded_() {
+    std::array<std::array<int, 7>, 7> ret;
+    for (int i = 0; i < 7; i++) {
+        for (int j = 0; j < 7; j++) {
+            ret[i][j] = spadesNeeded__((TerrainType) i, (TerrainType) j);
+        }
+    }
+    return ret;
+}
+
+inline int spadesNeeded(TerrainType src, TerrainType dst) {
+    constexpr auto r = spadesNeeded_();
+    return r[SC(src)][SC(dst)];
+}
