@@ -304,6 +304,8 @@ enum class ButtonActionSpecial : uint8_t {
     BuildBridge,
     UpgradeMine,
     WpForGuilds2,
+    RiverCity,
+    FlyingMan,
     None,
 };
 

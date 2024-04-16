@@ -1238,7 +1238,6 @@ void GameEngine::doAfterTurnActions(GameState& gs) const {
 
 void GameEngine::dealWithUpkeep(GameState& gs) const {
     if (gs.phase == GamePhase::Upkeep && !gameEnded(gs)) {
-        logCheckpoint();
         log("====================================================================================================");
         log("Round " + std::to_string(gs.round + 1) + " begins!");
 
