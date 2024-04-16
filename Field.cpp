@@ -235,15 +235,16 @@ void Field::populateField(GameState& gs, FieldActionType action, int pos, int pa
 
         std::queue<int8_t> q;
         if (action == FieldActionType::BuildBridge) {
-            if (newField.building.at(StaticData::fieldOrigin().bridgeConnections.at(pos).first).fedIdx >= 0) {
-                newField.building.at(StaticData::fieldOrigin().bridgeConnections.at(pos).second).fedIdx = newField.building.at(StaticData::fieldOrigin().bridgeConnections.at(pos).first).fedIdx;
-            } else if (newField.building.at(StaticData::fieldOrigin().bridgeConnections.at(pos).second).fedIdx >= 0) {
-                newField.building.at(StaticData::fieldOrigin().bridgeConnections.at(pos).first).fedIdx = newField.building.at(StaticData::fieldOrigin().bridgeConnections.at(pos).second).fedIdx;
+            const auto bCon = StaticData::fieldOrigin().bridgeConnections.at(pos);
+            if ((newField.building[bCon.first].owner == gs.activePlayer) && newField.building.at(bCon.first).fedIdx >= 0) {
+                newField.building.at(bCon.second).fedIdx = newField.building.at(bCon.first).fedIdx;
+            } else if ((newField.building[bCon.second].owner == gs.activePlayer) && newField.building.at(bCon.second).fedIdx >= 0) {
+                newField.building.at(bCon.first).fedIdx = newField.building.at(bCon.second).fedIdx;
             } else {
-                auto p = StaticData::fieldOrigin().bridgeConnections.at(pos).first;
+                auto p = bCon.first;
                 if (newField.building[p].owner == gs.activePlayer) q.push(p);
 
-                p = StaticData::fieldOrigin().bridgeConnections.at(pos).second;
+                p = bCon.second;
                 if (newField.building[p].owner == gs.activePlayer) q.push(p);
             }
         } else {
