@@ -100,7 +100,7 @@ int main() {
     // return 0;
 
     auto webBot = WebUiBot();
-    auto cBot = MctsBot(new GreedyBot(allScoreWeights), allScoreWeights, 10000, 2, 4);
+    auto cBot = MctsBot(new GreedyBot(allScoreWeights), allScoreWeights, 1000, 2, 4);
     GameServer gameServer({&webBot, &cBot});
 
     while(true);

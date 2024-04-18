@@ -217,6 +217,9 @@ void GameEngine::upgradeBuilding(int8_t pos, Building building, GameState& gs, i
         if (oldBuildingType == Building::Mine && ps.buildingsAvailable[Building::Mine] != 5) {
             ps.additionalIncome -= StaticData::buildingOrigins()[Building::Mine].income;
         }
+        if (oldBuildingType == Building::Laboratory) {
+            ps.additionalIncome.humans--;
+        }
         if (getColor(gs) == TerrainType::Mountain && ps.buildingsAvailable[Building::Guild] == 3) {
             ps.additionalIncome.gold++;
         }
