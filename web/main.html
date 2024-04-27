@@ -1,9 +1,9 @@
 <html>
     <body>
-        <table id="all-logs" style="position: absolute; top: 1170px; left: 10px; z-index: 3;"></table>
+        <div id="all-logs" style="position: absolute; top: 1170px; left: 10px; z-index: 3;">
             <table id="logs-summary" border="1"></table>
             <table id="logs-table" border="1"></table>
-        </table>
+        </div>
         <button type="button" id="btn-menu" style="position: absolute; left: 1808px; z-index: 3;">Menu</button>
         <div id="main-menu" style="position: absolute; top: 18px; left: 481px; width: 1884px; height: 900px; opacity: 0.9; z-index: 13; background-image: url('pics/menu.png'); background-size: contain; background-repeat: no-repeat;">
             <button type="button" id="btn-new-game" style="font-size: 50px; position: absolute; top: 300; left: 347px; z-index: 3;">New game</button>
@@ -1333,20 +1333,33 @@
                                 tdCur = trMain.insertCell();
                             }
 
+                            if (event.type == 0) { // BuildPalace
+                                addImg("pics/palace/" + event.param + ".png", tdCur, 100);
+                            }
+                            if (event.type == 1) { // GetTech
+                                addImg("pics/tech/" + event.param + ".png", tdCur, 60);
+                            }
+                            if (event.type == 2) { // GetInnovation
+                                addImg("pics/inno/" + event.param + ".png", tdCur, 100);
+                            }
+                            if (event.type == 3) { // Market
+                                addImg("pics/market_" + event.param + ".png", tdCur, 100);
+                            }
+                            if (event.type == 4) { // BookMarket
+                                addImg("pics/book_" + event.param + ".png", tdCur, 100);
+                            }
+                            if (event.type == 5) { // GetFedTile
+                                addImg("pics/fed_" + event.param + ".png", tdCur, 60);
+                            }
                             if (event.type == 6) { // BuildMine
                                 addImg("pics/building_0.png", tdCur, 30, "player-0");
                             }
 
-                            // BuildPalace, // 0
-                            // GetTech, // 1
-                            // GetInnovation, // 2
-                            // Market, // 3
-                            // BookMarket, // 4
-                            // GetFedTile, // 5
-                            // BuildMine, // 6
+                            if (event.type == 9) { // GetBooster
+                                addImg("pics/rb_" + event.param + ".png", tdCur, 50);
+                            }
                             // UpgradeNav, // 7
                             // UpgradeTerraformTo3,  // 8
-                            // GetBooster, // 9
                             // UpgradeBuilding, // 10
                             // Annex, // 11
                         }
