@@ -176,6 +176,26 @@ inline std::string toString(EventType event) {
     return {};
 }
 
+enum class LogEventType : uint8_t {
+    BuildPalace,
+    GetTech,
+    GetInnovation,
+    Market,
+    BookMarket,
+    GetFedTile,
+    BuildMine,
+    UpgradeNav,
+    UpgradeTerraformTo3,
+    None,
+};
+
+struct LogEvent {
+    int round;
+    int activePlayer;
+    LogEventType type;
+    int param;
+}
+
 struct RoundScoreBonus {
     EventType event = EventType::None;
     // int eventParams;
