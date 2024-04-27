@@ -13,6 +13,21 @@ void GameEngine::setLogger(std::function<void(const std::string&)> logger) {
     logger_ = logger;
 }
 
+void GameEngine::logEvent(const GameState& gs, LogEventType type, int param) const {
+    if (withLogs_) {
+        eventLogger_(LogEvent{
+            .round = gs.round,
+            .activePlayer = gs.activePlayer,
+            .type = type,
+            .param = param,
+        });
+    }
+}
+
+void GameEngine::setEventLogger(std::function<void(LogEvent)> logger) {
+    eventLogger_ = logger;
+}
+
 void GameEngine::setLogCheckpointer(std::function<void()> logCheckpointer) {
     logCheckpointer_ = logCheckpointer;
 }
@@ -83,6 +98,8 @@ void GameEngine::doFreeActionMarket(FreeActionMarketType action, GameState& gs) 
 void GameEngine::awardBooster(int boosterIdx, GameState& gs) const {
     auto& ps = gs.players[gs.activePlayer];
 
+    logEvent(gs, LogEventType::GetBooster, gs.boosters.at(boosterIdx).originIdx);
+
     const auto newBooster = gs.boosters.at(boosterIdx);
     awardResources(IncomableResources{ .gold = (int8_t) newBooster.gold }, gs);
 
@@ -137,6 +154,9 @@ void GameEngine::chargeOpp(int8_t pos, GameState& gs) const {
 void GameEngine::upgradeBuilding(int8_t pos, Building building, GameState& gs, int param, bool forFree) const {
     auto& ps = getPs(gs);
     const auto& bot = bots_[gs.activePlayer];
+
+    logEvent(gs, LogEventType::UpgradeBuilding, SC(building));
+
     ps.buildingsAvailable[building]--;
     const auto oldBuildingType = gs.field().building[pos].type;
     ps.buildingsAvailable[oldBuildingType]++;
@@ -147,6 +167,9 @@ void GameEngine::upgradeBuilding(int8_t pos, Building building, GameState& gs, i
     if (building == Building::Palace) {
         assert(param >= 0);
         ps.palaceIdx = param;
+
+        logEvent(gs, LogEventType::BuildPalace, param);
+
         std::remove(gs.palacesAvailable.begin(), gs.palacesAvailable.end(), param);
         gs.palacesAvailable.pop_back();
 
@@ -251,6 +274,8 @@ void GameEngine::upgradeBuilding(int8_t pos, Building building, GameState& gs, i
 void GameEngine::awardTechTile(TechTile tile, GameState& gs) const {
     auto& ps = gs.players[gs.activePlayer];
     ps.techTiles[tile] = true;
+
+    logEvent(gs, LogEventType::GetTech, SC(tile));
 
     switch (tile) {
         case TechTile::p3g2: {
@@ -720,6 +745,8 @@ void GameEngine::awardInnovation(Innovation inno, GameState& gs) const {
     ps.innovations.push_back(inno);
     awardWp(EventType::GetInvention, gs);
 
+    logEvent(gs, LogEventType::GetInnovation, SC(inno));
+
     switch (inno) {
         case Innovation::AcademyAnd2wp: {
             const auto poses = someHexes(true, false, gs);
@@ -854,6 +881,7 @@ void GameEngine::upgradeNav(GameState& gs, bool forFree) const {
     auto& ps = gs.players[gs.activePlayer];
     assert(ps.navLevel < 3 || forFree);
     awardWp(EventType::UpgradeNavOrTerra, gs);
+    logEvent(gs, LogEventType::UpgradeNav, -1);
     if (ps.navLevel < 3) {
         ps.navLevel++;
 
@@ -883,6 +911,8 @@ void GameEngine::upgradeTerraform(GameState& gs, bool forFree) const {
     auto& ps = gs.players[gs.activePlayer];
     assert(ps.tfLevel < 2 || forFree);
     awardWp(EventType::UpgradeNavOrTerra, gs);
+    if (ps.tfLevel == 1) logEvent(gs, LogEventType::UpgradeTerraformTo3, -1);
+
     if (ps.tfLevel < 2) {
         ps.tfLevel++;
         if (!forFree) {
@@ -962,6 +992,8 @@ void GameEngine::buildForFree(int8_t pos, Building building, bool isNeutral, Gam
 
 void GameEngine::buildMine(int8_t pos, GameState& gs) const {
     auto& ps = getPs(gs);
+
+    logEvent(gs, LogEventType::BuildMine, -1);
 
     assert(gs.field().building[pos].type == Building::None);
     assert(ps.buildingsAvailable[Building::Mine] > 0);
@@ -1053,6 +1085,7 @@ void GameEngine::doAction(Action action, GameState& gs) const {
         }
         case ActionType::BookMarket: {
             auto& bookAction = gs.bookActions[action.param1];
+            logEvent(gs, LogEventType::BookMarket, bookAction.picOrigin);
             spendResources(IncomableResources { .anyBook = bookAction.bookPrice }, gs);
             assert(bookAction.isUsed == 0);
             bookAction.isUsed = true;
@@ -1078,6 +1111,7 @@ void GameEngine::doAction(Action action, GameState& gs) const {
 
         case ActionType::Market: {
             auto& marketAction = gs.marketActions[action.param1];
+            logEvent(gs, LogEventType::Market, marketAction.picOrigin);
             int8_t manaDiscount = (race == Race::Illusionists) ? 1 : 0;
             spendResources(IncomableResources { .manaCharge = (int8_t) (marketAction.manaPrice - manaDiscount) }, gs);
             if (race == Race::Illusionists) {
@@ -1093,6 +1127,7 @@ void GameEngine::doAction(Action action, GameState& gs) const {
 
         case ActionType::Annex: {
             gs.field().populateField(gs, FieldActionType::AddAnnex, action.param1);
+            logEvent(gs, LogEventType::Annex, -1);
             assert(ps.annexLeft > 0);
             ps.annexLeft--;
             checkFederation(gs);
@@ -1620,6 +1655,8 @@ void GameEngine::awardFedTile(FedTileOrigin tile, GameState& gs) const {
     
     ps.feds.push_back(FederationTile{ .origin = tile, .flipped = false });
     awardResources(StaticData::fedTiles()[tile], gs, WpSource::City);
+
+    logEvent(gs, LogEventType::GetFedTile, SC(tile));
 
     awardWp(EventType::FormFederation, gs);
     if (getRace(gs) == Race::Felines) {

@@ -64,6 +64,11 @@ private:
     }
 
     void setupGeCallbacks(GameState& gs) {
+        ge_->setEventLogger([this] (LogEvent event) {
+            std::lock_guard lock(sendLogsMutex_);
+            logEvents_.emplace_back(event);
+        });
+
         ge_->setLogger([this] (const std::string& str) {
             std::lock_guard lock(sendLogsMutex_);
             curLogs_.emplace_back(str);
@@ -163,6 +168,7 @@ private:
         nlohmann::json j;
         j["action"] = "logs";
         j["data"] = toJson(states_);
+        j["events"] = toJson(logEvents_);
         server_.send(*hClient_, j.dump(), websocketpp::frame::opcode::text);
     }
 
@@ -218,6 +224,7 @@ private:
     // std::optional<std::string> lastRequest_;
 
     GameHistory states_;
+    std::vector<LogEvent> logEvents_;
     std::unique_ptr<GameEngine> ge_;
 
     std::vector<IBot*> bots_;

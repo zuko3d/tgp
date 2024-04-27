@@ -1,6 +1,9 @@
 <html>
     <body>
-        <table id="logs-table" border="1" style="position: absolute; top: 1170px; left: 10px; z-index: 3;"></table>
+        <table id="all-logs" style="position: absolute; top: 1170px; left: 10px; z-index: 3;"></table>
+            <table id="logs-summary" border="1"></table>
+            <table id="logs-table" border="1"></table>
+        </table>
         <button type="button" id="btn-menu" style="position: absolute; left: 1808px; z-index: 3;">Menu</button>
         <div id="main-menu" style="position: absolute; top: 18px; left: 481px; width: 1884px; height: 900px; opacity: 0.9; z-index: 13; background-image: url('pics/menu.png'); background-size: contain; background-repeat: no-repeat;">
             <button type="button" id="btn-new-game" style="font-size: 50px; position: absolute; top: 300; left: 347px; z-index: 3;">New game</button>
@@ -1316,90 +1319,126 @@
         gServerSocket.addEventListener('message', function (event) {
             const obj = JSON.parse(event.data);
             if (obj.action == "logs") {
-                var table = document.getElementById("logs-table");
-                table.innerHTML = "";
+                {
+                    var table = document.getElementById("logs-summary");
+                    table.innerHTML = "";
+                    var trMain = table.insertRow();
+                    var tdCur = trMain.insertCell();
+                    var curRound = 0;
 
-                for (var i = obj.data.length - 1; i >= 0; i--) {
-                    const item = obj.data[i];
-                    var trState = table.insertRow();
-                    var td = trState.insertCell();
-                    var dvEye = addImg("pics/eye.png", td, 50, 'highlight-history');
-                    dvEye.data = item.gs;
-                    dvEye.onclick = function() {
-                        clearHighlight();
-                        var bridges = document.querySelectorAll('*[id^="bridge-"]');
-                        for (bridge of bridges) {
-                            bridge.remove();
-                        }
-                        visualizeGs(this.data);
-                    };
-
-                    var dvArrow = addImg("pics/arrow.jpg", td, 50, 'highlight-history');
-                    dvArrow.data = i;
-                    dvArrow.onclick = function() {
-                        gServerSocket.send('{"action": "rewind", "state": ' + this.data + '}');
-                        location.reload();
-                    };
-
-                    {
-                        var dvStats = document.createElement('details');
-                        td.appendChild(dvStats);
-                        dvStats.open = false;
-                        var statsTable = document.createElement('table');
-                        statsTable.border = 1;
-                        dvStats.appendChild(statsTable);
-                        const names = ['', 'ManaCharge', 'RoundScoreBonus', 'Innovation', 'City', 'Faction', 'Tech', 'RoundBooster', 'Palace', 'BookAction', 'MedicineL9', 'SailingTerraform', 'AreaScore', 'ScienceTrack','ResourcesLeft', 'Other', 'None', 'Total']
-                        var namesRow = statsTable.insertRow();
-                        for (name of names) {
-                            var cell = namesRow.insertCell();
-                            cell.textContent = name;
-                        }
-                        var rd = 1
-                        var sums = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-                        for (roundRow of item.scores) {
-                            var curRow = statsTable.insertRow();
-                            var rdCell = curRow.insertCell();
-                            rdCell.textContent = "Round " + rd;
-                            var curSum = 0;
-                            var srcIdx = 0;
-                            for (pts of roundRow) {
-                                var cell = curRow.insertCell();
-                                if (pts != 0) cell.textContent = pts;
-                                sums[srcIdx] += pts;
-                                srcIdx++;
-                                curSum += pts;
+                    for (event of obj.events) {
+                        if (event.activePlayer == 0) {
+                            if (curRound != event.round) {
+                                curRound = event.round;
+                                tdCur = trMain.insertCell();
                             }
-                            var sumCell = curRow.insertCell();
-                            sumCell.textContent = curSum;
-                            rd++;
-                        }
-                        {
-                            var sumRow = statsTable.insertRow();
-                            var rdCell = sumRow.insertCell();
-                            rdCell.textContent = "Subtotal ";
-                            var curSum = 0;
-                            var srcIdx = 0;
-                            for (pts of sums) {
-                                var cell = sumRow.insertCell();
-                                if (pts != 0) cell.textContent = pts;
-                                sums[srcIdx] += pts;
-                                srcIdx++;
-                                curSum += pts;
+
+                            if (event.type == 6) { // BuildMine
+                                addImg("pics/building_0.png", tdCur, 30, "player-0");
                             }
-                            var sumCell = sumRow.insertCell();
-                            sumCell.textContent = curSum;
+
+                            // BuildPalace, // 0
+                            // GetTech, // 1
+                            // GetInnovation, // 2
+                            // Market, // 3
+                            // BookMarket, // 4
+                            // GetFedTile, // 5
+                            // BuildMine, // 6
+                            // UpgradeNav, // 7
+                            // UpgradeTerraformTo3,  // 8
+                            // GetBooster, // 9
+                            // UpgradeBuilding, // 10
+                            // Annex, // 11
                         }
                     }
+                }
 
-                    var td2 = trState.insertCell();
-                    var tableLogs = document.createElement("table");
-                    td2.appendChild(tableLogs);
-                    item.logs.reduceRight(function(_, logline) {
-                        var tr = tableLogs.insertRow();
-                        var td = tr.insertCell();
-                        td.innerHTML = logline;
-                    }, null);
-                };
+                {
+                    var table = document.getElementById("logs-table");
+                    table.innerHTML = "";
+
+                    for (var i = obj.data.length - 1; i >= 0; i--) {
+                        const item = obj.data[i];
+                        var trState = table.insertRow();
+                        var td = trState.insertCell();
+                        var dvEye = addImg("pics/eye.png", td, 50, 'highlight-history');
+                        dvEye.data = item.gs;
+                        dvEye.onclick = function() {
+                            clearHighlight();
+                            var bridges = document.querySelectorAll('*[id^="bridge-"]');
+                            for (bridge of bridges) {
+                                bridge.remove();
+                            }
+                            visualizeGs(this.data);
+                        };
+
+                        var dvArrow = addImg("pics/arrow.jpg", td, 50, 'highlight-history');
+                        dvArrow.data = i;
+                        dvArrow.onclick = function() {
+                            gServerSocket.send('{"action": "rewind", "state": ' + this.data + '}');
+                            location.reload();
+                        };
+
+                        {
+                            var dvStats = document.createElement('details');
+                            td.appendChild(dvStats);
+                            dvStats.open = false;
+                            var statsTable = document.createElement('table');
+                            statsTable.border = 1;
+                            dvStats.appendChild(statsTable);
+                            const names = ['', 'ManaCharge', 'RoundScoreBonus', 'Innovation', 'City', 'Faction', 'Tech', 'RoundBooster', 'Palace', 'BookAction', 'MedicineL9', 'SailingTerraform', 'AreaScore', 'ScienceTrack','ResourcesLeft', 'Other', 'None', 'Total']
+                            var namesRow = statsTable.insertRow();
+                            for (name of names) {
+                                var cell = namesRow.insertCell();
+                                cell.textContent = name;
+                            }
+                            var rd = 1
+                            var sums = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+                            for (roundRow of item.scores) {
+                                var curRow = statsTable.insertRow();
+                                var rdCell = curRow.insertCell();
+                                rdCell.textContent = "Round " + rd;
+                                var curSum = 0;
+                                var srcIdx = 0;
+                                for (pts of roundRow) {
+                                    var cell = curRow.insertCell();
+                                    if (pts != 0) cell.textContent = pts;
+                                    sums[srcIdx] += pts;
+                                    srcIdx++;
+                                    curSum += pts;
+                                }
+                                var sumCell = curRow.insertCell();
+                                sumCell.textContent = curSum;
+                                rd++;
+                            }
+                            {
+                                var sumRow = statsTable.insertRow();
+                                var rdCell = sumRow.insertCell();
+                                rdCell.textContent = "Subtotal ";
+                                var curSum = 0;
+                                var srcIdx = 0;
+                                for (pts of sums) {
+                                    var cell = sumRow.insertCell();
+                                    if (pts != 0) cell.textContent = pts;
+                                    sums[srcIdx] += pts;
+                                    srcIdx++;
+                                    curSum += pts;
+                                }
+                                var sumCell = sumRow.insertCell();
+                                sumCell.textContent = curSum;
+                            }
+                        }
+
+                        var td2 = trState.insertCell();
+                        var tableLogs = document.createElement("table");
+                        td2.appendChild(tableLogs);
+                        item.logs.reduceRight(function(_, logline) {
+                            var tr = tableLogs.insertRow();
+                            var td = tr.insertCell();
+                            td.innerHTML = logline;
+                        }, null);
+                    };
+                }
             }
         });
 

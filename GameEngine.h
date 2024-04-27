@@ -73,7 +73,10 @@ public:
     void log(const std::string& str) const;
     void log(const GameState& gs, const std::string& str) const;
     void setLogger(std::function<void(const std::string&)> logger);
-       
+
+    void logEvent(const GameState& gs, LogEventType type, int param) const;
+    void setEventLogger(std::function<void(LogEvent)> logger);
+
     void logCheckpoint() const;
     void setLogCheckpointer(std::function<void()> logCheckpointer);
     void setWpStatser(std::function<void(WpSource, int)> wpStatser);
@@ -97,6 +100,7 @@ private:
     bool withStats_ = false;
     
     std::function<void(const std::string&)> logger_;
+    std::function<void(LogEvent)> eventLogger_;
     std::function<void()> logCheckpointer_;
     std::function<void(WpSource, int)> wpStatser_;
 };

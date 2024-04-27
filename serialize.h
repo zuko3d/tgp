@@ -74,6 +74,8 @@ nlohmann::json toJson(const GameState& gs);
 
 nlohmann::json toJson(const GameInfo& gi);
 
+nlohmann::json toJson(const LogEvent& le);
+
 template <typename KeyType, typename ValueType, size_t Size>
 inline nlohmann::json toJson(const FlatMap<KeyType, ValueType, Size>& mp) {
     nlohmann::json j = nlohmann::json::array();

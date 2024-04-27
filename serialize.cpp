@@ -332,3 +332,14 @@ nlohmann::json toJson(const GameInfo& gi) {
     
     return j;
 }
+
+nlohmann::json toJson(const LogEvent& le) {
+    nlohmann::json j;
+
+    j["round"] = le.round;
+    j["activePlayer"] = le.activePlayer;
+    j["type"] = SC(le.type);
+    j["param"] = le.param;
+    
+    return j;
+}
