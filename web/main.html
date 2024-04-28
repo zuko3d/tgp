@@ -1,6 +1,6 @@
 <html>
     <body>
-        <div id="all-logs" style="position: absolute; top: 1170px; left: 10px; z-index: 3;">
+        <div id="all-logs" style="position: absolute; top: 1070px; left: 10px; z-index: 3;">
             <table id="logs-summary" border="1"></table>
             <table id="logs-table" border="1"></table>
         </div>
@@ -1324,13 +1324,15 @@
                     table.innerHTML = "";
                     var trMain = table.insertRow();
                     var tdCur = trMain.insertCell();
-                    var curRound = 0;
+                    tdCur.style = "width: 300;";
 
                     for (event of obj.events) {
                         if (event.activePlayer == 0) {
-                            if (curRound != event.round) {
-                                curRound = event.round;
+                            if (event.type == 9) { // booster
                                 tdCur = trMain.insertCell();
+                                addImg("pics/rb_" + event.param + ".png", tdCur, 50);
+                                tdCur = trMain.insertCell();
+                                tdCur.style = "width: 300;";
                             }
 
                             if (event.type == 0) { // BuildPalace
@@ -1346,7 +1348,7 @@
                                 addImg("pics/market_" + event.param + ".png", tdCur, 100);
                             }
                             if (event.type == 4) { // BookMarket
-                                addImg("pics/book_" + event.param + ".png", tdCur, 100);
+                                addImg("pics/book_action/" + event.param + ".png", tdCur, 100);
                             }
                             if (event.type == 5) { // GetFedTile
                                 addImg("pics/fed_" + event.param + ".png", tdCur, 60);
@@ -1355,9 +1357,6 @@
                                 addImg("pics/building_0.png", tdCur, 30, "player-0");
                             }
 
-                            if (event.type == 9) { // GetBooster
-                                addImg("pics/rb_" + event.param + ".png", tdCur, 50);
-                            }
                             // UpgradeNav, // 7
                             // UpgradeTerraformTo3,  // 8
                             // UpgradeBuilding, // 10
