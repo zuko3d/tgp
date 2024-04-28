@@ -1324,15 +1324,14 @@
                     table.innerHTML = "";
                     var trMain = table.insertRow();
                     var tdCur = trMain.insertCell();
-                    tdCur.style = "width: 300;";
 
                     for (event of obj.events) {
                         if (event.activePlayer == 0) {
-                            if (event.type == 9) { // booster
+                            if (event.type == 9 && event.round < 5) { // booster
                                 tdCur = trMain.insertCell();
                                 addImg("pics/rb_" + event.param + ".png", tdCur, 50);
                                 tdCur = trMain.insertCell();
-                                tdCur.style = "width: 300;";
+                                tdCur.style = "width: 270;";
                             }
 
                             if (event.type == 0) { // BuildPalace
@@ -1344,21 +1343,24 @@
                             if (event.type == 2) { // GetInnovation
                                 addImg("pics/inno/" + event.param + ".png", tdCur, 100);
                             }
-                            if (event.type == 3) { // Market
-                                addImg("pics/market_" + event.param + ".png", tdCur, 100);
-                            }
-                            if (event.type == 4) { // BookMarket
-                                addImg("pics/book_action/" + event.param + ".png", tdCur, 100);
-                            }
+                            // if (event.type == 3) { // Market
+                            //     addImg("pics/market_" + event.param + ".png", tdCur, 100);
+                            // }
+                            // if (event.type == 4) { // BookMarket
+                            //     addImg("pics/book_action/" + event.param + ".png", tdCur, 100);
+                            // }
                             if (event.type == 5) { // GetFedTile
                                 addImg("pics/fed_" + event.param + ".png", tdCur, 60);
                             }
                             if (event.type == 6) { // BuildMine
                                 addImg("pics/building_0.png", tdCur, 30, "player-0");
                             }
-
-                            // UpgradeNav, // 7
-                            // UpgradeTerraformTo3,  // 8
+                            if (event.type == 7) { // UpgradeNav
+                                addImg("pics/nav_up.png", tdCur, 30);
+                            }
+                            if (event.type == 8) { // UpgradeTerraformTo3
+                                addImg("pics/tf_up.png", tdCur, 30);
+                            }
                             // UpgradeBuilding, // 10
                             // Annex, // 11
                         }
