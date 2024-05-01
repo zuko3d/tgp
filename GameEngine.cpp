@@ -101,7 +101,6 @@ void GameEngine::awardBooster(int boosterIdx, GameState& gs) const {
     logEvent(gs, LogEventType::GetBooster, gs.boosters.at(boosterIdx).originIdx);
 
     const auto newBooster = gs.boosters.at(boosterIdx);
-    awardResources(IncomableResources{ .gold = (int8_t) newBooster.gold }, gs);
 
     if (ps.currentRoundBoosterOriginIdx >= 0) {
         const auto oldBooster = StaticData::roundBoosters()[ps.currentRoundBoosterOriginIdx];
@@ -127,6 +126,10 @@ void GameEngine::awardBooster(int boosterIdx, GameState& gs) const {
     } else {
         ps.boosterButton = Button{ .buttonOrigin = -1, .isUsed = true };
     }
+
+    logCheckpoint();
+
+    if (gs.round < 5) awardResources(IncomableResources{ .gold = (int8_t) newBooster.gold }, gs);
 }
 
 void GameEngine::chargeOpp(int8_t pos, GameState& gs) const {

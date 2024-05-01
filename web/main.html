@@ -1332,8 +1332,16 @@
                         if (event.activePlayer == 0) {
                             if (event.type == 9 && event.round < 5) { // booster
                                 tdCur = trMain.insertCell();
-                                tdSecondary = trSecondary.insertCell();
                                 addImg("pics/rb_" + event.param + ".png", tdCur, 50);
+
+                                tdSecondary = trSecondary.insertCell();
+                                addImg("pics/gold_1.png", tdSecondary, 30);
+                                tdSecondary.innerHTML += gi.gs.players[0].resources.gold + "<br><br>";
+                                addImg("pics/cube.png", tdSecondary, 30);
+                                tdSecondary.innerHTML += gi.gs.players[0].resources.cube + "<br><br>";
+                                addImg("pics/wp.png", tdSecondary, 30);
+                                tdSecondary.innerHTML += gi.gs.players[0].resources.winPoints + "<br><br>";
+                                
                                 tdCur = trMain.insertCell();
                                 tdSecondary = trSecondary.insertCell();
                                 tdCur.style = "width: 270;";
