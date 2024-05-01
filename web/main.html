@@ -1324,14 +1324,18 @@
                     table.innerHTML = "";
                     var trMain = table.insertRow();
                     var tdCur = trMain.insertCell();
+                    var trSecondary = table.insertRow();
+                    var tdSecondary = trSecondary.insertCell();
                     
                     for (gi of obj.data) {
                     for (event of gi.events) {
                         if (event.activePlayer == 0) {
                             if (event.type == 9 && event.round < 5) { // booster
                                 tdCur = trMain.insertCell();
+                                tdSecondary = trSecondary.insertCell();
                                 addImg("pics/rb_" + event.param + ".png", tdCur, 50);
                                 tdCur = trMain.insertCell();
+                                tdSecondary = trSecondary.insertCell();
                                 tdCur.style = "width: 270;";
                             }
 
@@ -1344,12 +1348,12 @@
                             if (event.type == 2) { // GetInnovation
                                 addImg("pics/inno/" + event.param + ".png", tdCur, 100);
                             }
-                            // if (event.type == 3) { // Market
-                            //     addImg("pics/market_" + event.param + ".png", tdCur, 100);
-                            // }
-                            // if (event.type == 4) { // BookMarket
-                            //     addImg("pics/book_action/" + event.param + ".png", tdCur, 100);
-                            // }
+                            if (event.type == 3) { // Market
+                                addImg("pics/market_" + event.param + ".png", tdSecondary, 100);
+                            }
+                            if (event.type == 4) { // BookMarket
+                                addImg("pics/book_action/" + event.param + ".png", tdSecondary, 100);
+                            }
                             if (event.type == 5) { // GetFedTile
                                 addImg("pics/fed_" + event.param + ".png", tdCur, 60);
                             }
@@ -1362,8 +1366,17 @@
                             if (event.type == 8) { // UpgradeTerraformTo3
                                 addImg("pics/tf_up.png", tdCur, 30);
                             }
-                            // UpgradeBuilding, // 10
-                            // Annex, // 11
+                            if (event.type == 10) { // UpgradeBuilding
+                                addImg("pics/building_" + event.param + ".png", tdSecondary, 40);
+                            }
+                            if (event.type == 11) { // Annex
+                                addImg("pics/annex.png", tdSecondary, 30);
+                            }
+                            if (event.type == 12) { // Terraform
+                                for (var i = 0; i < event.param; i++) {
+                                    addImg("pics/spade.png", tdSecondary, 30);
+                                }
+                            }
                         }
                     }
                     }

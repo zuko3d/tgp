@@ -1555,6 +1555,8 @@ TerrainType GameEngine::getColor(const GameState& gs) const {
 void GameEngine::terraform(int8_t pos, int amount, GameState& gs) const {
     auto& ps = getPs(gs);
 
+    logEvent(gs, LogEventType::Terraform, amount);
+
     for (int i = 0; i < amount; i++) {
         awardWp(EventType::Terraform, gs);
     }
