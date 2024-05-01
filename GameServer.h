@@ -82,10 +82,12 @@ private:
                 states_.emplace_back(GameInfo{
                     .gs = gs.clone(),
                     .logs = std::move(curLogs_),
-                    .scores = curScores_[gs.activePlayer % 2]
+                    .scores = curScores_[gs.activePlayer % 2],
+                    .logEvents = std::move(logEvents_)
                 });
             
                 curLogs_.clear();
+                logEvents_.clear();
             }
             sendLogs();
         });
@@ -168,7 +170,6 @@ private:
         nlohmann::json j;
         j["action"] = "logs";
         j["data"] = toJson(states_);
-        j["events"] = toJson(logEvents_);
         server_.send(*hClient_, j.dump(), websocketpp::frame::opcode::text);
     }
 

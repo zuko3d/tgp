@@ -1324,8 +1324,9 @@
                     table.innerHTML = "";
                     var trMain = table.insertRow();
                     var tdCur = trMain.insertCell();
-
-                    for (event of obj.events) {
+                    
+                    for (gi of obj.data) {
+                    for (event of gi.events) {
                         if (event.activePlayer == 0) {
                             if (event.type == 9 && event.round < 5) { // booster
                                 tdCur = trMain.insertCell();
@@ -1364,6 +1365,7 @@
                             // UpgradeBuilding, // 10
                             // Annex, // 11
                         }
+                    }
                     }
                 }
 

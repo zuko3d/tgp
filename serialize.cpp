@@ -329,6 +329,7 @@ nlohmann::json toJson(const GameInfo& gi) {
     j["gs"] = toJson(gi.gs);
     j["logs"] = toJson(gi.logs);
     j["scores"] = toJson(gi.scores);
+    j["events"] = toJson(gi.logEvents);
     
     return j;
 }

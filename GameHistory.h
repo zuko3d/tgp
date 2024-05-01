@@ -12,6 +12,7 @@ struct GameInfo
 
     std::vector<std::string> logs;
     WpByRound scores;
+    std::vector<LogEvent> logEvents;
 };
 
 using GameHistory = std::vector<GameInfo>;

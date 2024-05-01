@@ -189,6 +189,7 @@ enum class LogEventType : uint8_t {
     GetBooster, // 9
     UpgradeBuilding, // 10
     Annex, // 11
+    Terraform, // 12
     None,
 };
 
