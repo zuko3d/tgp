@@ -99,8 +99,15 @@ inline nlohmann::json toJson(const std::array<T, N>& arr) {
 template <typename J, typename T, size_t N>
 inline void fromJson(const J& j, std::array<T, N>& dst) {
     for (const auto [idx, v] : enumerate(j)) {
-        dst.at(idx) = v;
+        dst.at(idx) = (T) v;
     }
+}
+
+inline void fromJson(const nlohmann::json& j, NewGameParams& dst) {
+    dst.seed = j["seed"].get<int>();
+    fromJson(j["colors"], dst.colors);
+    fromJson(j["isHuman"], dst.isHuman);
+    fromJson(j["races"], dst.races);
 }
 
 template <typename T>

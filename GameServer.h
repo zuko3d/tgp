@@ -19,8 +19,9 @@ class GameServer {
 public:
     using Server = websocketpp::server<websocketpp::config::asio>;
 
-    GameServer(const std::vector<IBot*>& bots)
-        : bots_(bots)
+    GameServer(IBot* humanBot, IBot* aiBot)
+        : humanBot_(humanBot)
+        , aiBot_(aiBot)
     {
         using namespace std::placeholders;
 
@@ -58,9 +59,9 @@ private:
         }
     }
 
-    void playNewGame(uint32_t seed, const std::vector<IBot*>& bots) {
+    void playNewGame(NewGameParams params) {
         stopOngoingGame();
-        gameThread_.reset(new std::thread(&GameServer::playNewGameJob, this, seed, bots));
+        gameThread_.reset(new std::thread(&GameServer::playNewGameJob, this, params));
     }
 
     void setupGeCallbacks(GameState& gs) {
@@ -93,24 +94,30 @@ private:
         });
     }
 
-    void playNewGameJob(uint32_t seed, const std::vector<IBot*>& bots) {
-        for (auto bot: bots) {
-            bot->reset();
+    void playNewGameJob(NewGameParams params) {
+        bots_.clear();
+        for (const auto [idx, isHuman]: enumerate(params.isHuman)) {
+            if (isHuman) {
+                bots_.push_back(humanBot_);
+            } else {
+                bots_.push_back(aiBot_);
+            }
+            bots_.back()->reset();
         }
         {
             std::lock_guard lock(sendLogsMutex_);
             states_.clear();
         }
 
-        ge_.reset(new GameEngine(bots, true, true));
+        ge_.reset(new GameEngine(bots_, true, true));
         
         GameState gs;
-        std::default_random_engine rng{seed};
+        std::default_random_engine rng{params.seed};
 
         setupGeCallbacks(gs);
 
         try {
-            ge_->initializeRandomly(gs, rng);
+            ge_->initializeRandomly(gs, rng, params.races, params.colors);
             gameLoop(gs);
         } catch (const std::exception& e) {
             if (std::string{e.what()} == "halt") {
@@ -181,7 +188,10 @@ private:
         const auto resp = nlohmann::json::parse(*lastResponse_);
         if (resp.contains("action")) {
             if (resp["action"] == "new-game") {
-                playNewGame(resp["seed"].get<int>(), bots_);
+                NewGameParams params;
+                std::cerr << "New Game! " << *lastResponse_ << std::endl;
+                fromJson(resp, params);
+                playNewGame(params);
             } else if (resp["action"] == "rewind") {
                 rewindState(resp["state"].get<int>());
             } else {
@@ -228,7 +238,10 @@ private:
     std::vector<LogEvent> logEvents_;
     std::unique_ptr<GameEngine> ge_;
 
+    IBot* humanBot_;
+    IBot* aiBot_;
     std::vector<IBot*> bots_;
+
     bool resetGame_ = false;
 
     std::vector<std::string> curLogs_;

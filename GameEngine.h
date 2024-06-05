@@ -19,7 +19,7 @@ public:
     GameEngine(std::vector<IBot*> bots, bool withLogs = false, bool withStats = false);
     void reset();
     
-    void initializeRandomly(GameState& gs, std::default_random_engine& g) const;
+    void initializeRandomly(GameState& gs, std::default_random_engine& g, std::array<Race, 2> chosenRaces, std::array<TerrainType, 2> chosenColors) const;
 
     void playGame(GameState& gs) const;
 

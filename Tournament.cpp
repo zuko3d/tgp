@@ -64,7 +64,7 @@ GameResult Tournament::playSingleGame(const std::vector<IBot*>& bots, uint32_t s
     GameEngine ge(bots);
     GameState gs;
     std::default_random_engine g{seed};
-    ge.initializeRandomly(gs, g);
+    ge.initializeRandomly(gs, g, {Race::None, Race::None}, {TerrainType::None, TerrainType::None});
     ge.playGame(gs);
     const std::vector<int> winPoints = {
         gs.players[0].resources.winPoints,

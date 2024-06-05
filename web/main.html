@@ -1,13 +1,71 @@
 <html>
     <body>
-        <div id="all-logs" style="position: absolute; top: 1070px; left: 10px; z-index: 3;">
+        <div id="all-logs" style="position: absolute; top: 970px; left: 10px; z-index: 3;">
             <table id="logs-summary" border="1"></table>
             <table id="logs-table" border="1"></table>
         </div>
         <button type="button" id="btn-menu" style="position: absolute; left: 1808px; z-index: 3;">Menu</button>
         <div id="main-menu" style="position: absolute; top: 18px; left: 481px; width: 1884px; height: 900px; opacity: 0.9; z-index: 13; background-image: url('pics/menu.png'); background-size: contain; background-repeat: no-repeat;">
-            <button type="button" id="btn-new-game" style="font-size: 50px; position: absolute; top: 300; left: 347px; z-index: 3;">New game</button>
-            <input type="number" id="game-seed" style="font-size: 50px; width: 255; position: absolute; top: 380; left: 347px; z-index: 3;" value=42></input>
+            <button type="button" id="btn-new-game" style="font-size: 50px; position: absolute; top: 300; left: 330px; z-index: 3;">New game</button>
+            <input type="number" id="game-seed" style="font-size: 50px; width: 255; position: absolute; top: 380; left: 330px; z-index: 3;" value=42></input>
+            <select name="Player 1 race" id="race-0-select" style="font-size: 50px; width: 255; position: absolute; top: 460; left: 330px; z-index: 3;">
+                <option value="None">P1 Race</option>
+                <option value="Blessed">Blessed</option>
+                <option value="Felines">Felines</option>
+                <option value="Goblins">Goblins</option>
+                <option value="Illusionists">Illusionists</option>
+                <option value="Inventors">Inventors</option>
+                <option value="Lizards">Lizards</option>
+                <option value="Moles">Moles</option>
+                <option value="Monks">Monks</option>
+                <option value="Navigators">Navigators</option>
+                <option value="Omar">Omar</option>
+                <option value="Philosophers">Philosophers</option>
+                <option value="Psychics">Psychics</option>
+            </select>
+            <select name="Player 2 race" id="race-1-select" style="font-size: 50px; width: 255; position: absolute; top: 460; left: 600px; z-index: 3;">
+                <option value="None">P2 Race</option>
+                <option value="Blessed">Blessed</option>
+                <option value="Felines">Felines</option>
+                <option value="Goblins">Goblins</option>
+                <option value="Illusionists">Illusionists</option>
+                <option value="Inventors">Inventors</option>
+                <option value="Lizards">Lizards</option>
+                <option value="Moles">Moles</option>
+                <option value="Monks">Monks</option>
+                <option value="Navigators">Navigators</option>
+                <option value="Omar">Omar</option>
+                <option value="Philosophers">Philosophers</option>
+                <option value="Psychics">Psychics</option>
+            </select>
+            <select name="Player 1 color" id="color-0-select" style="font-size: 50px; width: 255; position: absolute; top: 540; left: 330px; z-index: 3;">
+                <option value="None">P1 Color</option>
+                <option value="Desert">Desert</option>
+                <option value="Plains">Plains</option>
+                <option value="Swamp">Swamp</option>
+                <option value="Lake">Lake</option>
+                <option value="Forest">Forest</option>
+                <option value="Mountain">Mountain</option>
+                <option value="Wasteland">Wasteland</option>
+            </select>
+            <select name="Player 2 color" id="color-1-select" style="font-size: 50px; width: 255; position: absolute; top: 540; left: 600px; z-index: 3;">
+                <option value="None">P2 Color</option>
+                <option value="Desert">Desert</option>
+                <option value="Plains">Plains</option>
+                <option value="Swamp">Swamp</option>
+                <option value="Lake">Lake</option>
+                <option value="Forest">Forest</option>
+                <option value="Mountain">Mountain</option>
+                <option value="Wasteland">Wasteland</option>
+            </select>
+            <select id="ishuman-0-select" style="font-size: 50px; width: 255; position: absolute; top: 620; left: 330px; z-index: 3;">
+                <option value="human">Human</option>
+                <option value="ai">AI</option>
+            </select>
+            <select id="ishuman-1-select" style="font-size: 50px; width: 255; position: absolute; top: 620; left: 600px; z-index: 3;">
+                <option value="ai">AI</option>
+                <option value="human">Human</option>
+            </select>            
         </div>
         <table>
             <tr><td><div id="input-box"></div></td></tr>
@@ -374,10 +432,118 @@
             }
             {
                 var dv = document.getElementById("btn-new-game");
-                var dvSeed = document.getElementById("game-seed");
                 
                 dv.onclick = function() {
-                    gServerSocket.send('{"action": "new-game", "seed": ' + dvSeed.value + '}');
+                    var dvSeed = document.getElementById("game-seed");
+                    var dvColor0 = document.getElementById("color-0-select");
+                    var color0 = 8;
+                    if (dvColor0.value == "Desert") {
+                        color0 = 0;
+                    } else if (dvColor0.value == "Plains") {
+                        color0 = 1;
+                    } else if (dvColor0.value == "Swamp") {
+                        color0 = 2;
+                    } else if (dvColor0.value == "Lake") {
+                        color0 = 3;
+                    } else if (dvColor0.value == "Forest") {
+                        color0 = 4;
+                    } else if (dvColor0.value == "Mountain") {
+                        color0 = 5;
+                    } else if (dvColor0.value == "Wasteland") {
+                        color0 = 6;
+                    }
+
+                    var dvColor1 = document.getElementById("color-1-select");
+                    var color1 = 8;
+                    if (dvColor1.value == "Desert") {
+                        color1 = 0;
+                    } else if (dvColor1.value == "Plains") {
+                        color1 = 1;
+                    } else if (dvColor1.value == "Swamp") {
+                        color1 = 2;
+                    } else if (dvColor1.value == "Lake") {
+                        color1 = 3;
+                    } else if (dvColor1.value == "Forest") {
+                        color1 = 4;
+                    } else if (dvColor1.value == "Mountain") {
+                        color1 = 5;
+                    } else if (dvColor1.value == "Wasteland") {
+                        color1 = 6;
+                    }
+
+                    var dvRace0 = document.getElementById("race-0-select");
+                    var race0 = 12;
+                    if (dvRace0.value == "Blessed") {
+                        race0 = 0;
+                    } else if (dvRace0.value == "Felines") {
+                        race0 = 1;
+                    } else if (dvRace0.value == "Goblins") {
+                        race0 = 2;
+                    } else if (dvRace0.value == "Illusionists") {
+                        race0 = 3;
+                    } else if (dvRace0.value == "Inventors") {
+                        race0 = 4;
+                    } else if (dvRace0.value == "Lizards") {
+                        race0 = 5;
+                    } else if (dvRace0.value == "Moles") {
+                        race0 = 6;
+                    } else if (dvRace0.value == "Monks") {
+                        race0 = 7;
+                    } else if (dvRace0.value == "Navigators") {
+                        race0 = 8;
+                    } else if (dvRace0.value == "Omar") {
+                        race0 = 9;
+                    } else if (dvRace0.value == "Philosophers") {
+                        race0 = 10;
+                    } else if (dvRace0.value == "Psychics") {
+                        race0 = 11;
+                    }
+
+                    var dvRace1 = document.getElementById("race-1-select");
+                    var race1 = 12;
+                    if (dvRace1.value == "Blessed") {
+                        race1 = 0;
+                    } else if (dvRace1.value == "Felines") {
+                        race1 = 1;
+                    } else if (dvRace1.value == "Goblins") {
+                        race1 = 2;
+                    } else if (dvRace1.value == "Illusionists") {
+                        race1 = 3;
+                    } else if (dvRace1.value == "Inventors") {
+                        race1 = 4;
+                    } else if (dvRace1.value == "Lizards") {
+                        race1 = 5;
+                    } else if (dvRace1.value == "Moles") {
+                        race1 = 6;
+                    } else if (dvRace1.value == "Monks") {
+                        race1 = 7;
+                    } else if (dvRace1.value == "Navigators") {
+                        race1 = 8;
+                    } else if (dvRace1.value == "Omar") {
+                        race1 = 9;
+                    } else if (dvRace1.value == "Philosophers") {
+                        race1 = 10;
+                    } else if (dvRace1.value == "Psychics") {
+                        race1 = 11;
+                    }
+
+                    var dvIsHuman0 = document.getElementById("ishuman-0-select");
+                    var isHuman0 = 0;
+                    if (dvIsHuman0.value == "human") {
+                        isHuman0 = 1;
+                    }
+
+                    var dvIsHuman1 = document.getElementById("ishuman-1-select");
+                    var isHuman1 = 0;
+                    if (dvIsHuman1.value == "human") {
+                        isHuman1 = 1;
+                    }
+
+                    gServerSocket.send('{"action": "new-game", "seed": ' + dvSeed.value +
+                        ', "colors": [' + color0 + ", " + color1 + ']' +
+                        ', "races": [' + race0 + ", " + race1 + ']' +
+                        ', "isHuman": [' + isHuman0 + ", " + isHuman1 + ']' +
+                        '}');
                 };
             }
         }
@@ -1345,6 +1511,7 @@
                                 tdCur = trMain.insertCell();
                                 tdSecondary = trSecondary.insertCell();
                                 tdCur.style = "width: 270;";
+                                tdSecondary.style = "width: 270;";
                             }
 
                             if (event.type == 0) { // BuildPalace

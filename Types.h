@@ -383,3 +383,10 @@ inline int spadesNeeded(TerrainType src, TerrainType dst) {
     constexpr auto r = spadesNeeded_();
     return r[SC(src)][SC(dst)];
 }
+
+struct NewGameParams {
+    uint32_t seed;
+    std::array<int, 2> isHuman;
+    std::array<Race, 2> races;
+    std::array<TerrainType, 2> colors;
+};
