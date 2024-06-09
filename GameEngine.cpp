@@ -2060,7 +2060,7 @@ void GameEngine::initializeRandomly(GameState& gs, std::default_random_engine& g
                 gs.players[i].buttons.push_back(Button{
                     .buttonOrigin = 17,
                 });
-            } else if (race == Race::Moles) {
+            } else if (race == Race::Moles && false) {
                 gs.players[i].buttons.push_back(Button{
                     .buttonOrigin = 18,
                 });
