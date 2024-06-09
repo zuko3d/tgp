@@ -212,7 +212,7 @@ public:
         return bestAction;
     }
 
-    int8_t choosePlaceForBridge(const GameState& gs, const std::vector<int8_t>& possiblePos) {
+    int choosePlaceForBridge(const GameState& gs, const std::vector<int>& possiblePos) {
         if (possiblePos.empty()) return -1;
         
         int bestAction = 0;

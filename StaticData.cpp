@@ -73,6 +73,9 @@ std::vector<ButtonOrigin> StaticData::generateButtonOrigins() {
         ButtonOrigin { .resources = IncomableResources{}, .special = ButtonActionSpecial::WpForGuilds2}, // 15
         ButtonOrigin { .resources = IncomableResources{ .spades = 3 }, .special = ButtonActionSpecial::None}, // 16
         ButtonOrigin { .resources = IncomableResources{ .anyBook = 1 }, .special = ButtonActionSpecial::None}, // 17
+        ButtonOrigin { .resources = IncomableResources{}, .special = ButtonActionSpecial::MolesFlyTf1, .oneShot = false}, // 18
+        ButtonOrigin { .resources = IncomableResources{}, .special = ButtonActionSpecial::MolesFlyBuild, .oneShot = false}, // 19
+        ButtonOrigin { .resources = IncomableResources{}, .special = ButtonActionSpecial::MolesBridge, .oneShot = false}, // 20
     };
 }
 

@@ -67,7 +67,7 @@ public:
     int moveGod(int amount, GodColor godColor, GameState& gs) const;
     void upgradeBuilding(int8_t pos, Building building, GameState& gs, int palaceIdx = -1, bool forFree = false) const;
     void terraform(int8_t pos, int amount, GameState& gs) const;
-    void buildBridge(int8_t pos, GameState& gs) const;
+    void buildBridge(int pos, GameState& gs) const;
     void buildMine(int8_t pos, GameState& gs) const;
 
     void log(const std::string& str) const;

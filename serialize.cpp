@@ -262,6 +262,7 @@ nlohmann::json toJson(const Field& f) {
     j["type"] = toJson(f.type);
     j["basic_type"] = toJson(StaticData::fieldOrigin().basicType);
     j["bridges"] = toJson(f.bridges);
+    j["moleBridges"] = toJson(f.moleBridges);
 
     std::vector<std::array<int8_t, 2>> bridgesHexes;
     for(const auto& [idx, owner] : enumerate(f.bridges)) {

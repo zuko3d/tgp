@@ -5,8 +5,8 @@
 #include "Utils.h"
 #include <queue>
 
-std::vector<int8_t> Field::buildableBridges(int owner) const {
-    std::vector<int8_t> ret;
+std::vector<int> Field::buildableBridges(int owner) const {
+    std::vector<int> ret;
     std::array<bool, FieldOrigin::TOTAL_BRIDGES> r {{false}};
     ret.reserve(40);
     for (const auto& pos: ownedByPlayer[owner]) {
@@ -16,7 +16,7 @@ std::vector<int8_t> Field::buildableBridges(int owner) const {
     }
 
     for (const auto& [idx, val]: enumerate(r)) {
-        if (val) ret.emplace_back((int8_t) idx);
+        if (val) ret.emplace_back((int) idx);
     }
 
     return ret;
@@ -92,6 +92,14 @@ std::array<int8_t, FieldOrigin::FIELD_SIZE> Field::bfs(int owner, int reach) con
                             }
                         }
                     }
+                    for (const auto [from, to]: moleBridges) {
+                        if (pos == from && building[to].owner == owner && ret[to] == -1) {
+                            q.push(to);
+                        }
+                        if (pos == to && building[from].owner == owner && ret[from] == -1) {
+                            q.push(from);
+                        }
+                    }
                 }
             }
         }
@@ -128,6 +136,46 @@ ResizableArray<int8_t, 10> Field::adjacent(int pos) const {
         }
     }
 
+    for (const auto [from, to]: moleBridges) {
+        if (pos == from) {
+            ret.push_back(to);
+        }
+        if (pos == to) {
+            ret.push_back(from);
+        }
+    }
+
+    return ret;
+}
+
+std::vector<int8_t> Field::flyable(int owner, int range, bool isFree) const {
+    std::vector<int8_t> ret;
+    ret.reserve(50);
+
+    std::array<bool, FieldOrigin::FIELD_SIZE> r{{false}};
+    for (const auto& pos: ownedByPlayer[owner]) {
+        for (const auto& neib: adjacent(pos)) {
+            for (const auto& p: StaticData::fieldOrigin().neibs[neib]) {
+                if ((!isFree || building.at(p).owner == -1) && type.at(p) != TerrainType::River) r[p] = true;
+            }
+        }
+    }
+
+    for (const auto [idx, isGood]: enumerate(r)) {
+        if (isGood) {
+            bool good = true;
+            for (const auto& p: adjacent(idx)) {
+                if (building.at(p).owner == owner) {
+                    good = false;
+                    break;
+                }
+            }
+            if (good) {
+                ret.push_back(idx);
+            }
+        }
+    }
+
     return ret;
 }
 
@@ -144,6 +192,14 @@ std::vector<int8_t> Field::reachable(int owner, int range, TerrainType color) co
 
                 p = StaticData::fieldOrigin().bridgeConnections[br].second;
                 if (building.at(p).owner == -1) r[p] = true;
+            }
+        }
+        for (const auto [from, to]: moleBridges) {
+            if (pos == from && building.at(to).owner == -1) {
+               r[to] = true;
+            }
+            if (pos == to && building.at(from).owner == -1) {
+                r[from] = true;
             }
         }
     }
@@ -168,7 +224,7 @@ void Field::populateField(GameState& gs, FieldActionType action, int pos, int pa
     actionHash += gs.activePlayer;
     actionHash *= 8;
     actionHash += SC(action);
-    actionHash *= 128;
+    actionHash *= 10000;
     actionHash += pos;
     actionHash *= 8;
     actionHash += param1;
@@ -203,8 +259,14 @@ void Field::populateField(GameState& gs, FieldActionType action, int pos, int pa
         break;
 
     case FieldActionType::BuildBridge:
-        assert(newField.bridges[pos] == -1);
-        newField.bridges[pos] = gs.activePlayer;
+        if (pos >= 100) { // Mole bridge
+            int from = pos / 100;
+            int to = pos % 100;
+            newField.moleBridges.push_back({from, to});
+        } else {
+            assert(newField.bridges[pos] == -1);
+            newField.bridges[pos] = gs.activePlayer;
+        }
         break;
 
     case FieldActionType::AddAnnex:
@@ -235,16 +297,25 @@ void Field::populateField(GameState& gs, FieldActionType action, int pos, int pa
 
         std::queue<int8_t> q;
         if (action == FieldActionType::BuildBridge) {
-            const auto bCon = StaticData::fieldOrigin().bridgeConnections.at(pos);
-            if ((newField.building[bCon.first].owner == gs.activePlayer) && newField.building.at(bCon.first).fedIdx >= 0) {
-                newField.building.at(bCon.second).fedIdx = newField.building.at(bCon.first).fedIdx;
-            } else if ((newField.building[bCon.second].owner == gs.activePlayer) && newField.building.at(bCon.second).fedIdx >= 0) {
-                newField.building.at(bCon.first).fedIdx = newField.building.at(bCon.second).fedIdx;
+            int from, to;
+            if (pos >= 100) {
+                from = pos / 100;
+                to = pos % 100;
             } else {
-                auto p = bCon.first;
+                const auto bCon = StaticData::fieldOrigin().bridgeConnections.at(pos);
+                from = bCon.first;
+                to = bCon.second;
+            }
+            
+            if ((newField.building[from].owner == gs.activePlayer) && newField.building.at(from).fedIdx >= 0) {
+                newField.building.at(to).fedIdx = newField.building.at(from).fedIdx;
+            } else if ((newField.building[to].owner == gs.activePlayer) && newField.building.at(to).fedIdx >= 0) {
+                newField.building.at(from).fedIdx = newField.building.at(to).fedIdx;
+            } else {
+                auto p = from;
                 if (newField.building[p].owner == gs.activePlayer) q.push(p);
 
-                p = bCon.second;
+                p = to;
                 if (newField.building[p].owner == gs.activePlayer) q.push(p);
             }
         } else {

@@ -76,6 +76,15 @@ nlohmann::json toJson(const GameInfo& gi);
 
 nlohmann::json toJson(const LogEvent& le);
 
+template <typename T1, typename T2>
+inline nlohmann::json toJson(std::pair<T1, T2> p) {
+    nlohmann::json j = nlohmann::json::array();
+    j.push_back(toJson(p.first));
+    j.push_back(toJson(p.second));
+
+    return j;
+}
+
 template <typename KeyType, typename ValueType, size_t Size>
 inline nlohmann::json toJson(const FlatMap<KeyType, ValueType, Size>& mp) {
     nlohmann::json j = nlohmann::json::array();

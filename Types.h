@@ -330,12 +330,16 @@ enum class ButtonActionSpecial : uint8_t {
     WpForGuilds2,
     RiverCity,
     FlyingMan,
+    MolesFlyTf1,
+    MolesFlyBuild,
+    MolesBridge,
     None,
 };
 
 struct ButtonOrigin {
     IncomableResources resources = IncomableResources{};
     ButtonActionSpecial special = ButtonActionSpecial::None;
+    bool oneShot = true;
 };
 
 struct Button {

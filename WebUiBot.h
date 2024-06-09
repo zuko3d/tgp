@@ -256,15 +256,22 @@ public:
         return (int8_t) ret["choice"].get<int>();
     }
 
-    int8_t choosePlaceForBridge(const GameState& gs, const std::vector<int8_t>& possiblePos) {
+    int choosePlaceForBridge(const GameState& gs, const std::vector<int>& possiblePos) {
         if (possiblePos.empty()) return -1;
         std::cout << "choosePlaceForBridge..." << std::endl;
 
+        bool isMoleBridge = false;
         std::vector<std::array<int8_t, 2>> possiblePairs;
         for (const auto& p: possiblePos) {
-            const auto& pair = StaticData::fieldOrigin().bridgeConnections[p];
-            possiblePairs.push_back({pair.first, pair.second});
-            possiblePairs.push_back({pair.second, pair.first});
+            if (p >= 100) {
+                possiblePairs.push_back({int8_t(p / 100), int8_t(p % 100)});
+                possiblePairs.push_back({int8_t(p % 100), int8_t(p / 100)});
+                isMoleBridge = true;
+            } else {
+                const auto& pair = StaticData::fieldOrigin().bridgeConnections[p];
+                possiblePairs.push_back({pair.first, pair.second});
+                possiblePairs.push_back({pair.second, pair.first});
+            }
         }
 
         nlohmann::json j;
@@ -273,10 +280,14 @@ public:
 
         const auto ret = rpc(gs, j.dump());
 
-        for (const auto& p: possiblePos) {
-            const auto& pair = StaticData::fieldOrigin().bridgeConnections[p];
-            if ((ret["from"].get<int>() == pair.first && ret["to"].get<int>() == pair.second) || (ret["from"].get<int>() == pair.second && ret["to"].get<int>() == pair.first)) {
-                return p;
+        if (isMoleBridge) {
+            return ret["from"].get<int>() * 100 + ret["to"].get<int>();
+        } else {
+            for (const auto& p: possiblePos) {
+                const auto& pair = StaticData::fieldOrigin().bridgeConnections[p];
+                if ((ret["from"].get<int>() == pair.first && ret["to"].get<int>() == pair.second) || (ret["from"].get<int>() == pair.second && ret["to"].get<int>() == pair.first)) {
+                    return p;
+                }
             }
         }
 

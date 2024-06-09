@@ -535,6 +535,49 @@ std::vector<Action> GameEngine::generateActions(const GameState& gs) const {
                     assert(false); // Invalid button
                     break;
                 }
+                case ButtonActionSpecial::MolesFlyTf1: {
+                    constexpr int8_t tfPrice[] = { 3, 2, 1 };
+                    if (ps.resources.cube >= 1 + tfPrice[ps.tfLevel]) {
+                        for (const auto pos: gs.field().flyable(gs.activePlayer, 1)) {
+                            if (getColor(gs) != gs.field().type[pos]) {
+                                ret.emplace_back(Action{
+                                    .type = ActionType::ActivateAbility,
+                                    .param1 = (int) idx,
+                                    .param2 = (int) pos,
+                                });
+                            }
+                        }
+                    }
+                    break;
+                }
+                case ButtonActionSpecial::MolesFlyBuild: {
+                    if (ps.resources.cube >= 2 && ps.resources.gold >= 2 && ps.buildingsAvailable[Building::Mine] > 0) {
+                        constexpr int8_t tfPrice[] = { 3, 2, 1 };
+                        int tfLeft = (ps.resources.cube - 2) / tfPrice[ps.tfLevel];
+                        for (const auto pos: gs.field().flyable(gs.activePlayer, 1)) {
+                            if (spadesNeeded(getColor(gs), gs.field().type[pos]) <= tfLeft) {
+                                ret.emplace_back(Action{
+                                    .type = ActionType::ActivateAbility,
+                                    .param1 = (int) idx,
+                                    .param2 = (int) pos,
+                                });
+                            }
+                        }
+                    }
+                    break;
+                }
+                case ButtonActionSpecial::MolesBridge: {
+                    if (ps.resources.cube >= 1 && ps.bridgesLeft > 0) {
+                        for (const auto pos: gs.field().ownedByPlayer[gs.activePlayer]) {
+                            ret.emplace_back(Action{
+                                .type = ActionType::ActivateAbility,
+                                .param1 = (int) idx,
+                                .param2 = (int) pos,
+                            });
+                        }
+                    }
+                    break;
+                }
                 case ButtonActionSpecial::FiraksButton: {
                     if (ps.buildingsAvailable[Building::Guild] > 0) {
                         for (const auto labPos: gs.cache->fieldByState_[gs.fieldStateIdx].buildingByPlayer(Building::Laboratory, gs.activePlayer)) {
@@ -679,7 +722,7 @@ void GameEngine::buildBridge(GameState& gs) const {
     }
 }
 
-void GameEngine::buildBridge(int8_t pos, GameState& gs) const {
+void GameEngine::buildBridge(int pos, GameState& gs) const {
     gs.field().populateField(gs, FieldActionType::BuildBridge, pos);
     assert(getPs(gs).bridgesLeft > 0);
     getPs(gs).bridgesLeft--;
@@ -701,6 +744,58 @@ void GameEngine::pushButton(int8_t buttonIdx, int param, GameState& gs) const {
             } else {
                 buildBridge(param, gs);
             }
+            break;
+        }
+        case ButtonActionSpecial::MolesFlyTf1: {
+            std::vector<int8_t> possiblePos;
+            possiblePos.reserve(20);
+            const auto myColor = getColor(gs);
+            for (const auto p: gs.field().flyable(gs.activePlayer, 1)) {
+                if (gs.field().type[p] != myColor) {
+                    possiblePos.push_back(p);
+                }
+            }
+            assert(!possiblePos.empty());
+
+            const auto pos = bot->choosePlaceToSpade(gs, 1, possiblePos);
+            constexpr int8_t tfPrice[] = { 3, 2, 1 };
+            spendResources(Resources{ .cube = int8_t(tfPrice[ps.tfLevel] + 1)}, gs);
+            awardWp(4, WpSource::Faction, gs);
+            terraform(pos, 1, gs);
+            break;
+        }
+        case ButtonActionSpecial::MolesFlyBuild: {
+            std::vector<int8_t> possiblePos;
+            constexpr int8_t tfPrice[] = { 3, 2, 1 };
+            int tfLeft = (ps.resources.cube - 2) / tfPrice[ps.tfLevel];
+            for (const auto pos: gs.field().flyable(gs.activePlayer, 1)) {
+                if (spadesNeeded(getColor(gs), gs.field().type[pos]) <= tfLeft) {
+                    possiblePos.push_back(pos);
+                }
+            }
+            assert(!possiblePos.empty());
+            assert(ps.buildingsAvailable[Building::Mine] > 0);
+
+            const auto pos = bot->choosePlaceToBuildForFree(gs, Building::Mine, false, possiblePos);
+            spendResources(Resources{ .cube = 1}, gs);
+            awardWp(4, WpSource::Faction, gs);
+            terraformAndBuildMine(pos, true, gs);
+            break;
+        }
+        case ButtonActionSpecial::MolesBridge: {
+            std::vector<int> possiblePos;
+            for (const auto from: gs.field().ownedByPlayer[gs.activePlayer]) {
+                for (const auto to: gs.field().flyable(gs.activePlayer, 1, false)) {
+                    possiblePos.push_back(from * 100 + to);
+                }
+            }
+
+            assert(!possiblePos.empty());
+            assert(ps.bridgesLeft > 0);
+
+            const auto pos = bot->choosePlaceForBridge(gs, possiblePos);
+            spendResources(Resources{ .cube = 1}, gs);
+            buildBridge(pos, gs);
             break;
         }
         case ButtonActionSpecial::FiraksButton: {
@@ -1106,7 +1201,7 @@ void GameEngine::doAction(Action action, GameState& gs) const {
             } else {
                 auto& aAction = ps.buttons[action.param1];
                 assert(aAction.isUsed == 0);
-                aAction.isUsed = true;
+                if (StaticData::buttonOrigins()[aAction.buttonOrigin].oneShot) aAction.isUsed = true;
                 pushButton(aAction.buttonOrigin, action.param2, gs);
             }
             break;
@@ -1964,6 +2059,16 @@ void GameEngine::initializeRandomly(GameState& gs, std::default_random_engine& g
             } else if (race == Race::Philosophers) {
                 gs.players[i].buttons.push_back(Button{
                     .buttonOrigin = 17,
+                });
+            } else if (race == Race::Moles) {
+                gs.players[i].buttons.push_back(Button{
+                    .buttonOrigin = 18,
+                });
+                gs.players[i].buttons.push_back(Button{
+                    .buttonOrigin = 19,
+                });
+                gs.players[i].buttons.push_back(Button{
+                    .buttonOrigin = 20,
                 });
             }
         }

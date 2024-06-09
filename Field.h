@@ -34,15 +34,18 @@ public:
     bool hasAdjacentEnemies(int8_t pos, int owner) const;
     int adjacentEnemiesPower(int8_t pos, int owner) const;
     int countReachableBuildings(int owner, int reach) const;
-    std::vector<int8_t> buildableBridges(int owner) const;
+    std::vector<int> buildableBridges(int owner) const;
     
     std::array<int8_t, FieldOrigin::FIELD_SIZE> bfs(int owner, int reach) const;
 
     std::vector<int8_t> reachable(int owner, int range, TerrainType color = TerrainType::None) const;
     ResizableArray<int8_t, 10> adjacent(int pos) const;
 
+    std::vector<int8_t> flyable(int owner, int range, bool isFree = true) const;
+
     std::array<TerrainType, FieldOrigin::FIELD_SIZE> type;
     std::array<int8_t, FieldOrigin::TOTAL_BRIDGES> bridges; // owner
+    ResizableArray<std::pair<int8_t, int8_t>, 3> moleBridges;
     std::array<BuildingOnMap, FieldOrigin::FIELD_SIZE> building = {};
     std::array<ResizableArray<int8_t, 22>, 2> ownedByPlayer = {};
     int stateIdx = 0;
