@@ -2040,7 +2040,7 @@ void GameEngine::initializeRandomly(GameState& gs, std::default_random_engine& g
     };
     for (int i = 0; i < 2; i++) {
         Race race;
-        if (gs.staticGs->playerRaces[i] == Race::None) {
+        if (chosenRaces.at(i) == Race::None) {
             race = bots_[i]->chooseRace(gs, races);
         } else {
             race = chosenRaces.at(i);
@@ -2084,10 +2084,10 @@ void GameEngine::initializeRandomly(GameState& gs, std::default_random_engine& g
     };
     for (int i = 0; i < 2; i++) {
         TerrainType color;
-        if (gs.staticGs->playerColors[i] == TerrainType::None) {
+        if (chosenColors[i] == TerrainType::None) {
             color = bots_[i]->chooseTerrainType(gs, colors);
         } else {
-            gs.staticGs->playerColors[i] = chosenColors[i];
+            color = chosenColors[i];
         }
         
         gs.staticGs->playerColors[i] = color;
