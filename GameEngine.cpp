@@ -568,13 +568,10 @@ std::vector<Action> GameEngine::generateActions(const GameState& gs) const {
                 }
                 case ButtonActionSpecial::MolesBridge: {
                     if (ps.resources.cube >= 1 && ps.bridgesLeft > 0) {
-                        for (const auto pos: gs.field().ownedByPlayer[gs.activePlayer]) {
-                            ret.emplace_back(Action{
-                                .type = ActionType::ActivateAbility,
-                                .param1 = (int) idx,
-                                .param2 = (int) pos,
-                            });
-                        }
+                        ret.emplace_back(Action{
+                            .type = ActionType::ActivateAbility,
+                            .param1 = (int) idx,
+                        });
                     }
                     break;
                 }
@@ -786,7 +783,7 @@ void GameEngine::pushButton(int8_t buttonIdx, int param, GameState& gs) const {
             std::vector<int> possiblePos;
             for (const auto from: gs.field().ownedByPlayer[gs.activePlayer]) {
                 for (const auto to: gs.field().flyable(gs.activePlayer, 1, false)) {
-                    possiblePos.push_back(from * 100 + to);
+                    if (from > 0) possiblePos.push_back(from * 100 + to);
                 }
             }
 
@@ -2060,7 +2057,7 @@ void GameEngine::initializeRandomly(GameState& gs, std::default_random_engine& g
                 gs.players[i].buttons.push_back(Button{
                     .buttonOrigin = 17,
                 });
-            } else if (race == Race::Moles && false) {
+            } else if (race == Race::Moles) {
                 gs.players[i].buttons.push_back(Button{
                     .buttonOrigin = 18,
                 });

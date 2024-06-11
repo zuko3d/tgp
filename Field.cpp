@@ -368,7 +368,21 @@ void Field::populateField(GameState& gs, FieldActionType action, int pos, int pa
             }
         }
         else {
-            newField.building.at(pos).fedIdx = inFedIdx;
+            if (action == FieldActionType::BuildBridge) {
+                int from, to;
+                if (pos >= 100) {
+                    from = pos / 100;
+                    to = pos % 100;
+                } else {
+                    const auto bCon = StaticData::fieldOrigin().bridgeConnections.at(pos);
+                    from = bCon.first;
+                    to = bCon.second;
+                }
+                if (newField.building.at(from).owner == gs.activePlayer) newField.building.at(from).fedIdx = inFedIdx;
+                if (newField.building.at(to).owner == gs.activePlayer) newField.building.at(to).fedIdx = inFedIdx;
+            } else {
+                newField.building.at(pos).fedIdx = inFedIdx;
+            }
         }
     }
 }
