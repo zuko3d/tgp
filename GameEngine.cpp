@@ -2036,38 +2036,41 @@ void GameEngine::initializeRandomly(GameState& gs, std::default_random_engine& g
         races.emplace_back((Race) i);
     };
     for (int i = 0; i < 2; i++) {
-        gs.staticGs->playerRaces[i] = chosenRaces.at(i);
-        if (gs.staticGs->playerRaces[i] == Race::None) {
-            const Race race = bots_[i]->chooseRace(gs, races);
-            gs.staticGs->playerRaces[i] = race;
-            std::remove(races.begin(), races.end(), race);
-            races.pop_back();
-            gs.activePlayer = i;
-            awardResources(raceStartBonuses[SC(race)].resources, gs);
-            awardResources(Resources{.gods = raceStartBonuses[SC(race)].gods}, gs);
+        Race race;
+        if (chosenRaces.at(i) == Race::None) {
+            race = bots_[i]->chooseRace(gs, races);
+        } else {
+            race = chosenRaces.at(i);
+        }
+        
+        gs.staticGs->playerRaces[i] = race;
+        std::remove(races.begin(), races.end(), race);
+        races.pop_back();
+        gs.activePlayer = i;
+        awardResources(raceStartBonuses[SC(race)].resources, gs);
+        awardResources(Resources{.gods = raceStartBonuses[SC(race)].gods}, gs);
 
-            if (race == Race::Navigators) {
-                gs.players[i].wpPerEvent[EventType::BuildNearRiver] += 2;
-                if(withStats_) gs.players[i].wpStatsTriggers_->at(EventType::BuildNearRiver)[WpSource::Faction] += 2;
-            } else if (race == Race::Psychics) {
-                gs.players[i].buttons.push_back(Button{
-                    .buttonOrigin = 13,
-                });
-            } else if (race == Race::Philosophers) {
-                gs.players[i].buttons.push_back(Button{
-                    .buttonOrigin = 17,
-                });
-            } else if (race == Race::Moles) {
-                gs.players[i].buttons.push_back(Button{
-                    .buttonOrigin = 18,
-                });
-                gs.players[i].buttons.push_back(Button{
-                    .buttonOrigin = 19,
-                });
-                gs.players[i].buttons.push_back(Button{
-                    .buttonOrigin = 20,
-                });
-            }
+        if (race == Race::Navigators) {
+            gs.players[i].wpPerEvent[EventType::BuildNearRiver] += 2;
+            if(withStats_) gs.players[i].wpStatsTriggers_->at(EventType::BuildNearRiver)[WpSource::Faction] += 2;
+        } else if (race == Race::Psychics) {
+            gs.players[i].buttons.push_back(Button{
+                .buttonOrigin = 13,
+            });
+        } else if (race == Race::Philosophers) {
+            gs.players[i].buttons.push_back(Button{
+                .buttonOrigin = 17,
+            });
+        } else if (race == Race::Moles && false) {
+            gs.players[i].buttons.push_back(Button{
+                .buttonOrigin = 18,
+            });
+            gs.players[i].buttons.push_back(Button{
+                .buttonOrigin = 19,
+            });
+            gs.players[i].buttons.push_back(Button{
+                .buttonOrigin = 20,
+            });
         }
     }
 
@@ -2077,19 +2080,22 @@ void GameEngine::initializeRandomly(GameState& gs, std::default_random_engine& g
         colors.emplace_back((TerrainType) i);
     };
     for (int i = 0; i < 2; i++) {
-        gs.staticGs->playerColors[i] = chosenColors[i];
-        if (gs.staticGs->playerColors[i] == TerrainType::None) {
-            const TerrainType color = bots_[i]->chooseTerrainType(gs, colors);
-            gs.staticGs->playerColors[i] = color;
-            std::remove(colors.begin(), colors.end(), color);
-            colors.pop_back();
+        TerrainType color;
+        if (chosenColors[i] == TerrainType::None) {
+            color = bots_[i]->chooseTerrainType(gs, colors);
+        } else {
+            color = chosenColors[i];
+        }
+        
+        gs.staticGs->playerColors[i] = color;
+        std::remove(colors.begin(), colors.end(), color);
+        colors.pop_back();
 
-            if (color == TerrainType::Lake) {
-                gs.players[i].navLevel = 1;
-            }
-            if (color == TerrainType::Mountain) {
-                gs.players[i].additionalIncome.gold += 2;
-            }
+        if (color == TerrainType::Lake) {
+            gs.players[i].navLevel = 1;
+        }
+        if (color == TerrainType::Mountain) {
+            gs.players[i].additionalIncome.gold += 2;
         }
     }
     
