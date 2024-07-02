@@ -23,6 +23,8 @@ public:
         , ownGe_({ greedyBot_.get(), greedyBot_.get() })
     { }
 
+    ~MctsBot() = default;
+
     Race chooseRace(const GameState& gs, const std::vector<Race>& races) {
         return races[0];
     }
@@ -57,6 +59,10 @@ public:
     }
 
     FullAction chooseAction(const GameState& gs, const std::vector<Action>& actions) {
+        return chooseAction(gs, actions, nullptr);
+    }
+
+    FullAction chooseAction(const GameState& gs, const std::vector<Action>& actions, double* rootPts) {
         const auto& ps = gs.players[gs.activePlayer];
 
         if (ps.mana[1] >= 2 && sum(ps.mana) > 7) {
@@ -69,7 +75,7 @@ public:
             };
         }
 
-        const auto bestAction = buildMcTree(gs);
+        const auto bestAction = buildMcTree(gs, rootPts);
 
         return FullAction{
             .preAction = {},
@@ -79,7 +85,7 @@ public:
     }
 
     GodColor chooseGodToMove(const GameState& gs, int amount) {
-        int bestAction = 0;
+        int bestAction = -1;
         double bestPts = -1e9;
         for (int i = 0; i < 4; i++) {
             auto newGs = gs;
@@ -140,7 +146,7 @@ public:
     bool wannaCharge(const GameState& gs, int amount) { return true; }
     
     FedTileOrigin chooseFedTile(const GameState& gs) {
-        int bestAction = 0;
+        int bestAction = -1;
         double bestPts = -1e9;
         for (const auto [tile, amnt]: gs.fedTilesAvailable) {
             if (amnt == 0) continue;
@@ -161,7 +167,7 @@ public:
     TechTile chooseTechTile(const GameState& gs) {
         const auto& ps = gs.players[gs.activePlayer];
 
-        int bestAction = 0;
+        int bestAction = -1;
         double bestPts = -1e9;
         for (int i = 0; i < 12; i++) {
             TechTile tile = (TechTile) i;
@@ -197,7 +203,7 @@ public:
             }
         }
 
-        int bestAction = 0;
+        int bestAction = possiblePos.front();
         double bestPts = -1e9;
         for (const auto& pos: poses) {
             auto newGs = gs;
@@ -215,7 +221,7 @@ public:
     int choosePlaceForBridge(const GameState& gs, const std::vector<int>& possiblePos) {
         if (possiblePos.empty()) return -1;
         
-        int bestAction = 0;
+        int bestAction = possiblePos.front();
         double bestPts = -1e9;
         for (const auto& pos : possiblePos) {
             auto newGs = gs;
@@ -233,7 +239,7 @@ public:
     int8_t choosePlaceToBuildForFree(const GameState& gs,  Building building, bool isNeutral, const std::vector<int8_t>& possiblePos) {
         if (possiblePos.empty()) return -1;
 
-        int8_t bestAction = 0;
+        int bestAction = possiblePos.front();
         double bestPts = -1e9;
         for (const auto pos: possiblePos) {
             auto newGs = gs;
@@ -252,7 +258,7 @@ public:
     int8_t chooseBuildingToConvertForFree(const GameState& gs, Building building, const std::vector<int8_t>& possiblePos) {
         if (possiblePos.empty()) return -1;
 
-        int8_t bestAction = 0;
+        int bestAction = possiblePos.front();
         double bestPts = -1e9;
         for (const auto pos: possiblePos) {
             auto newGs = gs;
@@ -278,7 +284,7 @@ private:
 
     void genChildren(MctsNode& node) const;
     MctsNode* goBottom(MctsNode& node, int stopRound) const;
-    Action buildMcTree(const GameState& gs) const;
+    Action buildMcTree(const GameState& gs, double* rootPts) const;
     void advanceToMyNextState(const Action& action, GameState& gs) const;
     void descentToFloor(GameState& gs, int stopRound) const;
 
@@ -286,6 +292,7 @@ private:
     int steps_ = 10000;
     int roundsDepth_ = 1;
     int maxDepth_ = 3;
+    double C_ = 1.4;
 
     AllScoreWeights allScoreWeights_;
     std::unique_ptr<IBot> greedyBot_;

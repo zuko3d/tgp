@@ -450,7 +450,7 @@ private:
     BOOST_CONSTEXPR static typename boost::enable_if_c<(std::numeric_limits<T>::digits > std::numeric_limits<IntType>::digits) && (std::numeric_limits<T>::is_signed == true) && (std::numeric_limits<IntType>::is_signed == true), bool>::type is_safe_narrowing_conversion(const T& val)
     {
        // Note that this check assumes IntType has a 2's complement representation,
-       // we don't want to try to convert a std::numeric_limits<IntType>::min() to
+       // we don't want to try to convert a std::numeric_limits<IntType>::lowest() to
        // a T because that conversion may not be allowed (this happens when IntType
        // is from Boost.Multiprecision).
        return (val < (T(1) << std::numeric_limits<IntType>::digits)) && (val >= -(T(1) << std::numeric_limits<IntType>::digits));

@@ -3,6 +3,8 @@
 #include "serialize.h"
 #include "StaticData.h"
 #include "Utils.h"
+#include "MctsBot.h"
+#include "Timer.h"
 
 #include <array>
 #include <iostream>
@@ -36,11 +38,13 @@ void GameEngine::setWpStatser(std::function<void(WpSource, int)> wpStatser) {
     wpStatser_ = wpStatser;
 }
 
-GameEngine::GameEngine(std::vector<IBot*> bots, bool withLogs, bool withStats)
+GameEngine::GameEngine(std::vector<IBot*> bots, bool withLogs, bool withWpStats, std::optional<StatsParams> statsParams)
     : bots_(std::move(bots))
     , withLogs_(withLogs)
-    , withStats_(withStats)
+    , withWpStats_(withWpStats)
+    , statsParams_(statsParams)
 {
+    trainStats_.reserve(10000);
 }
 
 void GameEngine::doFreeActionMarket(FreeActionMarketType action, GameState& gs) const {
@@ -105,7 +109,7 @@ void GameEngine::awardBooster(int boosterIdx, GameState& gs) const {
     if (ps.currentRoundBoosterOriginIdx >= 0) {
         const auto oldBooster = StaticData::roundBoosters()[ps.currentRoundBoosterOriginIdx];
         ps.wpPerEvent[oldBooster.trigger] -= oldBooster.wpPerTrigger;
-        if(withStats_) ps.wpStatsTriggers_->at(oldBooster.trigger)[WpSource::RoundBooster] -= oldBooster.wpPerTrigger;
+        if(withWpStats_) ps.wpStatsTriggers_->at(oldBooster.trigger)[WpSource::RoundBooster] -= oldBooster.wpPerTrigger;
 
         gs.boosters.at(boosterIdx) = RoundBoosterOnBoard{
             .originIdx = ps.currentRoundBoosterOriginIdx,
@@ -119,7 +123,7 @@ void GameEngine::awardBooster(int boosterIdx, GameState& gs) const {
     ps.currentRoundBoosterOriginIdx = newBooster.originIdx;
     const auto& origin = StaticData::roundBoosters()[newBooster.originIdx];
     ps.wpPerEvent[origin.trigger] += origin.wpPerTrigger;
-    if(withStats_) ps.wpStatsTriggers_->at(origin.trigger)[WpSource::RoundBooster] += origin.wpPerTrigger;
+    if(withWpStats_) ps.wpStatsTriggers_->at(origin.trigger)[WpSource::RoundBooster] += origin.wpPerTrigger;
 
     if (origin.buttonOriginIdx >= 0) {
         ps.boosterButton = Button{ .buttonOrigin = origin.buttonOriginIdx, .isUsed = false };
@@ -205,14 +209,14 @@ void GameEngine::upgradeBuilding(int8_t pos, Building building, GameState& gs, i
                 break;
             case PalaceSpecial::Guild3wp :
                 ps.wpPerEvent[EventType::BuildGuild] += 3;
-                if(withStats_) ps.wpStatsTriggers_->at(EventType::BuildGuild)[WpSource::Palace] += 3;
+                if(withWpStats_) ps.wpStatsTriggers_->at(EventType::BuildGuild)[WpSource::Palace] += 3;
                 break;
             case PalaceSpecial::Lab3wp :
                 // Only at EoT
                 break;
             case PalaceSpecial::Mine2wp :
                 ps.wpPerEvent[EventType::BuildMine] += 2;
-                if(withStats_) ps.wpStatsTriggers_->at(EventType::BuildMine)[WpSource::Palace] += 2;
+                if(withWpStats_) ps.wpStatsTriggers_->at(EventType::BuildMine)[WpSource::Palace] += 2;
                 break;
             case PalaceSpecial::Nav2 :
                 upgradeNav(gs, true);
@@ -284,7 +288,7 @@ void GameEngine::awardTechTile(TechTile tile, GameState& gs) const {
         case TechTile::p3g2: {
             ps.additionalIncome.gold += 2;
             ps.wpPerEvent[EventType::Income] += 3;
-            if(withStats_) ps.wpStatsTriggers_->at(EventType::Income)[WpSource::Tech] += 3;
+            if(withWpStats_) ps.wpStatsTriggers_->at(EventType::Income)[WpSource::Tech] += 3;
             break;
         }
         case TechTile::BookCharge: {
@@ -312,12 +316,12 @@ void GameEngine::awardTechTile(TechTile tile, GameState& gs) const {
         }
         case TechTile::putGod2p: {
             ps.wpPerEvent[EventType::PutManToGod] += 2;
-            if(withStats_) ps.wpStatsTriggers_->at(EventType::PutManToGod)[WpSource::Tech] += 2;
+            if(withWpStats_) ps.wpStatsTriggers_->at(EventType::PutManToGod)[WpSource::Tech] += 2;
             break;
         }
         case TechTile::scoreEdge : {
             ps.wpPerEvent[EventType::BuildOnEdge] += 3;
-            if(withStats_) ps.wpStatsTriggers_->at(EventType::BuildOnEdge)[WpSource::Tech] += 3;
+            if(withWpStats_) ps.wpStatsTriggers_->at(EventType::BuildOnEdge)[WpSource::Tech] += 3;
             break;
         }
         case TechTile::scoreFeds : {
@@ -848,7 +852,7 @@ void GameEngine::awardInnovation(Innovation inno, GameState& gs) const {
             const auto pos = bot->choosePlaceToBuildForFree(gs, Building::Academy, true, poses);
             if (pos >= 0) buildForFree(pos, Building::Academy, true, gs);
             ps.wpPerEvent[EventType::Income] += 2;
-            if(withStats_) ps.wpStatsTriggers_->at(EventType::Income)[WpSource::Innovation] += 2;
+            if(withWpStats_) ps.wpStatsTriggers_->at(EventType::Income)[WpSource::Innovation] += 2;
             break;
         }
         case Innovation::Bridges: {
@@ -1313,7 +1317,7 @@ void GameEngine::doAfterTurnActions(GameState& gs) const {
                     }
 
                     ps.wpPerEvent[curBonus.event] -= curBonus.bonusWp;
-                    if(withStats_) ps.wpStatsTriggers_->at(curBonus.event)[WpSource::RoundScoreBonus] -= curBonus.bonusWp;
+                    if(withWpStats_) ps.wpStatsTriggers_->at(curBonus.event)[WpSource::RoundScoreBonus] -= curBonus.bonusWp;
                     ps.passed = false;
                 }
 
@@ -1362,10 +1366,10 @@ void GameEngine::dealWithUpkeep(GameState& gs) const {
             auto& ps = gs.players[gs.activePlayer];
 
             ps.wpPerEvent[curBonus.event] += curBonus.bonusWp;
-            if(withStats_) ps.wpStatsTriggers_->at(curBonus.event)[WpSource::RoundScoreBonus] += curBonus.bonusWp;
+            if(withWpStats_) ps.wpStatsTriggers_->at(curBonus.event)[WpSource::RoundScoreBonus] += curBonus.bonusWp;
             if (gs.round == 5) {
                 ps.wpPerEvent[lastRoundBonus.event] += lastRoundBonus.bonusWp;
-                if(withStats_) ps.wpStatsTriggers_->at(lastRoundBonus.event)[WpSource::RoundScoreBonus] += lastRoundBonus.bonusWp;
+                if(withWpStats_) ps.wpStatsTriggers_->at(lastRoundBonus.event)[WpSource::RoundScoreBonus] += lastRoundBonus.bonusWp;
             }
             awardResources(ps.additionalIncome, gs);
             assert(ps.additionalIncome.winPoints == 0);
@@ -1386,6 +1390,61 @@ void GameEngine::dealWithUpkeep(GameState& gs) const {
 void GameEngine::advanceGs(GameState& gs) const {
     if (!gameEnded(gs)) {
         dealWithUpkeep(gs);
+
+        if (statsParams_->targetRound == -1) {
+            if (gs.round >= statsParams_->initialRound) {
+                if (trainStats_.front().finalScore <= 0) {
+                    TrainStats stats;
+                    stats.gsFeatures = gs.toFeatures(gs.activePlayer, *this);
+                    auto actions = generateActions(gs);
+                    GameEngine ge(bots_);
+
+                    MctsBot bot = MctsBot(new GreedyBot(statsParams_->allScoreWeights), statsParams_->allScoreWeights, 2000, 6 - statsParams_->initialRound, 30);
+                    double rootPts = -1;
+                    const auto action = bot.chooseAction(gs, actions, &rootPts);
+                    if (action.action.type != ActionType::None) {
+                        assert(rootPts > 0);
+
+                        stats.finalScore = rootPts;
+                        trainStats_.push_back(stats);
+                        for (auto& s: trainStats_) {
+                            s.finalScore = stats.finalScore;
+                        }
+                    }
+                }
+            } else {
+                trainStats_.push_back(
+                    TrainStats{
+                        .gsFeatures = gs.toFeatures(gs.activePlayer, *this),
+                        .finalScore = -1,
+                        .round = gs.round,                        
+                    }
+                );
+            }
+        } else if (statsParams_ && gs.round == statsParams_->initialRound && trainStats_.empty()) {
+            Timer timer;
+            TrainStats stats;
+            stats.gsFeatures = gs.toFeatures(gs.activePlayer, *this);
+            auto actions = generateActions(gs);
+            GameEngine ge(bots_);
+
+            MctsBot bot = MctsBot(new GreedyBot(statsParams_->allScoreWeights), statsParams_->allScoreWeights, 2000, statsParams_->targetRound - statsParams_->initialRound, 30);
+            double rootPts = -1;
+            const auto action = bot.chooseAction(gs, actions, &rootPts);
+            if (action.action.type != ActionType::None) {
+                assert(rootPts > 0);
+
+                stats.finalScore = rootPts;
+                // std::cout << "tree calc got " << timer.elapsedMilliSeconds() << " msec" << std::endl;
+                
+    // #pragma omp critical
+                {
+                    trainStats_.push_back(stats);
+                }
+                // throw std::runtime_error("halt");
+            }
+        }
+
         doTurnGuided(gs);
         doAfterTurnActions(gs);
     }
@@ -1394,11 +1453,9 @@ void GameEngine::advanceGs(GameState& gs) const {
 void GameEngine::playGame(GameState& gs) const {
     while (!gameEnded(gs)) {
         const auto field = gs.field();
-        // std::cout << "cleared " << gs.cache->fieldByState_.size() << std::endl;
         gs.cache->reset();
         gs.fieldStateIdx = 0;
         gs.cache->fieldByState_.push_back(field);
-
         advanceGs(gs);
     }
 }
@@ -1437,7 +1494,7 @@ void GameEngine::awardWp(int amount, WpSource source, GameState& gs) const {
     if (amount != 0) {
         getPs(gs).resources.winPoints += amount;
         log("Gain " + std::to_string(amount) + " wp from " + toString(source));
-        if (withStats_) wpStatser_(source, amount);
+        if (withWpStats_) wpStatser_(source, amount);
     }
 }
 
@@ -1447,7 +1504,7 @@ void GameEngine::awardWp(EventType event, GameState& gs) const {
     if (amount != 0) {
         ps.resources.winPoints += amount;
         log("Gain " + std::to_string(amount) + " wp from " + toString(event));
-        if (withStats_) {
+        if (withWpStats_) {
             int partialAmount = 0;
             for (const auto [src, amnt]: ps.wpStatsTriggers_->at(event)) {
                 wpStatser_(src, amnt);
@@ -1512,7 +1569,7 @@ int GameEngine::moveGod(int amount, GodColor godColor, GameState& gs) const {
                 break;
             case GodColor::White:
                 ps.wpPerEvent[EventType::Income] += 3;
-                if(withStats_) ps.wpStatsTriggers_->at(EventType::Income)[WpSource::MedicineL9] += 3;
+                if(withWpStats_) ps.wpStatsTriggers_->at(EventType::Income)[WpSource::MedicineL9] += 3;
                 break;
             default:
                 assert(false);
@@ -1937,7 +1994,7 @@ void GameEngine::initializeRandomly(GameState& gs, std::default_random_engine& g
         gs.playersOrder.push_back(i);
     }
 
-    if (withStats_) {
+    if (withWpStats_) {
         for (auto& p: gs.players) {
             p.wpStatsTriggers_.emplace();
         }
@@ -2052,7 +2109,7 @@ void GameEngine::initializeRandomly(GameState& gs, std::default_random_engine& g
 
         if (race == Race::Navigators) {
             gs.players[i].wpPerEvent[EventType::BuildNearRiver] += 2;
-            if(withStats_) gs.players[i].wpStatsTriggers_->at(EventType::BuildNearRiver)[WpSource::Faction] += 2;
+            if(withWpStats_) gs.players[i].wpStatsTriggers_->at(EventType::BuildNearRiver)[WpSource::Faction] += 2;
         } else if (race == Race::Psychics) {
             gs.players[i].buttons.push_back(Button{
                 .buttonOrigin = 13,
@@ -2159,4 +2216,8 @@ void GameEngine::initializeRandomly(GameState& gs, std::default_random_engine& g
     for (auto& rb: gs.boosters) {
         rb.gold++;
     }
+}
+
+std::vector<TrainStats>&& GameEngine::moveTrainStats() {
+    return std::move(trainStats_);
 }

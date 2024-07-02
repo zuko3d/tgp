@@ -8,7 +8,7 @@ struct MctsNode {
         assert (!children.empty());
 
         const MctsNode *bestChild = &children.front();
-        double bestPts  = bestChild->bestPerspectivePts;
+        double bestPts = bestChild->bestPerspectivePts;
         for (const auto& child: children) {
             if (child.bestPerspectivePts > bestPts) {
                 bestPts = child.bestPerspectivePts;
@@ -341,7 +341,7 @@ MctsNode* MctsBot::goBottom(MctsNode& node, int stopRound) const {
                     continue;
                 }
 
-                double mctsPoints = (child.bestPerspectivePts - minPts) / deltaPts + 1.4 * sqrt(log(curNode->stepIns) / (child.stepIns + 1e-6));
+                double mctsPoints = (child.bestPerspectivePts - minPts) / deltaPts + C_ * sqrt(log(curNode->stepIns) / (child.stepIns + 1e-6));
 
                 if (mctsPoints > bestPts) {
                     bestPts = mctsPoints;
@@ -369,26 +369,37 @@ bool allChildrenAreCalculated(const MctsNode& node) {
     return true;
 }
 
-Action MctsBot::buildMcTree(const GameState& gs) const {
+Action MctsBot::buildMcTree(const GameState& gs, double* rootPts) const {
     MctsNode root { .gs = gs };
     double bottomPts = -123.0;
 
     int stopRound = gs.round + roundsDepth_;
     for (int step = 0; step < steps_; step++) {
-        Timer timer;
+        // Timer timer;
 
         // std::cout << "step: " << step << ", fs: " << gs.cache->fieldByState_.size() << std::endl;
         MctsNode* bottom = goBottom(root, stopRound);
         bottomPts = bottom->pts;
 
-        while (bottom->parent != nullptr) {
-            bottom->parent->bestPerspectivePts = std::max(bottom->parent->bestPerspectivePts, bottomPts);
+        if (root.nodeIsCompletelyEvaluated) {
+            // std::cout << "Fully built MCTS tree after " << step + 1 << " steps, pts: " << root.bestPerspectivePts << std::endl;
+            break;
+        }
+
+        while (bottom != nullptr) {
+            if (bottom->parent != nullptr) {
+                bottom->parent->bestPerspectivePts = std::max(bottom->parent->bestPerspectivePts, bottomPts);
+            }
             bottom->nodeIsCompletelyEvaluated = allChildrenAreCalculated(*bottom);
 
             bottom = bottom->parent;
         }
 
 //         std::cout << timer.elapsedUSeconds() << std::endl;
+    }
+
+    if (rootPts != nullptr) {
+        *rootPts = root.bestPerspectivePts;
     }
 
     return root.findBestChild()->actionToGetHere;

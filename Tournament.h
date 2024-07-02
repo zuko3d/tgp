@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Bot.h"
+#include "GameEngine.h"
 
 #include <vector>
 
@@ -20,6 +21,9 @@ struct GameResult
 
 class Tournament {
 public:
-    static GameResult playSingleGame(const std::vector<IBot*>& bots, uint32_t seed, bool withLogs = false);
-    static std::vector<GameResult> playAllInAll(const std::vector<IBot*>& bots, int repeat);
+    GameResult playSingleGame(const std::vector<IBot*>& bots, uint32_t seed, bool withLogs = false);
+    std::vector<GameResult> playAllInAll(const std::vector<IBot*>& bots, int repeat);
+
+    std::vector<TrainStats> trainStats;
+    std::optional<StatsParams> statsParams;
 };

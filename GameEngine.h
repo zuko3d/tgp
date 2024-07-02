@@ -14,9 +14,21 @@
 
 int spadesNeeded(TerrainType src, TerrainType dst);
 
+struct TrainStats {
+    GsFeatures gsFeatures;
+    double finalScore;
+    int round = -1;
+};
+
+struct StatsParams {
+    int initialRound = 5;
+    int targetRound = 6;
+    AllScoreWeights allScoreWeights;
+};
+
 class GameEngine {
 public:
-    GameEngine(std::vector<IBot*> bots, bool withLogs = false, bool withStats = false);
+    GameEngine(std::vector<IBot*> bots, bool withLogs = false, bool withWpStats = false, std::optional<StatsParams> statsParams = {});
     void reset();
     
     void initializeRandomly(GameState& gs, std::default_random_engine& g, std::array<Race, 2> chosenRaces, std::array<TerrainType, 2> chosenColors) const;
@@ -81,6 +93,8 @@ public:
     void setLogCheckpointer(std::function<void()> logCheckpointer);
     void setWpStatser(std::function<void(WpSource, int)> wpStatser);
 
+    std::vector<TrainStats>&& moveTrainStats();
+
 private:
     int countGroups(GameState& gs) const;
 
@@ -97,7 +111,9 @@ private:
     std::vector<IBot*> bots_;
 
     bool withLogs_ = false;
-    bool withStats_ = false;
+    bool withWpStats_ = false;
+    std::optional<StatsParams> statsParams_;
+    mutable std::vector<TrainStats> trainStats_;
     
     std::function<void(const std::string&)> logger_;
     std::function<void(LogEvent)> eventLogger_;

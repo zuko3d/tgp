@@ -61,15 +61,20 @@ std::vector<double> GameResult::avgWinPoints(const std::vector<GameResult> &gr) 
 GameResult Tournament::playSingleGame(const std::vector<IBot*>& bots, uint32_t seed, bool withLogs) {
     Timer timer;
 
-    GameEngine ge(bots);
+    GameEngine ge(bots, false, false, statsParams);
     GameState gs;
     std::default_random_engine g{seed};
-    ge.initializeRandomly(gs, g, {Race::None, Race::None}, {TerrainType::None, TerrainType::None});
+    ge.initializeRandomly(gs, g, {Race::Inventors, Race::Monks}, {TerrainType::Wasteland, TerrainType::Desert});
     ge.playGame(gs);
     const std::vector<int> winPoints = {
         gs.players[0].resources.winPoints,
         gs.players[1].resources.winPoints,
     };
+
+    const auto curTrainStats = ge.moveTrainStats();
+
+#pragma omp critical
+    std::copy(curTrainStats.begin(), curTrainStats.end(), std::back_inserter(trainStats));
 
     // std::cout << "game time: " << timer.elapsedMilliSeconds() << std::endl;
     return GameResult{

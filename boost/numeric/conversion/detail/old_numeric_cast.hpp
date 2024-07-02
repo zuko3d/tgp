@@ -145,7 +145,7 @@ namespace boost
 // less_than_type_min -
   //    x_is_signed should be numeric_limits<X>::is_signed
   //    y_is_signed should be numeric_limits<Y>::is_signed
-  //    y_min should be numeric_limits<Y>::min()
+  //    y_min should be numeric_limits<Y>::lowest()
   //
   //    check(x, y_min) returns true iff x < y_min without invoking comparisons
   //    between signed and unsigned values.

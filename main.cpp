@@ -8,6 +8,7 @@
 #include "MctsBot.h"
 #include "Tournament.h"
 #include "Serialize.h"
+#include "Trainer.h"
 
 #include <memory>
 #include <random>
@@ -26,9 +27,18 @@ int main() {
         },
     };
 
-    // AllScoreWeights curBestWeights = allScoreWeights;
-    // double lr = 2.0;
-    // std::default_random_engine rng{1};
+    AllScoreWeights curBestWeights = allScoreWeights;
+    double lr = 2.0;
+    std::default_random_engine rng{1};
+
+    // Trainer t;
+    // AllScoreWeights randomWeights;
+    // for (auto& w: randomWeights) {
+    //     w.initRandomly(rng);
+    // }
+    // randomWeights.back() = ScoreWeights{};
+    // randomWeights.back().winPoints = 1.0;
+    // t.train2(randomWeights, 500);
 
     // for (int iter = 0; iter < 10; iter++) {
     //     std::cout << "============================" << std::endl;
