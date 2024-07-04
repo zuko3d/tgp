@@ -26,4 +26,6 @@ public:
 
     std::vector<TrainStats> trainStats;
     std::optional<StatsParams> statsParams;
+
+    std::default_random_engine rng{1};
 };

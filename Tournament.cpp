@@ -4,6 +4,7 @@
 #include "Timer.h"
 #include "Utils.h"
 
+#include <omp.h>
 #include <fstream>
 #include <iostream>
 
@@ -91,6 +92,7 @@ std::vector<GameResult> Tournament::playAllInAll(const std::vector<IBot*>& bots,
 // #pragma omp parallel for schedule(dynamic)
 // #endif
 
+    omp_set_num_threads(8);
     Timer timer;
 	for (int p0 = 0; p0 < bots.size(); p0++) {
 #pragma omp parallel for schedule(dynamic)
@@ -98,11 +100,14 @@ std::vector<GameResult> Tournament::playAllInAll(const std::vector<IBot*>& bots,
 			// std::cout << "seed: " << seed << std::endl;
 			// std::cout << ".";
 			// std::cout.flush();
+            const auto seed_ = seed;
 			for (int p1 = p0 + 1; p1 < bots.size(); p1++) {
 				{
-                    auto result = playSingleGame({bots.at(p0), bots.at(p1)}, seed);
+                    Timer timerGame;
+                    auto result = playSingleGame({bots.at(p0), bots.at(p1)}, seed_);
                     result.botIndices = {p0, p1};
 
+                    // std::cout << "01, seed " << seed_ << ", time: " << timerGame.elapsedMilliSeconds() << ", wp: " << result.winPoints.at(result.winner) << std::endl;
                     // std::cout << result.winPoints[0] << "\t" << result.winPoints[1] << std::endl;
 
 #pragma omp critical
@@ -110,9 +115,11 @@ std::vector<GameResult> Tournament::playAllInAll(const std::vector<IBot*>& bots,
 
 				}
 				{
-					auto result = playSingleGame({bots.at(p1), bots.at(p0)}, seed);
+                    Timer timerGame;
+					auto result = playSingleGame({bots.at(p1), bots.at(p0)}, seed_);
                     result.botIndices = {p1, p0};
 
+                    // std::cout << "10, seed " << seed_ << ", time: " << timerGame.elapsedMilliSeconds() << ", wp: " << result.winPoints.at(result.winner) << std::endl;
                     // std::cout << result.winPoints[0] << "\t" << result.winPoints[1] << std::endl;
 
 #pragma omp critical

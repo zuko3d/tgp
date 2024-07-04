@@ -1394,12 +1394,13 @@ void GameEngine::advanceGs(GameState& gs) const {
         if (statsParams_->targetRound == -1) {
             if (gs.round >= statsParams_->initialRound) {
                 if (trainStats_.front().finalScore <= 0) {
+                    Timer timer;
                     TrainStats stats;
                     stats.gsFeatures = gs.toFeatures(gs.activePlayer, *this);
                     auto actions = generateActions(gs);
                     GameEngine ge(bots_);
 
-                    MctsBot bot = MctsBot(new GreedyBot(statsParams_->allScoreWeights), statsParams_->allScoreWeights, 2000, 6 - statsParams_->initialRound, 30);
+                    MctsBot bot = MctsBot(new GreedyBot(statsParams_->allScoreWeights), statsParams_->allScoreWeights, 100000, 6 - statsParams_->initialRound, 50);
                     double rootPts = -1;
                     const auto action = bot.chooseAction(gs, actions, &rootPts);
                     if (action.action.type != ActionType::None) {
@@ -1411,6 +1412,7 @@ void GameEngine::advanceGs(GameState& gs) const {
                             s.finalScore = stats.finalScore;
                         }
                     }
+                    std::cout << "eval @ge time: " << timer.elapsedMilliSeconds() << std::endl;
                 }
             } else {
                 trainStats_.push_back(
@@ -1428,13 +1430,14 @@ void GameEngine::advanceGs(GameState& gs) const {
             auto actions = generateActions(gs);
             GameEngine ge(bots_);
 
-            MctsBot bot = MctsBot(new GreedyBot(statsParams_->allScoreWeights), statsParams_->allScoreWeights, 2000, statsParams_->targetRound - statsParams_->initialRound, 30);
+            MctsBot bot = MctsBot(new GreedyBot(statsParams_->allScoreWeights), statsParams_->allScoreWeights, 2001, statsParams_->targetRound - statsParams_->initialRound, 30);
             double rootPts = -1;
             const auto action = bot.chooseAction(gs, actions, &rootPts);
             if (action.action.type != ActionType::None) {
                 assert(rootPts > 0);
 
                 stats.finalScore = rootPts;
+                stats.round = gs.round;
                 // std::cout << "tree calc got " << timer.elapsedMilliSeconds() << " msec" << std::endl;
                 
     // #pragma omp critical

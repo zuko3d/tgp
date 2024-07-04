@@ -374,12 +374,18 @@ Action MctsBot::buildMcTree(const GameState& gs, double* rootPts) const {
     double bottomPts = -123.0;
 
     int stopRound = gs.round + roundsDepth_;
+    std::stringstream ss;
+    ss << "round: " << (int) gs.round << ", ";
     for (int step = 0; step < steps_; step++) {
         // Timer timer;
 
         // std::cout << "step: " << step << ", fs: " << gs.cache->fieldByState_.size() << std::endl;
         MctsNode* bottom = goBottom(root, stopRound);
         bottomPts = bottom->pts;
+
+        if (step == 10 || step == 100 || step == 1000 || step == 3000 || step == 10000 || step == 100000 || step == 1000000) {
+            ss << step << ", pts: " << root.bestPerspectivePts << "\t| ";
+        }
 
         if (root.nodeIsCompletelyEvaluated) {
             // std::cout << "Fully built MCTS tree after " << step + 1 << " steps, pts: " << root.bestPerspectivePts << std::endl;
@@ -397,6 +403,8 @@ Action MctsBot::buildMcTree(const GameState& gs, double* rootPts) const {
 
 //         std::cout << timer.elapsedUSeconds() << std::endl;
     }
+
+    // if (steps_ > 500) std::cout << ss.str() << ", final: " << root.bestPerspectivePts << std::endl;
 
     if (rootPts != nullptr) {
         *rootPts = root.bestPerspectivePts;

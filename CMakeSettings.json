@@ -18,7 +18,7 @@
       "buildRoot": "${projectDir}\\out\\build\\${name}",
       "installRoot": "${projectDir}\\out\\install\\${name}",
       "cmakeCommandArgs": "",
-      "buildCommandArgs": "",
+      "buildCommandArgs": "/openmp",
       "ctestCommandArgs": "",
       "inheritEnvironments": [ "msvc_x64_x64" ]
     }

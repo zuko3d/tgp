@@ -8,10 +8,10 @@
 #include "Timer.h"
 
 void Trainer::train(AllScoreWeights& weights1, int epochs) {
-    for (int iteration = 0; iteration < 100; iteration++) {
-        Tournament t;
+    for (int iteration = 0; iteration < 1000; iteration++) {
         std::cout << "train iteration " << iteration << std::endl;
         for (int round = 5; round >= 0; round--) {
+            Tournament t;
             std::cout << "round " << round << std::endl;
 
             t.statsParams = StatsParams { .initialRound = round, .targetRound = round + 1, .allScoreWeights = weights1 };
@@ -42,6 +42,17 @@ void Trainer::train(AllScoreWeights& weights1, int epochs) {
             //     stat.gsFeatures.normalize();
             // }
 
+            // double th = 0.0;
+            // for (const auto& stat: t.trainStats) {
+            //     th += pow(stat.finalScore, 1.0 / 3.0);
+            // }
+            // th /= t.trainStats.size();
+            // th = pow(th, 3.0);
+            // t.trainStats.resize(std::distance(
+            //     t.trainStats.begin(),
+            //     std::remove_if(t.trainStats.begin(), t.trainStats.end(), [th] (const TrainStats& op) { return op.finalScore < th; })
+            // ));
+
             const auto updateWeights = [round, &t] (AllScoreWeights& weights) {
                 double mse = 0;
                 Timer timer;
@@ -61,10 +72,11 @@ void Trainer::train(AllScoreWeights& weights1, int epochs) {
                         const auto delta = stat.gsFeatures.scale(diff * lr);
 
                         weights[round] += delta;
+
+                        // weights[stat.round].winPoints = 1.0;
+                        // weights[stat.round].winPointsIncome = 5.0 - stat.round;
                     }
-                    
-                    weights[round].winPoints = 1;
-                    weights[round].winPointsIncome = 5 - round;
+
                     mse = std::sqrt(mse) / t.trainStats.size();
                     // std::cout << "sgdEpoch: " << sgdEpoch <<  "\tmse: " << mse << std::endl;
                     // weights[round].normalize();
@@ -93,7 +105,7 @@ void Trainer::train2(AllScoreWeights& weights, int epochs) {
         Tournament t;
         std::cout << "train iteration " << iteration << std::endl;
 
-        t.statsParams = StatsParams { .initialRound = 5, .targetRound = -1, .allScoreWeights = weights };
+        t.statsParams = StatsParams { .initialRound = 4, .targetRound = -1, .allScoreWeights = weights };
         MctsBot bot1(new GreedyBot(weights), weights, 50, 2, 15);
         PassingBot bot2;
 
@@ -110,13 +122,13 @@ void Trainer::train2(AllScoreWeights& weights, int epochs) {
         });
         std::cout << "highscore:" << best->winPoints.at(best->winner) << std::endl;
 
-        constexpr double lr = 1e-3;
-
         std::cout << "sgd, t.trainStats size: " << t.trainStats.size() << std::endl;
 
         // for (auto& stat: t.trainStats) {
         //     stat.gsFeatures.normalize();
         // }
+
+        double lr = 1e-2 / t.trainStats.size();
 
         double mse = 0;
         Timer timer;
@@ -128,11 +140,11 @@ void Trainer::train2(AllScoreWeights& weights, int epochs) {
             }
             mse = 0;
             for (auto& w: weights) {
-                w.scale(0.9999);
+                w.scale(0.999);
             }
             for (int pos = 0; pos < sizeof(AllScoreWeights) / 8; pos++) {
-                if (wPtr[pos] > 0) wPtr[pos] -= 1e-5;
-                    else wPtr[pos] += 1e-5;
+                if (wPtr[pos] > 0) wPtr[pos] -= 1e-4;
+                    else wPtr[pos] += 1e-4;
             }
 
             for (const auto& stat: t.trainStats) {

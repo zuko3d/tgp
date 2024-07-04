@@ -48,6 +48,6 @@ public:
     void clear() { size_ = 0; }
 
 private:
-    std::array<T, N> data_;
+    std::array<T, N> data_ = {};
     size_t size_ = 0;
 };
